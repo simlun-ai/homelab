@@ -13,7 +13,14 @@
 
 ## vault
 
-Inventory details to be added.
+- **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.
+- **Shutdown coordinator:** No Raspberry Pi 3.
+- **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
+- **Storage:** 3 × inexpensive, DRAM-less 128 GB SATA SSDs, connected through decent SATA-to-USB 3 adapters.
+- **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
+- **Network:** 1 Gbit router connectivity, as for the pi cluster.
+- **UPS:** Eaton 3S USV 3S850D power protection, as for the pi cluster.
+- **Boot configuration:** Latest EEPROM firmware, with USB boot given priority.
 
 ## backup
 
