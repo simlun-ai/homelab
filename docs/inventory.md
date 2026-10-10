@@ -11,7 +11,11 @@
 - **UPS:** Everything powered through an Eaton 3S USV 3S850D.
 - **Boot configuration:** All five Raspberry Pi 4 nodes running the latest EEPROM firmware, with USB boot given priority.
 
-## vault
+## Shared infrastructure
+
+- **UPS:** One Eaton 3S USV 3S850D shared by the vault and backup clusters.
+
+### vault
 
 - **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.
 - **Shutdown coordinator:** The Raspberry Pi 4 itself, connected to the Eaton UPS via USB to coordinate its own safe shutdown.
@@ -19,10 +23,9 @@
 - **Storage:** 3 × inexpensive, DRAM-less 128 GB Intenso USB SSDs.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
 - **Network:** 1 Gbit router connectivity, as for the pi cluster.
-- **UPS:** Eaton 3S USV 3S850D power protection, as for the pi cluster.
 - **Boot configuration:** Latest EEPROM firmware, with USB boot given priority.
 
-## backup
+### backup
 
 Inventory details to be added.
 
