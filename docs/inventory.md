@@ -16,7 +16,10 @@
 
 ### backup
 
-Inventory details to be added.
+- **Compute:** Lenovo ThinkCentre M93p Tiny.
+- **RAM:** 8 GB.
+- **OS drive:** Intel 180 GB SSD.
+- **Storage:** ZFS mirror (RAID 1), consisting of two 8 TB Samsung USB HDDs, each with a 3.5-inch form factor.
 
 ## pi cluster
 
