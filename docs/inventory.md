@@ -5,7 +5,7 @@
 - **Compute:** 5 × Raspberry Pi 4, each with 8 GB RAM.
 - **Shutdown coordinator:** 1 × Raspberry Pi 3, to be connected to the Eaton UPS via USB to coordinate safe shutdown of the cluster.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub per Pi.
-- **Storage:** 3 × inexpensive, DRAM-less 128 GB SATA SSDs, connected through decent SATA-to-USB 3 adapters.
+- **Storage:** 3 × inexpensive, DRAM-less 128 GB Intenso USB SSDs.
 - **Power:** Official USB-C power adapters for both the Pis and hubs, supplied from 230 V mains.
 - **Network:** One 1 Gbit router connecting all five Pis.
 - **UPS:** Everything powered through an Eaton 3S USV 3S850D.
@@ -16,7 +16,7 @@
 - **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.
 - **Shutdown coordinator:** The Raspberry Pi 4 itself, connected to the Eaton UPS via USB to coordinate its own safe shutdown.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
-- **Storage:** 3 × inexpensive, DRAM-less 128 GB SATA SSDs, connected through decent SATA-to-USB 3 adapters.
+- **Storage:** 3 × inexpensive, DRAM-less 128 GB Intenso USB SSDs.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
 - **Network:** 1 Gbit router connectivity, as for the pi cluster.
 - **UPS:** Eaton 3S USV 3S850D power protection, as for the pi cluster.
