@@ -61,14 +61,14 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 
 #### worker1
 
-- **Compute:** Lenovo ThinkCentre M900, Intel Core i7-6700.
+- **Compute:** Lenovo ThinkCentre M900, Intel Core i5-6400.
 - **RAM:** 40 GB.
 - **SATA1:** PNY 120 GB SSD.
-- **SATA2:** OCZ Vertex 4 128 GB SSD.
-- **NVMe1:** Samsung SSD 990 PRO 4 TB.
-- **NVMe2:** Samsung PM951 256 GB (mzvlv256hchp-000L1).
-- **1 Gbit MAC address:** `4C:CC:6A:C3:C7:15`.
-- **2.5 Gbit MAC address:** `1C:86:0B:2B:38:42`.
+- **SATA2:** Intenso TOP 128 GB SSD.
+- **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
+- **NVMe2:** Patriot P320 256 GB SSD.
+- **1 Gbit MAC address:** `1c:66:6d:98:d6:6e`.
+- **2.5 Gbit MAC address:** `1c:86:0b:2b:39:0f`.
 
 #### worker2
 
@@ -83,14 +83,14 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 
 #### worker3
 
-- **Compute:** Lenovo ThinkCentre M900, Intel Core i5-6400.
+- **Compute:** Lenovo ThinkCentre M900, Intel Core i7-6700.
 - **RAM:** 40 GB.
 - **SATA1:** PNY 120 GB SSD.
-- **SATA2:** Intenso TOP 128 GB SSD.
-- **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
-- **NVMe2:** Patriot P320 256 GB SSD.
-- **1 Gbit MAC address:** `1c:66:6d:98:d6:6e`.
-- **2.5 Gbit MAC address:** `1c:86:0b:2b:39:0f`.
+- **SATA2:** OCZ Vertex 4 128 GB SSD.
+- **NVMe1:** Samsung SSD 990 PRO 4 TB.
+- **NVMe2:** Samsung PM951 256 GB (mzvlv256hchp-000L1).
+- **1 Gbit MAC address:** `4C:CC:6A:C3:C7:15`.
+- **2.5 Gbit MAC address:** `1C:86:0B:2B:38:42`.
 
 #### worker4
 
