@@ -9,7 +9,9 @@
 - **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.
 - **Shutdown coordinator:** The Raspberry Pi 4 itself, connected to the Eaton UPS via USB to coordinate its own safe shutdown.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
-- **Storage:** 3 × inexpensive, DRAM-less 128 GB Intenso USB SSDs.
+- **Disks:** 3 × inexpensive, DRAM-less 128 GB Intenso USB SSDs.
+- **OS drive:** 1 × 128 GB Intenso USB SSD.
+- **Storage:** ZFS mirror (RAID 1) using the other 2 × 128 GB Intenso USB SSDs.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
 - **Network:** 1 Gbit router connectivity, as for the pi cluster.
 - **Boot configuration:** Latest EEPROM firmware, with USB boot given priority.
