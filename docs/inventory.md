@@ -99,7 +99,8 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **Accelerator:** Coral USB Accelerator with an Edge TPU coprocessor.
 - **SATA1:** Silicon Power A5X 128 GB SSD.
 - **SATA2:** Patriot P220 128 GB SSD.
-- **Additional SATA disks:** 2 × 1500 GB disks.
+- **SATA3:** 1500 GB disk.
+- **SATA4:** 1500 GB disk.
 - **NVMe1:** Fanxiang S500Pro 256 GB SSD.
 - **NVMe2:** Patriot P320 256 GB SSD.
 - **1 Gbit MAC address:** TBD.
