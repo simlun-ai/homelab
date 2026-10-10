@@ -51,6 +51,20 @@ Each of the five Raspberry Pi 4 nodes gets three SSDs:
 - **OS:** Two SSDs per Pi in MD RAID1 (10 SSDs across the cluster).
 - **Piraeus data plane:** One SSD per Pi (5 SSDs across the cluster).
 
+### SSD allocation
+
+Planned allocation; Pi 1–3 are control-plane nodes and Pi 4–5 are workers. All SSDs are 128 GB. OS disk 1 and OS disk 2 form each node's MD RAID1; the data SSD joins the Piraeus data plane.
+
+| Node | Role | OS disk 1 | OS disk 2 | Piraeus data SSD |
+| --- | --- | --- | --- | --- |
+| Pi 1 | Control plane | Silicon Power A5X | Fanxiang S101 | Patriot P220 |
+| Pi 2 | Control plane | Patriot P220 | Fanxiang S101 | Silicon Power A5X |
+| Pi 3 | Control plane | Patriot P220 | Silicon Power A5X | Fanxiang S101 |
+| Pi 4 | Worker | Silicon Power A5X | Intenso TOP | Patriot P220 |
+| Pi 5 | Worker | Patriot P220 | Silicon Power A5X | Intenso TOP |
+
+The three control-plane data SSDs have different brands, and the two worker data SSDs have different brands. Each Pi's OS pair also has different brands; this allocation gives every Pi three different SSD brands in total. All 15 SSDs are allocated, with none left over.
+
 ## metal cluster
 
 ### Control plane
