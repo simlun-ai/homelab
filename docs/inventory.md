@@ -36,4 +36,69 @@
 
 ## metal cluster
 
-Inventory details to be added.
+### Control plane
+
+Three Lenovo ThinkCentre M920x nodes and one Lenovo ThinkCentre M920x cold spare.
+
+Each machine has:
+
+- **RAM:** 8 GB.
+- **SATA:** 1 × 256 GB SSD.
+- **NVMe:** 2 × 256 GB SSDs.
+- **OS:** MD RAID1 across the two NVMe SSDs.
+- **Storage:** Piraeus on ZFS for the SATA SSD.
+
+| Inventory entry | Role | 1 Gbit MAC address | 2.5 Gbit MAC address |
+| --- | --- | --- | --- |
+| M920x 1 | Control plane | TBD | TBD |
+| M920x 2 | Control plane | TBD | TBD |
+| M920x 3 | Control plane | TBD | TBD |
+| M920x cold spare | Cold spare | TBD | TBD |
+
+### Workers
+
+All workers use MD RAID1 across SATA1 and SATA2 for the OS.
+
+#### worker1
+
+- **Compute:** Lenovo ThinkCentre M900, Intel Core i7-6700.
+- **RAM:** 40 GB.
+- **SATA1:** PNY 120 GB SSD.
+- **SATA2:** OCZ Vertex 4 128 GB SSD.
+- **NVMe1:** Samsung SSD 990 PRO 4 TB.
+- **NVMe2:** Samsung PM951 256 GB (mzvlv256hchp-000L1).
+- **1 Gbit MAC address:** `4C:CC:6A:C3:C7:15`.
+- **2.5 Gbit MAC address:** `1C:86:0B:2B:38:42`.
+
+#### worker2
+
+- **Compute:** Lenovo ThinkCentre M900, Intel Core i5-6400.
+- **RAM:** 40 GB.
+- **SATA1:** PNY 120 GB SSD.
+- **SATA2:** Intenso TOP 128 GB SSD.
+- **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
+- **NVMe2:** Fanxiang 256 GB SSD.
+- **1 Gbit MAC address:** `1c:66:6d:98:ea:02`.
+- **2.5 Gbit MAC address:** `1c:86:0b:2b:39:cb`.
+
+#### worker3
+
+- **Compute:** Lenovo ThinkCentre M900, Intel Core i5-6400.
+- **RAM:** 40 GB.
+- **SATA1:** PNY 120 GB SSD.
+- **SATA2:** Intenso TOP 128 GB SSD.
+- **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
+- **NVMe2:** Patriot P320 256 GB SSD.
+- **1 Gbit MAC address:** `1c:66:6d:98:d6:6e`.
+- **2.5 Gbit MAC address:** `1c:86:0b:2b:39:0f`.
+
+#### worker4
+
+- **Compute:** Desktop chassis with an MSI H77MA-G43 motherboard.
+- **RAM:** 32 GB.
+- **SATA1:** Silicon Power A5X 128 GB SSD.
+- **SATA2:** Patriot P220 128 GB SSD.
+- **NVMe1:** Fanxiang S500Pro 256 GB SSD.
+- **NVMe2:** Patriot P320 256 GB SSD.
+- **1 Gbit MAC address:** TBD.
+- **2.5 Gbit MAC address:** TBD.
