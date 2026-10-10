@@ -28,11 +28,28 @@
 - **Compute:** 5 × Raspberry Pi 4, each with 8 GB RAM.
 - **Shutdown coordinator:** 1 × Raspberry Pi 3, to be connected to the Eaton UPS via USB to coordinate safe shutdown of the cluster.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub per Pi.
-- **Storage:** 3 × inexpensive, DRAM-less 128 GB SATA SSDs, connected through decent SATA-to-USB 3 adapters.
+- **Disks:** 15 × 128 GB SATA SSDs in total, three per Raspberry Pi 4; models and layout listed below.
 - **Power:** Official USB-C power adapters for both the Pis and hubs, supplied from 230 V mains.
 - **Network:** One 1 Gbit router connecting all five Pis.
 - **UPS:** Everything powered through an Eaton 3S USV 3S850D.
 - **Boot configuration:** All five Raspberry Pi 4 nodes running the latest EEPROM firmware, with USB boot given priority.
+
+### SSD inventory and layout
+
+15 × DRAM-less 128 GB SATA SSDs available for the cluster, connected through SATA-to-USB 3 adapters:
+
+| Model | Quantity | Capacity per SSD |
+| --- | --- | --- |
+| Patriot P220 | 5 | 128 GB |
+| Silicon Power A5X | 5 | 128 GB |
+| Intenso TOP | 2 | 128 GB |
+| Fanxiang S101 | 3 | 128 GB |
+| **Total** | **15** | **128 GB** |
+
+Each of the five Raspberry Pi 4 nodes gets three SSDs:
+
+- **OS:** Two SSDs per Pi in MD RAID1 (10 SSDs across the cluster).
+- **Piraeus data plane:** One SSD per Pi (5 SSDs across the cluster).
 
 ## metal cluster
 
