@@ -1,5 +1,7 @@
 # Homelab Inventory
 
+## pi
+
 - **Compute:** 5 × Raspberry Pi 4, each with 8 GB RAM.
 - **Shutdown coordinator:** 1 × Raspberry Pi 3, to be connected to the Eaton UPS via USB to coordinate safe shutdown of the cluster.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub per Pi.
@@ -8,3 +10,15 @@
 - **Network:** One 1 Gbit router connecting all five Pis.
 - **UPS:** Everything powered through an Eaton 3S USV 3S850D.
 - **Boot configuration:** All five Raspberry Pi 4 nodes running the latest EEPROM firmware, with USB boot given priority.
+
+## vault
+
+Inventory details to be added.
+
+## backup
+
+Inventory details to be added.
+
+## metal
+
+Inventory details to be added.
