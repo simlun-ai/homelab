@@ -9,6 +9,7 @@ Common goals:
 - Encryption for all ZFS storage; OS disk encryption is also a goal. Key delivery, a possible shared disk-unlock key, and recovery remain TBD.
 - No secrets committed or written to workstation disk. Encrypted persistence in cluster services and backups is allowed; workstation handling remains memory-only as described in [layout.md](layout.md#secrets-state-and-disk-encryption).
 - Selected infrastructure workloads, such as monitoring, may run on control-plane nodes. Application workloads belong on workers where workers exist; exact scheduling controls are TBD.
+- After a UPS-triggered shutdown, systems remain off for operator-controlled startup, one machine at a time. Disable power-on after power restoration, Wake-on-LAN, and other automatic wake sources where supported. Bring Vault services up before dependent clusters; detailed sequencing and per-device verification remain TBD in [layout.md](layout.md#power-loss-shutdown-and-manual-startup).
 - Three separate shutdown coordinators serve Vault + Backup (Raspberry Pi 2), Pi (Raspberry Pi 3), and Metal (Raspberry Pi 3). Raspberry Pi OS Lite and Ansible are tentative choices for these supporting hosts.
 
 ## Vault

@@ -15,6 +15,8 @@ Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capac
 
 **Planned platform and storage policy:** All four Kubernetes clusters use Talos Linux. All ZFS storage must be encrypted, and OS disk encryption is also a goal; these are requirements, not verified disk state. Non-Piraeus ZFS data pools are prepared and repaired manually and must be protected from automatic provisioning. Exact encryption, unlock, and Talos MD RAID1 implementation details remain TBD in [layout.md](layout.md). The three shutdown coordinators (one Raspberry Pi 2 and two Raspberry Pi 3 hosts) are separate supporting hosts, tentatively using Raspberry Pi OS Lite and Ansible.
 
+**Planned power-return policy:** After a UPS-triggered shutdown, systems should remain off until manually started, one machine at a time. Configure BIOS/UEFI to stay off after power restoration and disable Wake-on-LAN and other automatic wake sources wherever supported. Per-device support, settings, and verification are TBD, including Raspberry Pi boards, shutdown coordinators, and UPS outlet behavior; no hardware capability or completed configuration is assumed. See [layout.md](layout.md#power-loss-shutdown-and-manual-startup).
+
 ## Vault
 
 - **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.

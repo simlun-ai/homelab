@@ -47,6 +47,7 @@ Use a consistent vocabulary and capitalization for cluster names and components.
 - All four Kubernetes clusters target Talos Linux. Each cluster owns its tool-version pins and `bin/` directory, selected through Makefiles; do not silently fall back to global tools.
 - All ZFS storage must be encrypted; OS disk encryption is a goal whose implementation is still TBD. Do not describe these goals as verified deployment state.
 - Non-Piraeus ZFS data disks and pools are prepared and repaired manually. Automatic provisioning must not wipe, format, recreate, or destroy them; OS and Piraeus preparation must stay within explicit disk assignments.
+- After a UPS-triggered shutdown, recovery is manual: the operator starts systems one at a time. Preserve stay-off behavior after power restoration and disable Wake-on-LAN and other automatic wake sources where supported. Document hardware limitations rather than assuming support; do not introduce unattended power-on as a requirement. Vault services precede dependent clusters during startup.
 
 ## Before completing a change
 

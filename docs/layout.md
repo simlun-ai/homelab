@@ -12,6 +12,7 @@ One repository manages four Talos Linux Kubernetes clusters, in this order: **Va
 - Never commit secrets or let secrets touch the workstation's disk, including the checkout, temporary files, and tool caches. Encrypted persistence in cluster services and backups is allowed.
 - Encrypt all ZFS storage. Aim to encrypt OS disks as well. A shared disk-unlock key or passphrase is an acceptable option to investigate for simplicity.
 - Make provisioning as unattended, scripted, and repeatable as possible, within explicitly assigned disk boundaries.
+- After a UPS-triggered shutdown, leave systems off for manual startup, one machine at a time. Disable automatic power-on after power restoration, Wake-on-LAN, and other automatic wake sources where supported.
 - Prepare all non-Piraeus ZFS data disks and pools manually. Provisioning must preserve them through installation, upgrades, rebuilds, and removal of nodes.
 - Allow infrastructure workloads, such as monitoring, on control-plane nodes; keep application workloads on workers where workers exist.
 - Document common operations centrally in `/runbooks/`, with a brief root README and more detailed cluster READMEs.
@@ -127,7 +128,7 @@ Prefer direct API calls, process memory, and streams when implementing secret tr
 
 The workstation restriction does not prohibit encrypted persistence in cluster services or backups. OpenBao's encrypted backend, Kubernetes Secrets in etcd with appropriate encryption at rest, protected Talos node state, and encrypted backups fit that boundary. Their encryption and key-management details still need implementation and verification. Secret transport and backup/restore operations must not stage sensitive contents on workstation disk.
 
-Vault's own secrets remain manually supplied without relying on its OpenBao instance. Its disk unlock, OpenBao unseal/recovery, and restore credentials must also be available without any other cluster. Manual input still follows the workstation no-disk rule. The recovery source and unattended-unlock mechanism are TBD.
+Vault's own secrets remain manually supplied without relying on its OpenBao instance. Its disk unlock, OpenBao unseal/recovery, and restore credentials must also be available without any other cluster. Manual input still follows the workstation no-disk rule. The recovery source and unlock mechanism are TBD. Human-present unlock and unseal are acceptable; unattended recovery after a UPS-triggered shutdown is not required.
 
 ### Hardware-assisted unlock candidate
 
@@ -137,7 +138,7 @@ Four available YubiKeys are recorded in [inventory.md](inventory.md#security-key
 - Evaluate protection of OpenBao Shamir unseal shares, potentially using OpenPGP on the two YubiKey 5 NFC devices or a challenge-response-based wrapping helper. Challenge-response itself is not a native OpenBao seal mechanism; YubiKey availability does not establish PKCS#11 auto-unseal compatibility.
 - Keep Vault's disk unlock and OpenBao unseal independent of its own services and all other clusters. Hardware-token access must not create a circular bootstrap dependency.
 - Before choosing a design, validate firmware capabilities, existing OTP slot usage, touch policy, Talos-side key delivery, memory-only workstation handling, backup tokens, independent recovery material, and lost-token/key-rotation procedures. Never overwrite an occupied slot without explicit approval.
-- Human-present unlock and unattended restart are separate operating choices. Recovery access must work after token loss without relying on encrypted storage that remains locked.
+- Human-present unlock fits the manual startup policy after a UPS-triggered shutdown; unattended restart is not required. Recovery access must work after token loss without relying on encrypted storage that remains locked.
 
 ### OpenTofu state
 
@@ -225,7 +226,20 @@ Use one supporting-host scope because one coordinator serves two clusters and sh
 | `ansible/templates/` | Non-secret service templates. |
 | `ansible/requirements.yml` | Pinned external collections or roles if Ansible is selected. |
 
-The three coordinator roles are **Vault + Backup** (Raspberry Pi 2, powered from the Eaton 3S700's 2 A USB power outlet), **Pi** (Raspberry Pi 3), and **Metal** (Raspberry Pi 3), matching the hardware inventory. Raspberry Pi OS Lite is the tentative OS; Ansible is the proposed configuration tool. Both remain choices to confirm. OpenTofu may manage suitable surrounding resources but has no assigned coordinator role yet. Shutdown software, credentials, triggering rules, and shutdown/startup sequencing are TBD. These hosts follow the same secret-handling requirements.
+The three coordinator roles are **Vault + Backup** (Raspberry Pi 2, powered from the Eaton 3S700's 2 A USB power outlet), **Pi** (Raspberry Pi 3), and **Metal** (Raspberry Pi 3), matching the hardware inventory. Raspberry Pi OS Lite is the tentative OS; Ansible is the proposed configuration tool. Both remain choices to confirm. OpenTofu may manage suitable surrounding resources but has no assigned coordinator role yet. Shutdown software, credentials, triggering rules, and detailed sequencing are TBD. Recovery after a UPS-triggered shutdown is explicitly manual, as described below. These hosts follow the same secret-handling requirements.
+
+### Power-loss shutdown and manual startup
+
+**Decision:** After an outage lasts long enough for a UPS coordinator to initiate shutdown, systems are to remain off until the operator starts them again, one machine at a time. Restored mains power must not trigger an automatic restart, including if it returns during shutdown.
+
+- Set BIOS/UEFI power-restoration behavior to **stay off**, where supported.
+- Disable Wake-on-LAN and other automatic wake or startup sources, where supported. Do not add a coordinator-driven or scheduled power-on workflow.
+- Record per-device support, chosen settings, and verification in the inventory. Raspberry Pi boards, coordinators, and UPS outlets need their own power-return checks; do not assume PC firmware settings apply. Unsupported behavior and any required manual power isolation remain TBD.
+- Start Vault and make its required services available before bringing up dependent clusters. The operator controls each power-on; detailed node order and readiness checks belong in the shutdown/startup runbook.
+- Manual disk unlock and OpenBao unseal are acceptable. Key delivery and recovery design still need to avoid circular dependencies and workstation-disk secrets.
+- Unattended provisioning remains a goal once a machine is deliberately powered on. This power-loss policy does not prohibit an explicitly requested maintenance reboot.
+
+These are intended settings and behavior, not claims that the hardware has already been configured or tested.
 
 ## Central runbooks
 
@@ -244,19 +258,19 @@ Runbooks should state scope, prerequisites, secret sources by reference, expecte
 | `/runbooks/recover-piraeus-volume.md` | Recover replicas or placement after a failure or maintenance event. |
 | `/runbooks/recover-encryption-access.md` | Recover or rotate disk-unlock access without circular dependencies. |
 | `/runbooks/restore-openbao.md` | Restore OpenBao and its independently held recovery material. |
-| `/runbooks/ups-shutdown-and-startup.md` | Exercise shutdown coordination and restart in dependency order. |
+| `/runbooks/ups-shutdown-and-startup.md` | Verify safe shutdown, staying off after power restoration, and operator-controlled startup one machine at a time in dependency order. |
 
 ## Open decisions for later iterations
 
 1. Secret delivery and memory-only workstation runtime paths; whether a SOPS + age fallback is needed and how encrypted payloads would be stored.
 2. OpenTofu remote state, encryption, failure handling, and independently accessible Vault recovery material.
 3. Talos MD RAID1 installation, boot recovery, and OS encryption on each hardware platform.
-4. ZFS encryption layer, shared-key strategy, key recovery, and unattended unlock without circular dependencies.
+4. ZFS encryption layer, shared-key strategy, key recovery, and unlock during operator-controlled startup without circular dependencies.
 5. Node/disk configuration schema and how to keep machine-readable declarations synchronized with the inventory.
 6. Piraeus pool preparation, StorageClass semantics, two-replica quorum behavior, and maintenance procedures.
 7. Metal's dedicated storage-network addressing and physical switch topology.
 8. Helm release orchestration, immutable chart storage, and exact division of work between scripts and OpenTofu.
-9. Coordinator OS, configuration tool, shutdown software, and power-event sequencing.
+9. Coordinator OS, configuration tool, shutdown software, and detailed power-event sequencing; verify per-device stay-off behavior and handle hardware limitations. Manual startup after UPS-triggered shutdown is decided.
 
 ## Upstream references
 
