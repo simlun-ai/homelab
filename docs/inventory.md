@@ -181,6 +181,19 @@ Three Eaton UPS units protect the metal cluster:
 - **UPS:** One Eaton 3S700 shared by the Vault and Backup clusters.
 - **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to the Eaton UPS via USB to coordinate safe shutdown of those clusters.
 
+## Security keys
+
+Four YubiKeys available; secret-handling roles are candidates, not configured assignments.
+
+| Model | Firmware | Enabled interfaces | Quantity |
+| --- | --- | --- | --- |
+| YubiKey 5 NFC | 5.2.4 | OTP + FIDO + CCID | 2 |
+| YubiKey Standard | 2.2.3 | OTP | 1 |
+| YubiKey Standard | 2.4.1 | OTP | 1 |
+| **Sum** | | | **4** |
+
+Potential uses include HMAC-SHA1 challenge-response-assisted unlock of manually managed encrypted ZFS storage and protection of OpenBao unseal material. No slots, credentials, or recovery arrangements have been assigned. See [layout.md](layout.md#hardware-assisted-unlock-candidate).
+
 ## Spare drives
 
 - Samsung SSD 870 EVO 2 TB.
