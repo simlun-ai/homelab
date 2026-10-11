@@ -25,7 +25,7 @@
 
 ## pi cluster
 
-- **Compute:** 5 × Raspberry Pi 4, each with 8 GB RAM.
+- **Compute:** 5 × Raspberry Pi 4, each with 8 GB RAM. One Raspberry Pi 4 8 GB RAM cold spare as well.
 - **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to the Eaton UPS via USB to coordinate safe shutdown of the cluster.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub per Pi.
 - **Disks:** 15 × 128 GB SATA SSDs in total, three per Raspberry Pi 4; models and layout listed below.
@@ -143,8 +143,8 @@ Three Eaton UPS units protect the metal cluster:
 
 | UPS | Model | Protected equipment |
 | --- | --- | --- |
-| 1 | Eaton 3S850 | Three control-plane nodes and all network switches |
+| 1 | Eaton 3S850 | Three control-plane nodes, the Pi3 coordinator and all network switches |
 | 2 | Eaton 3S850 | worker1 and worker2 |
 | 3 | Eaton 3S700 | worker3 and worker4 |
 
-- **Shutdown coordinator:** 1 × Raspberry Pi 3 for the control-plane and network UPS.
+**Shutdown coordinator:** 1 × Raspberry Pi 3 for the whole cluster.
