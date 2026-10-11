@@ -2,7 +2,7 @@
 
 ## Shared infrastructure
 
-- **UPS:** One Eaton 3S USV 3S850D shared by the vault and backup clusters.
+- **UPS:** One Eaton 3S850 shared by the vault and backup clusters.
 
 ### vault
 
@@ -31,12 +31,12 @@
 - **Disks:** 15 × 128 GB SATA SSDs in total, three per Raspberry Pi 4; models and layout listed below.
 - **Power:** Official USB-C power adapters for both the Pis and hubs, supplied from 230 V mains.
 - **Network:** One 1 Gbit router connecting all five Pis.
-- **UPS:** Everything powered through an Eaton 3S USV 3S850D.
+- **UPS:** Everything powered through an Eaton 3S850.
 - **Boot configuration:** All five Raspberry Pi 4 nodes running the latest EEPROM firmware, with USB boot given priority.
 
 ### SSD inventory and layout
 
-15 × DRAM-less 128 GB SATA SSDs available for the cluster, connected through SATA-to-USB 3 adapters:
+15 × cheap DRAM-less 128 GB SATA SSDs available for the cluster, connected through SATA-to-USB 3 adapters:
 
 | Model | Quantity | Capacity per SSD / combined sum |
 | --- | --- | --- |
