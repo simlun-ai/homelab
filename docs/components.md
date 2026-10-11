@@ -1,5 +1,7 @@
 # Components
 
+## Infrastructure
+
 - Talos (v1.14.2)
 - Piraeus Operator (v2.12.0)
 - ZFS (v2.4.4, Talos system extension)
@@ -15,9 +17,12 @@
 - External Secrets Operator (v2.11.0)
 - cert-manager (v1.21.2)
 - Garage (v2.4.1)
+- PostgreSQL (v18.6)
+
+## Workloads
+
 - Zigbee2MQTT (v2.14.2)
 - Home Assistant (2026.10.0)
-- PostgreSQL (v18.6)
 - Immich (v3.3.1)
 - Syncthing (v2.1.6)
 - Jellyfin (v12.2)
