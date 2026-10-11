@@ -136,3 +136,15 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **NVMe2:** Patriot P320 256 GB SSD.
 - **1 Gbit MAC address:** TBD.
 - **2.5 Gbit MAC address:** TBD.
+
+### UPS and shutdown coordination
+
+Three Eaton UPS units protect the metal cluster:
+
+| UPS | Model | Protected equipment |
+| --- | --- | --- |
+| 1 | Eaton 3S850 | Three control-plane nodes and all network switches |
+| 2 | Eaton 3S850 | worker1 and worker2 |
+| 3 | Eaton 3S700 | worker3 and worker4 |
+
+- **Shutdown coordinator:** 1 × Raspberry Pi 3 for the control-plane and network UPS.
