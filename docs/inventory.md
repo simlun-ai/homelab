@@ -4,7 +4,7 @@
 
 - **UPS:** One Eaton 3S850 shared by the vault and backup clusters.
 
-### vault
+### vault (single-node)
 
 - **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.
 - **Shutdown coordinator:** The Raspberry Pi 4 itself, connected to the Eaton UPS via USB to coordinate its own safe shutdown.
@@ -16,7 +16,7 @@
 - **Network:** 1 Gbit router connectivity, as for the pi cluster.
 - **Boot configuration:** Latest EEPROM firmware, with USB boot given priority.
 
-### backup
+### backup (single-node)
 
 - **Compute:** Lenovo ThinkCentre M93p Tiny.
 - **RAM:** 8 GB.
