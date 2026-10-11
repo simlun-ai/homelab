@@ -21,3 +21,4 @@
 - Immich (v3.3.1)
 - Syncthing (v2.1.6)
 - Jellyfin (v12.2)
+- Frigate NVR (v0.18.0)
