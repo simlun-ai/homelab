@@ -4,6 +4,7 @@
 
 - **Total disk capacity before mirroring:** 115,116 GB.
 - **Total nominal usable capacity after mirroring:** 62,264 GB, excluding spare drives and cold-spare disks.
+- **Total spare disk capacity:** 15,768 GB across 8 spare disks.
 - **Total RAM:** 248 GB documented, plus unspecified RAM in three Raspberry Pi 3 shutdown coordinators and the old NAS computer.
 - **Total computers:** 20, including two cold spares, three shutdown coordinators and the old NAS computer.
 - **Total disks:** 76, including eight spare drives.
