@@ -19,6 +19,8 @@
 - Garage (v2.4.1)
 - PostgreSQL (v18.6)
 
+- Headlamp (v0.45.0)
+
 ## Workloads
 
 - Zigbee2MQTT (v2.14.2)
