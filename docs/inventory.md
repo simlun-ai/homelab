@@ -100,6 +100,7 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **NVMe2:** Patriot P320 256 GB SSD.
 - **USB 3 SSDs:** 2 × Samsung T7 1 TB USB SSDs.
 - **USB 3 HDDs:** 2 × Seagate Portable Drive 2.5-inch 4 TB USB HDDs.
+- **USB-connected SATA HDDs:** 2 × 3 TB SATA HDDs, each connected through a SATA–USB 3 adapter.
 - **1 Gbit MAC address:** `1c:66:6d:98:d6:6e`.
 - **2.5 Gbit MAC address:** `1c:86:0b:2b:39:0f`.
 
