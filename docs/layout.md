@@ -219,13 +219,13 @@ Use one supporting-host scope because one coordinator serves two clusters and sh
 | `README.md` | Coordinator roles, UPS mappings, shutdown order, and recovery links. |
 | `Makefile` | Explicit coordinator-management targets. |
 | `toolchain.yaml` and `bin/` | Independently pinned management tools and ignored local installations. |
-| `inventory.yaml` | Three Raspberry Pi 3 hosts and the equipment each protects; identifiers and addresses TBD. |
+| `inventory.yaml` | One Raspberry Pi 2 for Vault + Backup and two Raspberry Pi 3 hosts for Pi and Metal, plus the equipment each protects; identifiers and addresses TBD. |
 | `ansible/playbooks/` | Proposed host configuration and update entry points. |
 | `ansible/roles/` | Proposed shutdown-manager setup and service configuration. |
 | `ansible/templates/` | Non-secret service templates. |
 | `ansible/requirements.yml` | Pinned external collections or roles if Ansible is selected. |
 
-The three coordinator roles are **Vault + Backup**, **Pi**, and **Metal**, matching the hardware inventory. Raspberry Pi OS Lite is the tentative OS; Ansible is the proposed configuration tool. Both remain choices to confirm. OpenTofu may manage suitable surrounding resources but has no assigned coordinator role yet. Shutdown software, credentials, triggering rules, and shutdown/startup sequencing are TBD. These hosts follow the same secret-handling requirements.
+The three coordinator roles are **Vault + Backup** (Raspberry Pi 2, powered from the Eaton 3S700's 2 A USB power outlet), **Pi** (Raspberry Pi 3), and **Metal** (Raspberry Pi 3), matching the hardware inventory. Raspberry Pi OS Lite is the tentative OS; Ansible is the proposed configuration tool. Both remain choices to confirm. OpenTofu may manage suitable surrounding resources but has no assigned coordinator role yet. Shutdown software, credentials, triggering rules, and shutdown/startup sequencing are TBD. These hosts follow the same secret-handling requirements.
 
 ## Central runbooks
 
