@@ -1,13 +1,13 @@
 # Homelab Inventory
 
-## Shared infrastructure
+## Shared infrastructure nodes
 
-- **UPS:** One Eaton 3S850 shared by the vault and backup clusters.
+- **UPS:** One Eaton 3S700 shared by the vault and backup clusters.
+- **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to the Eaton UPS via USB to coordinate safe shutdown of the cluster.
 
 ### vault (single-node)
 
 - **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.
-- **Shutdown coordinator:** The Raspberry Pi 4 itself, connected to the Eaton UPS via USB to coordinate its own safe shutdown.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
 - **Disks:** 3 × inexpensive, DRAM-less 128 GB Intenso USB SSDs.
 - **OS drive:** 1 × 128 GB Intenso USB SSD.
@@ -26,11 +26,11 @@
 ## pi cluster
 
 - **Compute:** 5 × Raspberry Pi 4, each with 8 GB RAM.
-- **Shutdown coordinator:** 1 × Raspberry Pi 3, to be connected to the Eaton UPS via USB to coordinate safe shutdown of the cluster.
+- **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to the Eaton UPS via USB to coordinate safe shutdown of the cluster.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub per Pi.
 - **Disks:** 15 × 128 GB SATA SSDs in total, three per Raspberry Pi 4; models and layout listed below.
 - **Power:** Official USB-C power adapters for both the Pis and hubs, supplied from 230 V mains.
-- **Network:** One 1 Gbit router connecting all five Pis.
+- **Network:** One Netgear 1 Gbit router connecting all five Pis.
 - **UPS:** Everything powered through an Eaton 3S850.
 - **Boot configuration:** All five Raspberry Pi 4 nodes running the latest EEPROM firmware, with USB boot given priority.
 
