@@ -139,9 +139,9 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **Accelerator:** Coral USB Accelerator with an Edge TPU coprocessor.
 - **SATA1:** Silicon Power A5X 128 GB SSD (OS MD RAID1).
 - **SATA2:** Patriot P220 128 GB SSD (OS MD RAID1).
-- **SATA3:** 1500 GB SATA HDD.
-- **SATA4:** 1500 GB SATA HDD.
-- **ZFS mirror pool `nvr`:** 2 × 1500 GB SATA HDDs (SATA3 and SATA4).
+- **ZFS mirror pool `nvr`:**
+  - **SATA3:** 1500 GB SATA HDD.
+  - **SATA4:** 1500 GB SATA HDD.
 - **ZFS mirror pool `piraeus`:**
   - **NVMe1:** Fanxiang S500Pro 256 GB SSD.
   - **NVMe2:** Patriot P320 256 GB SSD.
