@@ -39,6 +39,7 @@ The Vault cluster is the foundational cluster: it does not depend on any of the 
 ### Secrets and certificates
 
 - OpenBao provides centralized secrets management for dependent clusters; the Vault cluster does not rely on it for its own secrets.
+- Available YubiKeys are candidates for hardware-assisted disk unlock and protection of OpenBao unseal material, not a configured seal or unlock mechanism; see [layout.md](layout.md#hardware-assisted-unlock-candidate).
 - cert-manager issues Let's Encrypt certificates using Cloudflare DNS-01 validation.
 - External Secrets Operator uses PushSecret to publish cert-manager certificates to OpenBao.
 - Dependent clusters use External Secrets Operator connected to OpenBao to pull certificates.
