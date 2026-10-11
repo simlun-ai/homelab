@@ -148,3 +148,14 @@ Three Eaton UPS units protect the metal cluster:
 | 3 | Eaton 3S700 | worker3 and worker4 |
 
 **Shutdown coordinator:** 1 × Raspberry Pi 3 for the whole cluster.
+
+## Spare Drives
+
+- Samsung SSD 870 EVO 2 TB.
+- Samsung USB SSD T7 1 TB.
+- Patriot P220 128 GB SATA SSD.
+- Silicon Power A5X 256 GB SATA SSD.
+- Fanxiang 256 GB NVMe SSD.
+- Intenso 128 GB Portable SSD Premium USB.
+- Seagate Expansion 3.5-inch 8 TB USB HDD.
+- Seagate Portable Drive 2.5-inch 4 TB USB HDD.
