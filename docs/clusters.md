@@ -14,7 +14,8 @@ The Vault cluster is the foundational cluster: it does not depend on any of the 
 
 ### Storage and backups
 
-- Two USB SSDs in a mirrored ZFS pool.
+- **OS:** 2 × 128 GB Intenso USB SSDs in MD RAID1 (128 GB nominal usable).
+- **Storage:** The other 2 × 128 GB Intenso USB SSDs in a ZFS mirror (128 GB nominal usable).
 - zfs-localpv for local persistent volumes.
 - Backups to Cloudflare R2, including the OpenBao PVC.
 
