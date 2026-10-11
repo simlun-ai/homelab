@@ -129,6 +129,16 @@ The workstation restriction does not prohibit encrypted persistence in cluster s
 
 Vault's own secrets remain manually supplied without relying on its OpenBao instance. Its disk unlock, OpenBao unseal/recovery, and restore credentials must also be available without any other cluster. Manual input still follows the workstation no-disk rule. The recovery source and unattended-unlock mechanism are TBD.
 
+### Hardware-assisted unlock candidate
+
+Four available YubiKeys are recorded in [inventory.md](inventory.md#security-keys). Their use for secrets is exploratory, not configured or deployed.
+
+- Evaluate OTP HMAC-SHA1 challenge-response to protect disk-unlock material for manually managed encrypted ZFS datasets/zvols. A helper would derive or unwrap key material and deliver it through memory-only streams; this is not a native ZFS YubiKey integration.
+- Evaluate protection of OpenBao Shamir unseal shares, potentially using OpenPGP on the two YubiKey 5 NFC devices or a challenge-response-based wrapping helper. Challenge-response itself is not a native OpenBao seal mechanism; YubiKey availability does not establish PKCS#11 auto-unseal compatibility.
+- Keep Vault's disk unlock and OpenBao unseal independent of its own services and all other clusters. Hardware-token access must not create a circular bootstrap dependency.
+- Before choosing a design, validate firmware capabilities, existing OTP slot usage, touch policy, Talos-side key delivery, memory-only workstation handling, backup tokens, independent recovery material, and lost-token/key-rotation procedures. Never overwrite an occupied slot without explicit approval.
+- Human-present unlock and unattended restart are separate operating choices. Recovery access must work after token loss without relying on encrypted storage that remains locked.
+
 ### OpenTofu state
 
 Each cluster owns its own state boundary; there is no shared state covering all four clusters. Supporting hosts or external resources get separate state only if OpenTofu actually manages them.
