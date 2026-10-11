@@ -52,6 +52,13 @@ Planned Talos cluster on the Lenovo ThinkCentre M93p Tiny described in [inventor
 - Manually prepared ZFS mirror using two 8 TB Samsung USB HDDs; encryption is required.
 - Depends on Vault services. Workloads, backup software, retention, and storage integration are TBD.
 
+## Shared infrastructure
+
+Shared exclusively by the **Vault and Backup clusters**:
+
+- **UPS:** 1 × Eaton 3S700 supplying power to both clusters.
+- **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to this UPS via USB to coordinate safe shutdown of both Vault and Backup. This supporting host is separate from their Talos nodes.
+
 ## Pi
 
 - Five active Raspberry Pi 4 nodes: three control-plane nodes and two workers, plus one cold spare.
