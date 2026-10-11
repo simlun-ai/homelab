@@ -112,6 +112,8 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **SATA2:** Intenso TOP 128 GB SSD.
 - **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
 - **NVMe2:** Fanxiang 256 GB SSD.
+- **ZFS pool `dump`:** Mirror of 2 × 2 TB SATA HDDs, each connected through a SATA–USB 3 adapter.
+- **ZFS pool `nas`:** Mirror of 2 × 4 TB SATA HDDs, each connected through a SATA–USB 3 adapter.
 - **1 Gbit MAC address:** `1c:66:6d:98:ea:02`.
 - **2.5 Gbit MAC address:** `1c:86:0b:2b:39:cb`.
 
