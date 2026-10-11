@@ -9,7 +9,7 @@ Common goals:
 - Encryption for all ZFS storage; OS disk encryption is also a goal. Key delivery, a possible shared disk-unlock key, and recovery remain TBD.
 - No secrets committed or written to workstation disk. Encrypted persistence in cluster services and backups is allowed; workstation handling remains memory-only as described in [layout.md](layout.md#secrets-state-and-disk-encryption).
 - Selected infrastructure workloads, such as monitoring, may run on control-plane nodes. Application workloads belong on workers where workers exist; exact scheduling controls are TBD.
-- Three separate Raspberry Pi 3 shutdown coordinators serve Vault + Backup, Pi, and Metal. Raspberry Pi OS Lite and Ansible are tentative choices for these supporting hosts.
+- Three separate shutdown coordinators serve Vault + Backup (Raspberry Pi 2), Pi (Raspberry Pi 3), and Metal (Raspberry Pi 3). Raspberry Pi OS Lite and Ansible are tentative choices for these supporting hosts.
 
 ## Vault
 
@@ -57,7 +57,7 @@ Planned Talos cluster on the Lenovo ThinkCentre M93p Tiny described in [inventor
 Shared exclusively by the **Vault and Backup clusters**:
 
 - **UPS:** 1 × Eaton 3S700 supplying power to both clusters.
-- **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to this UPS via USB to coordinate safe shutdown of both Vault and Backup. This supporting host is separate from their Talos nodes.
+- **Shutdown coordinator:** 1 × Raspberry Pi 2, connected to this UPS via USB for monitoring and safe shutdown of both Vault and Backup. Powered from the Eaton 3S700's 2 A USB power outlet. This supporting host is separate from their Talos nodes.
 
 ## Pi
 
