@@ -3,12 +3,12 @@
 ## Summary
 
 - **Total disk capacity before mirroring:** 79,116 GB.
-- **Total nominal usable capacity after mirroring:** 50,544 GB, including spare capacity.
+- **Total nominal usable capacity after mirroring:** 34,264 GB, excluding spare drives and cold-spare disks.
 - **Total RAM:** 248 GB documented, plus the RAM in three Raspberry Pi 3 shutdown coordinators (not specified).
 - **Total computers:** 19, including two cold spares and three shutdown coordinators.
 - **Total disks:** 71, including eight spare drives.
 
-Totals include the cold spares and all drives listed under Spare Drives. The spare drives contribute 15,768 GB of unallocated capacity; the M920x cold spare contributes 512 GB after its OS mirror. Excluding those drives, the configured systems provide 34,264 GB after mirroring.
+Raw disk capacity, RAM and equipment counts include cold spares and all drives listed under Spare Drives. Usable capacity excludes the eight spare drives (15,768 GB) and the M920x cold spare's disks (512 GB after its OS mirror).
 
 Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capacity of its smallest member. Figures include OS disks and exclude filesystem overhead and any additional Piraeus replication. Unlisted boot media are not counted.
 
