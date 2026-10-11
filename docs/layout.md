@@ -180,7 +180,13 @@ Once a manual pool has been prepared, its declaration can support non-destructiv
 
 `/clusters/vault/` describes the independent single-node Talos cluster. Preserve Flannel, MetalLB, Traefik, kube-prometheus-stack with Telegram alerting, Headlamp, cert-manager, External Secrets Operator, OpenBao, and ZFS LocalPV as documented in [clusters.md](clusters.md#vault).
 
-Keep the MD RAID1 OS pair separate from the manually prepared ZFS data mirror. Preserve Cloudflare DNS-01 certificate issuance, PushSecret publication to OpenBao, and encrypted Cloudflare R2 backups including the OpenBao PVC, without staging secrets on workstation disk. Vault has no Piraeus directory unless its design is explicitly changed.
+Keep the MD RAID1 OS pair separate from the manually prepared ZFS data mirror. Preserve Cloudflare DNS-01 certificate issuance and PushSecret publication to OpenBao. Vault has no Piraeus directory unless its design is explicitly changed.
+
+#### OpenBao backups
+
+**Decision:** Use OpenBao's integrated Raft storage and take online, application-consistent Raft snapshots while OpenBao remains running. A scheduled job inside the Vault cluster obtains the snapshot through OpenBao's snapshot API and uploads it to Cloudflare R2.
+
+Backups must remain encrypted. Snapshot transfer and any additional encryption happen inside Vault, without staging secrets or snapshots on workstation disk. Schedule, retention, job authentication, upload implementation, and restore verification details remain TBD. Corresponding unseal/recovery material must be independently available, and the restore runbook must cover restoring a snapshot from R2.
 
 ### Backup
 
@@ -257,7 +263,7 @@ Runbooks should state scope, prerequisites, secret sources by reference, expecte
 | `/runbooks/replace-md-raid1-os-disk.md` | Replace an OS mirror member, restore bootability, and verify the mirror. |
 | `/runbooks/recover-piraeus-volume.md` | Recover replicas or placement after a failure or maintenance event. |
 | `/runbooks/recover-encryption-access.md` | Recover or rotate disk-unlock access without circular dependencies. |
-| `/runbooks/restore-openbao.md` | Restore OpenBao and its independently held recovery material. |
+| `/runbooks/restore-openbao.md` | Restore OpenBao from a Raft snapshot in Cloudflare R2 using independently held unseal/recovery material, then verify recovery. |
 | `/runbooks/ups-shutdown-and-startup.md` | Verify safe shutdown, staying off after power restoration, and operator-controlled startup one machine at a time in dependency order. |
 
 ## Open decisions for later iterations
@@ -283,3 +289,4 @@ These references inform the unresolved implementation details; they do not estab
 - [OpenTofu state and plan encryption](https://opentofu.org/docs/language/state/encryption/): persistence and encryption considerations.
 - [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/): etcd persistence and encryption considerations.
 - [OpenBao security model](https://openbao.org/docs/internals/security/): encrypted storage and recovery considerations.
+- [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/): online snapshot export and restore.

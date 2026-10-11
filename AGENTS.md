@@ -43,6 +43,7 @@ Use a consistent vocabulary and capitalization for cluster names and components.
 - **Vault** is the independent foundational cluster; other clusters depend on services it supplies. Avoid circular dependencies: its own secrets are entered manually rather than fetched from its OpenBao instance.
 - Keep intended configuration details (for example Flannel versus Cilium, storage technology, and certificate distribution) aligned between cluster architecture and component documentation.
 - Describe backups, security-sensitive configuration, and external dependencies accurately without committing actual credentials or secrets.
+- Vault's OpenBao backup plan uses integrated Raft storage and scheduled online Raft snapshots uploaded to Cloudflare R2 by a job inside Vault. Preserve independently accessible unseal/recovery material and keep secrets and snapshots off workstation disk.
 - Preserve the hard rule that secrets are neither committed nor written to workstation disk, including the checkout, temporary files, caches, and logs. Encrypted persistence in cluster services and backups is allowed; secret handling on the workstation must remain memory-only as described in `docs/layout.md`.
 - All four Kubernetes clusters target Talos Linux. Each cluster owns its tool-version pins and `bin/` directory, selected through Makefiles; do not silently fall back to global tools.
 - All ZFS storage must be encrypted; OS disk encryption is a goal whose implementation is still TBD. Do not describe these goals as verified deployment state.

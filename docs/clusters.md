@@ -30,7 +30,9 @@ The Vault cluster is the foundational cluster: it does not depend on any of the 
 - **Storage:** The other 2 × 128 GB Intenso USB SSDs in a ZFS mirror (128 GB nominal usable).
 - The data mirror is manually prepared and must be encrypted; exact encryption and unlock implementation are TBD.
 - zfs-localpv for local persistent volumes.
-- Encrypted backups to Cloudflare R2, including the OpenBao PVC, without staging secrets on workstation disk.
+- OpenBao uses integrated Raft storage, with scheduled online Raft snapshots uploaded to Cloudflare R2 while the service remains running.
+- A scheduled job inside the Vault cluster handles snapshots and uploads, with encrypted backups and no staging of secrets or snapshots on workstation disk.
+- Backup schedule, retention, authentication, and restore verification details are TBD. Corresponding unseal/recovery material must remain independently available.
 
 ### Monitoring and alerting
 
