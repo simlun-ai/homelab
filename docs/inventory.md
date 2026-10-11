@@ -138,6 +138,7 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **SATA2:** Patriot P220 128 GB SSD.
 - **SATA3:** 1500 GB SATA HDD.
 - **SATA4:** 1500 GB SATA HDD.
+- **ZFS mirror pool `nvr`:** 2 × 1500 GB SATA HDDs (SATA3 and SATA4).
 - **NVMe1:** Fanxiang S500Pro 256 GB SSD.
 - **NVMe2:** Patriot P320 256 GB SSD.
 - **1 Gbit MAC address:** TBD.
