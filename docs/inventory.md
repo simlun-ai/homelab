@@ -13,6 +13,8 @@ Raw disk capacity, RAM and equipment counts include cold spares and all drives l
 
 Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capacity of its smallest member. Figures include OS disks and exclude filesystem overhead and any additional Piraeus replication. Unlisted boot media are not counted.
 
+**Planned platform and storage policy:** All four Kubernetes clusters use Talos Linux. All ZFS storage must be encrypted, and OS disk encryption is also a goal; these are requirements, not verified disk state. Non-Piraeus ZFS data pools are prepared and repaired manually and must be protected from automatic provisioning. Exact encryption, unlock, and Talos MD RAID1 implementation details remain TBD in [layout.md](layout.md). The three Raspberry Pi 3 shutdown coordinators are separate supporting hosts, tentatively using Raspberry Pi OS Lite and Ansible.
+
 ## Vault
 
 - **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.
@@ -155,6 +157,12 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
   - **NVMe2:** Patriot P320 256 GB SSD.
 - **1 Gbit MAC address:** TBD.
 - **2.5 Gbit MAC address:** TBD.
+
+### Dedicated storage network
+
+- **Available switches:** 2 × five-port 2.5 Gbit/s Ethernet switches; models TBD.
+- **Planned use:** Metal's 2.5 Gbit/s interfaces carry Piraeus/DRBD data only.
+- **Tentative topology:** One switch for control-plane nodes and one for workers, with a possible inter-switch link. Final cabling and addressing are TBD.
 
 ### UPS and shutdown coordination
 

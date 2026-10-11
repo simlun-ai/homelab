@@ -1,5 +1,7 @@
 # Components
 
+This is a component catalog, not a record of deployed versions. The draft [repository layout](layout.md) gives each cluster independent tool and component pins; catalog versions do not force a simultaneous upgrade of all clusters.
+
 ## Infrastructure
 
 - Talos (v1.14.2)
@@ -20,6 +22,19 @@
 - PostgreSQL (v18.6)
 
 - Headlamp (v0.45.0)
+
+### Management tooling and supporting hosts (planned)
+
+- Make (version TBD; checked bootstrap prerequisite).
+- Python (version and dependency locking TBD; shared helper logic with runtime requirements pinned per scope).
+- Bash (version TBD; suitable small scripts).
+- kubectl (version TBD per cluster).
+- talosctl (version TBD per cluster, compatible with that cluster's Talos version).
+- Helm (version TBD per cluster).
+- OpenBao CLI (`bao`; version TBD per scope where required).
+- OpenTofu CLI (`tofu`; independently pinned per scope; OpenTofu is cataloged above).
+- Raspberry Pi OS Lite (candidate OS for UPS shutdown coordinators; version TBD).
+- Ansible (candidate management tool for UPS shutdown coordinators; version TBD).
 
 ## Workloads
 
