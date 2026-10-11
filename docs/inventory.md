@@ -98,6 +98,8 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **SATA2:** Intenso TOP 128 GB SSD.
 - **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
 - **NVMe2:** Patriot P320 256 GB SSD.
+- **USB 3 SSDs:** 2 × Samsung T7 1 TB USB SSDs.
+- **USB 3 HDDs:** 2 × Seagate Portable Drive 2.5-inch 4 TB USB HDDs.
 - **1 Gbit MAC address:** `1c:66:6d:98:d6:6e`.
 - **2.5 Gbit MAC address:** `1c:86:0b:2b:39:0f`.
 
