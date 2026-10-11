@@ -98,9 +98,9 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **SATA2:** Intenso TOP 128 GB SSD.
 - **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
 - **NVMe2:** Patriot P320 256 GB SSD.
-- **ZFS pool `immich`:** Mirror of 2 × Samsung T7 1 TB USB SSDs, connected via USB 3.
-- **ZFS pool `photos`:** Mirror of 2 × Seagate Portable Drive 2.5-inch 4 TB USB HDDs, connected via USB 3.
-- **ZFS pool `media`:** Mirror of 2 × 3 TB SATA HDDs, each connected through a SATA–USB 3 adapter.
+- **ZFS mirror pool `immich`:** 2 × Samsung T7 1 TB USB SSDs, connected via USB 3.
+- **ZFS mirror pool `photos`:** 2 × Seagate Portable Drive 2.5-inch 4 TB USB HDDs, connected via USB 3.
+- **ZFS mirror pool `media`:** 2 × 3 TB SATA HDDs, each connected through a SATA–USB 3 adapter.
 - **1 Gbit MAC address:** `1c:66:6d:98:d6:6e`.
 - **2.5 Gbit MAC address:** `1c:86:0b:2b:39:0f`.
 
