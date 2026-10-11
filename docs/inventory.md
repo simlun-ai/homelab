@@ -77,7 +77,7 @@ Each machine has:
 - **SATA:** 1 × 256 GB SSD.
 - **NVMe:** 2 × 256 GB SSDs.
 - **OS:** MD RAID1 across the two NVMe SSDs.
-- **Storage:** Piraeus on ZFS for the SATA SSD.
+- **Storage:** The SATA SSD is a single disk ZFS pool `piraeus` for the cluster-wide Piraeus data plane.
 
 | Inventory entry | Role | 1 Gbit MAC address | 2.5 Gbit MAC address |
 | --- | --- | --- | --- |
@@ -96,8 +96,9 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **RAM:** 40 GB.
 - **SATA1:** PNY 120 GB SSD (OS MD RAID1).
 - **SATA2:** Intenso TOP 128 GB SSD (OS MD RAID1).
-- **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
-- **NVMe2:** Patriot P320 256 GB SSD.
+- **ZFS mirror pool `piraeus`:**
+  - **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
+  - **NVMe2:** Patriot P320 256 GB SSD.
 - **ZFS mirror pool `immich`:** 2 × Samsung T7 1 TB USB SSDs, connected via USB 3.
 - **ZFS mirror pool `photos`:** 2 × Seagate Portable Drive 2.5-inch 4 TB USB HDDs, connected via USB 3.
 - **ZFS mirror pool `media`:** 2 × 3 TB SATA HDDs, each connected through a SATA–USB 3 adapter.
