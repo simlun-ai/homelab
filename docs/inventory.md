@@ -33,6 +33,13 @@ Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capac
 - **OS drive:** Intel 180 GB SSD.
 - **Storage:** ZFS mirror (RAID 1), consisting of two 8 TB Samsung USB HDDs, each with a 3.5-inch form factor.
 
+## Shared infrastructure
+
+Shared exclusively by the **Vault and Backup clusters**:
+
+- **UPS:** 1 × Eaton 3S700 supplying power to both clusters.
+- **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to this UPS via USB to coordinate safe shutdown of both Vault and Backup. This supporting host is separate from their Talos nodes.
+
 ## Pi
 
 - **Compute:** 5 × Raspberry Pi 4, each with 8 GB RAM. One Raspberry Pi 4 8 GB RAM cold spare as well.
@@ -175,11 +182,6 @@ Three Eaton UPS units protect the metal cluster:
 | 3 | Eaton 3S700 | worker3 and worker4 |
 
 **Shutdown coordinator:** 1 × Raspberry Pi 3 for the whole cluster.
-
-## Shared infrastructure
-
-- **UPS:** One Eaton 3S700 shared by the Vault and Backup clusters.
-- **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to the Eaton UPS via USB to coordinate safe shutdown of those clusters.
 
 ## Security keys
 
