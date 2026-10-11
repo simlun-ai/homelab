@@ -38,13 +38,13 @@
 
 15 × DRAM-less 128 GB SATA SSDs available for the cluster, connected through SATA-to-USB 3 adapters:
 
-| Model | Quantity | Capacity per SSD |
+| Model | Quantity | Capacity per SSD / combined sum |
 | --- | --- | --- |
 | Patriot P220 | 5 | 128 GB |
 | Silicon Power A5X | 5 | 128 GB |
 | Intenso TOP | 2 | 128 GB |
 | Fanxiang S101 | 3 | 128 GB |
-| **Total** | **15** | **128 GB** |
+| **Sum** | **15** | **1,920 GB** |
 
 Each of the five Raspberry Pi 4 nodes gets three SSDs:
 
