@@ -94,8 +94,8 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 
 - **Compute:** Lenovo ThinkCentre M900, Intel Core i5-6400.
 - **RAM:** 40 GB.
-- **SATA1:** PNY 120 GB SSD.
-- **SATA2:** Intenso TOP 128 GB SSD.
+- **SATA1:** PNY 120 GB SSD (OS MD RAID1).
+- **SATA2:** Intenso TOP 128 GB SSD (OS MD RAID1).
 - **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
 - **NVMe2:** Patriot P320 256 GB SSD.
 - **ZFS mirror pool `immich`:** 2 × Samsung T7 1 TB USB SSDs, connected via USB 3.
@@ -108,8 +108,8 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 
 - **Compute:** Lenovo ThinkCentre M900, Intel Core i5-6400.
 - **RAM:** 40 GB.
-- **SATA1:** PNY 120 GB SSD.
-- **SATA2:** Intenso TOP 128 GB SSD.
+- **SATA1:** PNY 120 GB SSD (OS MD RAID1).
+- **SATA2:** Intenso TOP 128 GB SSD (OS MD RAID1).
 - **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
 - **NVMe2:** Fanxiang 256 GB SSD.
 - **ZFS mirror pool `dump`:** 2 × 2 TB SATA HDDs, each connected through a SATA–USB 3 adapter.
@@ -121,8 +121,8 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 
 - **Compute:** Lenovo ThinkCentre M900, Intel Core i7-6700.
 - **RAM:** 40 GB.
-- **SATA1:** PNY 120 GB SSD.
-- **SATA2:** OCZ Vertex 4 128 GB SSD.
+- **SATA1:** PNY 120 GB SSD (OS MD RAID1).
+- **SATA2:** OCZ Vertex 4 128 GB SSD (OS MD RAID1).
 - **NVMe1:** Samsung SSD 990 PRO 4 TB, with an XFS filesystem labeled `ethereum`.
 - **NVMe2:** Samsung PM951 256 GB (mzvlv256hchp-000L1).
 - **ZFS mirror pool `bitcoin`:** 2 × Samsung 870 EVO 2 TB SATA SSDs, each connected through a USB 3–SATA adapter.
@@ -134,8 +134,8 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **Compute:** Desktop chassis with an MSI H77MA-G43 motherboard.
 - **RAM:** 32 GB.
 - **Accelerator:** Coral USB Accelerator with an Edge TPU coprocessor.
-- **SATA1:** Silicon Power A5X 128 GB SSD.
-- **SATA2:** Patriot P220 128 GB SSD.
+- **SATA1:** Silicon Power A5X 128 GB SSD (OS MD RAID1).
+- **SATA2:** Patriot P220 128 GB SSD (OS MD RAID1).
 - **SATA3:** 1500 GB SATA HDD.
 - **SATA4:** 1500 GB SATA HDD.
 - **ZFS mirror pool `nvr`:** 2 × 1500 GB SATA HDDs (SATA3 and SATA4).
