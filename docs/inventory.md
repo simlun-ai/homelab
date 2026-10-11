@@ -2,12 +2,12 @@
 
 ## Summary
 
-- **Total disk capacity before mirroring:** 115,116 GB.
+- **Total disk capacity before mirroring:** 115,244 GB.
 - **Total nominal usable capacity after mirroring:** 62,264 GB, excluding spare drives and cold-spare disks.
 - **Total spare disk capacity:** 15,768 GB across 8 spare disks.
 - **Total RAM:** 248 GB documented, plus unspecified RAM in three Raspberry Pi 3 shutdown coordinators and the old NAS computer.
 - **Total computers:** 20, including two cold spares, three shutdown coordinators and the old NAS computer.
-- **Total disks:** 76, including eight spare drives.
+- **Total disks:** 77, including eight spare drives.
 
 Raw disk capacity, RAM and equipment counts include cold spares and all drives listed under Spare Drives and Other disks. Usable capacity excludes the eight spare drives (15,768 GB) and the M920x cold spare's disks (512 GB after its OS mirror).
 
@@ -22,8 +22,8 @@ Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capac
 
 - **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
-- **Disks:** 3 × inexpensive, DRAM-less 128 GB Intenso USB SSDs.
-- **OS drive:** 1 × 128 GB Intenso USB SSD.
+- **Disks:** 4 × inexpensive, DRAM-less 128 GB Intenso USB SSDs.
+- **OS drives:** 2 × 128 GB Intenso USB SSDs in MD RAID1 (128 GB nominal usable).
 - **Storage:** ZFS mirror (RAID 1) using the other 2 × 128 GB Intenso USB SSDs.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
 - **Network:** 1 Gbit router connectivity, as for the pi cluster.
