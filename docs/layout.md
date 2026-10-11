@@ -32,6 +32,9 @@ Paths beginning with `/` are relative to the repository root, not the host files
 | `/docs/clusters.md` | Cluster architecture, topology, dependencies, and services. |
 | `/docs/components.md` | Component catalog; exact operational pins belong to the relevant cluster. |
 | `/docs/layout.md` | This draft: directory ownership, operating conventions, and unresolved decisions. |
+| `/docs/security.md` | Core-secret foundation, YubiKey configuration/custody, encryption, and workstation handling. |
+| `/docs/backup-and-restore.md` | Backup architecture, independently recoverable material, and restore planning. |
+| `/docs/emergency-recovery-guide.md` | Single-file, non-secret Emergency Recovery Guide for the four token/USB pairs. |
 | `/clusters/vault/` | Independent foundational cluster. |
 | `/clusters/backup/` | Backup cluster. |
 | `/clusters/pi/` | Raspberry Pi Kubernetes cluster. |
@@ -72,7 +75,7 @@ Every directory under `/clusters/` follows the same contract. `<cluster>` means 
 
 `nodes/` records machine-readable assignments, while `docs/inventory.md` remains the human-readable hardware inventory. Changes must keep them synchronized. A pool declaration records ownership and intent; it does not itself grant permission to initialize disks.
 
-There is deliberately no proposed workstation-disk location for kubeconfigs, talosconfigs, generated machine secrets, rendered secret-bearing configuration, tokens, or disk keys. A runtime workspace for tools requiring paths is TBD and must be memory-only.
+There is deliberately no proposed workstation-disk location for kubeconfigs, talosconfigs, generated machine secrets, rendered secret-bearing configuration, tokens, or disk keys. A runtime workspace for tools requiring paths is TBD and must follow [security.md](security.md#secret-handling-boundary).
 
 ## Shared implementation
 
@@ -118,44 +121,11 @@ CLI pins, Talos/Kubernetes pins, and Helm chart pins serve different purposes. K
 
 ## Secrets, state, and disk encryption
 
-### Secrets handling
+[Security](security.md) owns the detailed secret-handling and encryption plan. All core monorepo secrets rely on the four YubiKeys' matching, touch-required HMAC-SHA1 challenge-response configuration, with a separately held offline golden key. Workstation secret handling remains memory-only; exact slots, challenge/derivation/wrapping protocols, and integrations are TBD.
 
-The hard rule is **no secrets in Git and no secrets written to the workstation's disk**, including the checkout, temporary files, ignored files, cached credentials, logs, shell history, crash dumps, and persisted plans. Secret references and non-secret templates may be committed.
+Each cluster owns its OpenTofu state boundary. Keep backend, encryption, provider behavior, and bootstrap dependencies aligned with [security.md](security.md#disk-encryption-and-opentofu). All ZFS storage requires encryption; OS disk encryption remains a goal. Preserve the manual-storage boundary below.
 
-The delivery mechanism is TBD: an external secrets manager or OpenBao in the Vault cluster are candidates. SOPS with age remains a last-resort candidate to evaluate, with Git storage of encrypted payloads still undecided. Decryption must never materialize secrets on the workstation's disk, and private age keys must follow the same handling rule.
-
-Prefer direct API calls, process memory, and streams when implementing secret transport. Tools that require file paths need a verified memory-only mechanism with workstation swap, hibernation, dumps, caches, and failure paths accounted for. An ignored directory or a temporary file deleted afterward does not satisfy the rule.
-
-The workstation restriction does not prohibit encrypted persistence in cluster services or backups. OpenBao's encrypted backend, Kubernetes Secrets in etcd with appropriate encryption at rest, protected Talos node state, and encrypted backups fit that boundary. Their encryption and key-management details still need implementation and verification. Secret transport and backup/restore operations must not stage sensitive contents on workstation disk.
-
-Vault's own secrets remain manually supplied without relying on its OpenBao instance. Its disk unlock, OpenBao unseal/recovery, and restore credentials must also be available without any other cluster. Manual input still follows the workstation no-disk rule. The recovery source and unlock mechanism are TBD. Human-present unlock and unseal are acceptable; unattended recovery after a UPS-triggered shutdown is not required.
-
-### Hardware-assisted unlock candidate
-
-Four available YubiKeys are recorded in [inventory.md](inventory.md#security-keys). Their use for secrets is exploratory, not configured or deployed.
-
-- Evaluate OTP HMAC-SHA1 challenge-response to protect disk-unlock material for manually managed encrypted ZFS datasets/zvols. A helper would derive or unwrap key material and deliver it through memory-only streams; this is not a native ZFS YubiKey integration.
-- Evaluate protection of OpenBao Shamir unseal shares, potentially using OpenPGP on the two YubiKey 5 NFC devices or a challenge-response-based wrapping helper. Challenge-response itself is not a native OpenBao seal mechanism; YubiKey availability does not establish PKCS#11 auto-unseal compatibility.
-- Keep Vault's disk unlock and OpenBao unseal independent of its own services and all other clusters. Hardware-token access must not create a circular bootstrap dependency.
-- Before choosing a design, validate firmware capabilities, existing OTP slot usage, touch policy, Talos-side key delivery, memory-only workstation handling, backup tokens, independent recovery material, and lost-token/key-rotation procedures. Never overwrite an occupied slot without explicit approval.
-- Human-present unlock fits the manual startup policy after a UPS-triggered shutdown; unattended restart is not required. Recovery access must work after token loss without relying on encrypted storage that remains locked.
-
-### OpenTofu state
-
-Each cluster owns its own state boundary; there is no shared state covering all four clusters. Supporting hosts or external resources get separate state only if OpenTofu actually manages them.
-
-State backend, locking, encryption, and recovery are TBD. Encrypted remote state is allowed; secret-bearing state and saved plans must never be written to workstation disk. Marking a value `sensitive` or choosing a remote backend does not by itself prevent local writes. Review provider behavior, local working data, error recovery files, and logs before using a resource that handles secrets. Any secret-bearing local runtime data must remain memory-only, including during failures.
-
-The Vault bootstrap path must not require a state backend or an encryption-key service that only becomes available after Vault is running.
-
-### Encryption intent
-
-- **All ZFS pools:** encryption is required, including Piraeus backing storage and manually prepared pools. If native ZFS encryption is selected, express this through encrypted datasets and zvols with verified inheritance; native encryption is not blanket encryption of all pool metadata. The exact layer and provisioning sequence remain TBD.
-- **OS disks:** encryption is a goal. Validate it alongside the planned MD RAID1 layout and each hardware platform. Talos system-volume encryption must not be described as proof that every boot partition is encrypted. Its static `STATE` key option stores key material in `META`; select a key method that provides the intended disk protection.
-- **Shared key:** a shared disk-unlock key or passphrase may simplify operation. Exact key formats, delivery, rotation, recovery, and compatibility across ZFS and Talos remain TBD. Do not assume their internal encryption keys are interchangeable.
-- **Boot and recovery:** avoid requiring a key service hosted on the very storage being unlocked. Vault must be recoverable independently; other clusters need a defined recovery path when Vault is unavailable.
-
-Encryption here is desired configuration, not a claim about the current disks. Existing-data migration must be planned explicitly and must preserve the manual-storage boundary.
+[Backup and restore](backup-and-restore.md) owns recovery dependencies and backup procedures. The single-file [Emergency Recovery Guide](emergency-recovery-guide.md) is the non-secret USB kit paired with each YubiKey at its separate location. Key custody, software recovery, and the planned YubiKey configuration runbook are specified in [security.md](security.md#planned-yubikey-configuration-runbook).
 
 ## Provisioning and storage ownership
 
@@ -184,9 +154,7 @@ Keep the MD RAID1 OS pair separate from the manually prepared ZFS data mirror. P
 
 #### OpenBao backups
 
-**Decision:** Use OpenBao's integrated Raft storage and take online, application-consistent Raft snapshots while OpenBao remains running. A scheduled job inside the Vault cluster obtains the snapshot through OpenBao's snapshot API and uploads it to Cloudflare R2.
-
-Backups must remain encrypted. Snapshot transfer and any additional encryption happen inside Vault, without staging secrets or snapshots on workstation disk. Schedule, retention, job authentication, upload implementation, and restore verification details remain TBD. Corresponding unseal/recovery material must be independently available, and the restore runbook must cover restoring a snapshot from R2.
+Use integrated Raft storage and scheduled online snapshots uploaded to Cloudflare R2 by a job inside Vault. [Backup and restore](backup-and-restore.md#openbao-online-backups) owns encryption, credential handling, retention, independent recovery material, and restore verification details.
 
 ### Backup
 
@@ -262,31 +230,26 @@ Runbooks should state scope, prerequisites, secret sources by reference, expecte
 | `/runbooks/replace-zfs-mirror-member.md` | Identify a failed member, replace it deliberately, and verify resilvering. |
 | `/runbooks/replace-md-raid1-os-disk.md` | Replace an OS mirror member, restore bootability, and verify the mirror. |
 | `/runbooks/recover-piraeus-volume.md` | Recover replicas or placement after a failure or maintenance event. |
-| `/runbooks/recover-encryption-access.md` | Recover or rotate disk-unlock access without circular dependencies. |
-| `/runbooks/restore-openbao.md` | Restore OpenBao from a Raft snapshot in Cloudflare R2 using independently held unseal/recovery material, then verify recovery. |
+| `/runbooks/recover-encryption-access.md` | Recover or rotate disk-unlock access under the HMAC foundation in [security.md](security.md), without circular dependencies. |
+| `/runbooks/configure-yubikey-challenge-response.md` | Planned: program and verify all four tokens with the shared golden key, matching HMAC settings, and touch required; follow [security.md](security.md#planned-yubikey-configuration-runbook). |
+| `/runbooks/restore-openbao.md` | Restore and verify OpenBao under [backup-and-restore.md](backup-and-restore.md#vault-restore-outline), using independently held recovery material. |
 | `/runbooks/ups-shutdown-and-startup.md` | Verify safe shutdown, staying off after power restoration, and operator-controlled startup one machine at a time in dependency order. |
 
 ## Open decisions for later iterations
 
-1. Secret delivery and memory-only workstation runtime paths; whether a SOPS + age fallback is needed and how encrypted payloads would be stored.
-2. OpenTofu remote state, encryption, failure handling, and independently accessible Vault recovery material.
+1. Security implementation details are tracked in [security.md](security.md#remaining-decisions): challenge protocol, slots, golden-key custody, protected-payload locations, and memory-only delivery. The shared, touch-required HMAC foundation is decided.
+2. Backup and recovery implementation details are tracked in [backup-and-restore.md](backup-and-restore.md#planned-work): scheduling, retention, job credentials, restore validation, and completion of the Emergency Recovery Guide.
 3. Talos MD RAID1 installation, boot recovery, and OS encryption on each hardware platform.
-4. ZFS encryption layer, shared-key strategy, key recovery, and unlock during operator-controlled startup without circular dependencies.
+4. ZFS/Talos encryption integration and unlock during operator-controlled startup, following [security.md](security.md#disk-encryption-and-opentofu) and preserving manual pools.
 5. Node/disk configuration schema and how to keep machine-readable declarations synchronized with the inventory.
 6. Piraeus pool preparation, StorageClass semantics, two-replica quorum behavior, and maintenance procedures.
 7. Metal's dedicated storage-network addressing and physical switch topology.
 8. Helm release orchestration, immutable chart storage, and exact division of work between scripts and OpenTofu.
 9. Coordinator OS, configuration tool, shutdown software, and detailed power-event sequencing; verify per-device stay-off behavior and handle hardware limitations. Manual startup after UPS-triggered shutdown is decided.
 
-## Upstream references
+## Further reading
 
-These references inform the unresolved implementation details; they do not establish that the proposed configuration is supported on every node or already deployed.
-
-- [Talos disk encryption](https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/disk-encryption): system volumes, persisted node secrets, and key handling.
-- [OpenZFS dataset properties](https://openzfs.github.io/openzfs-docs/man/master/7/zfsprops.7.html): encryption roots, datasets, and key delivery.
-- [OpenZFS encryption behavior](https://openzfs.github.io/openzfs-docs/man/master/8/zfs-load-key.8.html#encryption): inheritance and metadata coverage.
+- [Security](security.md): secret handling, the YubiKey foundation, encryption decisions, and security upstream references.
+- [Backup and restore](backup-and-restore.md): online OpenBao backups, recovery dependencies, and restore upstream references.
+- [Emergency Recovery Guide](emergency-recovery-guide.md): the non-secret, single-file USB kit draft.
 - [Piraeus replicated volumes](https://piraeus.io/docs/stable/tutorial/replicated-volumes/): Placement Count and diskful replicas.
-- [OpenTofu state and plan encryption](https://opentofu.org/docs/language/state/encryption/): persistence and encryption considerations.
-- [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/): etcd persistence and encryption considerations.
-- [OpenBao security model](https://openbao.org/docs/internals/security/): encrypted storage and recovery considerations.
-- [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/): online snapshot export and restore.

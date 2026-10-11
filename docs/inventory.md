@@ -13,7 +13,7 @@ Raw disk capacity, RAM and equipment counts include cold spares and all drives l
 
 Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capacity of its smallest member. Figures include OS disks and exclude filesystem overhead and any additional Piraeus replication. Unlisted boot media are not counted.
 
-**Planned platform and storage policy:** All four Kubernetes clusters use Talos Linux. All ZFS storage must be encrypted, and OS disk encryption is also a goal; these are requirements, not verified disk state. Non-Piraeus ZFS data pools are prepared and repaired manually and must be protected from automatic provisioning. Exact encryption, unlock, and Talos MD RAID1 implementation details remain TBD in [layout.md](layout.md). The three shutdown coordinators (one Raspberry Pi 2 and two Raspberry Pi 3 hosts) are separate supporting hosts, tentatively using Raspberry Pi OS Lite and Ansible.
+**Planned platform and storage policy:** All four Kubernetes clusters use Talos Linux. All ZFS storage must be encrypted, and OS disk encryption is also a goal; these are requirements, not verified disk state. Non-Piraeus ZFS data pools are prepared and repaired manually and must be protected from automatic provisioning. Exact encryption and unlock details remain TBD in [security.md](security.md); Talos MD RAID1 implementation is tracked in [layout.md](layout.md). The three shutdown coordinators (one Raspberry Pi 2 and two Raspberry Pi 3 hosts) are separate supporting hosts, tentatively using Raspberry Pi OS Lite and Ansible.
 
 **Planned power-return policy:** After a UPS-triggered shutdown, systems should remain off until manually started, one machine at a time. Configure BIOS/UEFI to stay off after power restoration and disable Wake-on-LAN and other automatic wake sources wherever supported. Per-device support, settings, and verification are TBD, including Raspberry Pi boards, shutdown coordinators, and UPS outlet behavior; no hardware capability or completed configuration is assumed. See [layout.md](layout.md#power-loss-shutdown-and-manual-startup).
 
@@ -187,7 +187,7 @@ Three Eaton UPS units protect the metal cluster:
 
 ## Security keys
 
-Four YubiKeys available; secret-handling roles are candidates, not configured assignments.
+Four YubiKeys available. Their planned core-secret role is decided; programming and verification have not been performed as part of this documentation.
 
 | Model | Firmware | Enabled interfaces | Quantity |
 | --- | --- | --- | --- |
@@ -196,7 +196,9 @@ Four YubiKeys available; secret-handling roles are candidates, not configured as
 | YubiKey Standard | 2.4.1 | OTP | 1 |
 | **Sum** | | | **4** |
 
-Potential uses include HMAC-SHA1 challenge-response-assisted unlock of manually managed encrypted ZFS storage and protection of OpenBao unseal material. No slots, credentials, or recovery arrangements have been assigned. See [layout.md](layout.md#hardware-assisted-unlock-candidate).
+All four will use the same golden key and matching HMAC-SHA1 challenge-response settings, with physical touch required. They will be kept at four different locations, each paired with a USB stick carrying the non-secret [Emergency Recovery Guide](emergency-recovery-guide.md). The golden key will be held separately offline for token replacement and software recovery. See [security.md](security.md#core-secret-foundation) and [backup-and-restore.md](backup-and-restore.md#emergency-recovery-guide-custody).
+
+OTP slot assignments and actual programming remain TBD. The four documentation USB sticks are planned media; their models, capacities, and acquisition are TBD, so they are not added to the physical disk totals.
 
 ## Spare drives
 

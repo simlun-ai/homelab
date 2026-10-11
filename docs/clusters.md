@@ -7,7 +7,7 @@ Common goals:
 - Independently pinned tools and component versions for each cluster, with Makefiles selecting tools from that cluster's `bin/` directory.
 - Unattended provisioning where possible, limited to explicitly assigned OS and Piraeus disks. Non-Piraeus ZFS data pools are prepared and repaired manually.
 - Encryption for all ZFS storage; OS disk encryption is also a goal. Key delivery, a possible shared disk-unlock key, and recovery remain TBD.
-- No secrets committed or written to workstation disk. Encrypted persistence in cluster services and backups is allowed; workstation handling remains memory-only as described in [layout.md](layout.md#secrets-state-and-disk-encryption).
+- Core secrets rely on the four matching, touch-required HMAC-SHA1 YubiKeys and a separately held offline golden key. No secrets are committed or written to workstation disk; encrypted service storage and backups are allowed. See [security.md](security.md) and [backup-and-restore.md](backup-and-restore.md).
 - Selected infrastructure workloads, such as monitoring, may run on control-plane nodes. Application workloads belong on workers where workers exist; exact scheduling controls are TBD.
 - After a UPS-triggered shutdown, systems remain off for operator-controlled startup, one machine at a time. Disable power-on after power restoration, Wake-on-LAN, and other automatic wake sources where supported. Bring Vault services up before dependent clusters; detailed sequencing and per-device verification remain TBD in [layout.md](layout.md#power-loss-shutdown-and-manual-startup).
 - Three separate shutdown coordinators serve Vault + Backup (Raspberry Pi 2), Pi (Raspberry Pi 3), and Metal (Raspberry Pi 3). Raspberry Pi OS Lite and Ansible are tentative choices for these supporting hosts.
@@ -30,9 +30,7 @@ The Vault cluster is the foundational cluster: it does not depend on any of the 
 - **Storage:** The other 2 × 128 GB Intenso USB SSDs in a ZFS mirror (128 GB nominal usable).
 - The data mirror is manually prepared and must be encrypted; exact encryption and unlock implementation are TBD.
 - zfs-localpv for local persistent volumes.
-- OpenBao uses integrated Raft storage, with scheduled online Raft snapshots uploaded to Cloudflare R2 while the service remains running.
-- A scheduled job inside the Vault cluster handles snapshots and uploads, with encrypted backups and no staging of secrets or snapshots on workstation disk.
-- Backup schedule, retention, authentication, and restore verification details are TBD. Corresponding unseal/recovery material must remain independently available.
+- OpenBao uses integrated Raft storage with scheduled online snapshots uploaded to Cloudflare R2 by a job inside Vault. Detailed backup and recovery requirements belong in [backup-and-restore.md](backup-and-restore.md#openbao-online-backups).
 
 ### Monitoring and alerting
 
@@ -42,7 +40,7 @@ The Vault cluster is the foundational cluster: it does not depend on any of the 
 ### Secrets and certificates
 
 - OpenBao provides centralized secrets management for dependent clusters; the Vault cluster does not rely on it for its own secrets.
-- Available YubiKeys are candidates for hardware-assisted disk unlock and protection of OpenBao unseal material, not a configured seal or unlock mechanism; see [layout.md](layout.md#hardware-assisted-unlock-candidate).
+- The core-secret foundation is the shared, touch-required YubiKey HMAC-SHA1 design in [security.md](security.md#core-secret-foundation). Exact disk-unlock and OpenBao unseal-material wrapping are planned, not yet implemented. The [Emergency Recovery Guide](emergency-recovery-guide.md) accompanies each token at its separate location.
 - cert-manager issues Let's Encrypt certificates using Cloudflare DNS-01 validation.
 - External Secrets Operator uses PushSecret to publish cert-manager certificates to OpenBao.
 - Dependent clusters use External Secrets Operator connected to OpenBao to pull certificates.

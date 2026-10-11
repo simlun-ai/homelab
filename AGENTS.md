@@ -26,7 +26,10 @@ These instructions apply to the entire homelab repository.
 - `docs/inventory.md`: Physical machines, cluster membership, hardware, network interfaces, disks, OS and storage layout, spares, shared equipment, and aggregate inventory counts.
 - `docs/clusters.md`: Kubernetes cluster topology, dependencies, platform services, networking, storage integration, backup and secrets architecture.
 - `docs/components.md`: Software/component catalog and versions, separated into **Infrastructure** and **Workloads**.
-- `docs/layout.md`: Draft repository structure, configuration ownership, tooling scopes, automation boundaries, and open implementation decisions.
+- `docs/layout.md`: Draft repository structure, configuration ownership, tooling scopes, automation boundaries, and links to detailed policies.
+- `docs/security.md`: Authoritative core-secret/YubiKey foundation, golden-key custody, workstation secret handling, encryption intent, and security implementation decisions.
+- `docs/backup-and-restore.md`: Authoritative backup architecture, independent recovery dependencies, and restore planning.
+- `docs/emergency-recovery-guide.md`: Single-file non-secret USB recovery guide; keep it usable independently of other local documents once completed.
 
 Use a consistent vocabulary and capitalization for cluster names and components. Preserve precise ZFS pool names, disk models, capacities, redundancy schemes, and node assignments.
 
@@ -44,7 +47,8 @@ Use a consistent vocabulary and capitalization for cluster names and components.
 - Keep intended configuration details (for example Flannel versus Cilium, storage technology, and certificate distribution) aligned between cluster architecture and component documentation.
 - Describe backups, security-sensitive configuration, and external dependencies accurately without committing actual credentials or secrets.
 - Vault's OpenBao backup plan uses integrated Raft storage and scheduled online Raft snapshots uploaded to Cloudflare R2 by a job inside Vault. Preserve independently accessible unseal/recovery material and keep secrets and snapshots off workstation disk.
-- Preserve the hard rule that secrets are neither committed nor written to workstation disk, including the checkout, temporary files, caches, and logs. Encrypted persistence in cluster services and backups is allowed; secret handling on the workstation must remain memory-only as described in `docs/layout.md`.
+- Preserve the hard rule that secrets are neither committed nor written to workstation disk, including the checkout, temporary files, caches, and logs. Encrypted persistence in cluster services and backups is allowed; secret handling on the workstation must remain memory-only as described in `docs/security.md`.
+- All core monorepo secrets rely on four interchangeable HMAC-SHA1 challenge-response YubiKeys with the same golden key/settings and touch required. Each token is paired with a non-secret USB Emergency Recovery Guide at a separate location. The golden key is held separately offline for replacement tokens and software recovery. Keep implementation details and custody decisions in `docs/security.md`; never place actual key material or responses in documentation.
 - All four Kubernetes clusters target Talos Linux. Each cluster owns its tool-version pins and `bin/` directory, selected through Makefiles; do not silently fall back to global tools.
 - All ZFS storage must be encrypted; OS disk encryption is a goal whose implementation is still TBD. Do not describe these goals as verified deployment state.
 - Non-Piraeus ZFS data disks and pools are prepared and repaired manually. Automatic provisioning must not wipe, format, recreate, or destroy them; OS and Piraeus preparation must stay within explicit disk assignments.
