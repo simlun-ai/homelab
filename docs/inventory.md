@@ -123,9 +123,9 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **RAM:** 40 GB.
 - **SATA1:** PNY 120 GB SSD.
 - **SATA2:** OCZ Vertex 4 128 GB SSD.
-- **NVMe1:** Samsung SSD 990 PRO 4 TB.
+- **NVMe1:** Samsung SSD 990 PRO 4 TB, with an XFS filesystem labeled `ethereum`.
 - **NVMe2:** Samsung PM951 256 GB (mzvlv256hchp-000L1).
-- **USB storage:** 2 × Samsung 870 EVO 2 TB SATA SSDs, each connected through a USB 3–SATA adapter.
+- **ZFS mirror pool `bitcoin`:** 2 × Samsung 870 EVO 2 TB SATA SSDs, each connected through a USB 3–SATA adapter.
 - **1 Gbit MAC address:** `4C:CC:6A:C3:C7:15`.
 - **2.5 Gbit MAC address:** `1C:86:0B:2B:38:42`.
 
