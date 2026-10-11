@@ -5,7 +5,7 @@
 - **Total disk capacity before mirroring:** 115,244 GB.
 - **Total nominal usable capacity after mirroring:** 62,264 GB, excluding spare drives and cold-spare disks.
 - **Total spare disk capacity:** 15,768 GB across 8 spare disks.
-- **Total RAM:** 248 GB documented, plus unspecified RAM in three Raspberry Pi 3 shutdown coordinators and the old NAS computer.
+- **Total RAM:** 248 GB documented, plus unspecified RAM in one Raspberry Pi 2 and two Raspberry Pi 3 shutdown coordinators and the old NAS computer.
 - **Total computers:** 20, including two cold spares, three shutdown coordinators and the old NAS computer.
 - **Total disks:** 77, including eight spare drives.
 
@@ -13,7 +13,7 @@ Raw disk capacity, RAM and equipment counts include cold spares and all drives l
 
 Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capacity of its smallest member. Figures include OS disks and exclude filesystem overhead and any additional Piraeus replication. Unlisted boot media are not counted.
 
-**Planned platform and storage policy:** All four Kubernetes clusters use Talos Linux. All ZFS storage must be encrypted, and OS disk encryption is also a goal; these are requirements, not verified disk state. Non-Piraeus ZFS data pools are prepared and repaired manually and must be protected from automatic provisioning. Exact encryption, unlock, and Talos MD RAID1 implementation details remain TBD in [layout.md](layout.md). The three Raspberry Pi 3 shutdown coordinators are separate supporting hosts, tentatively using Raspberry Pi OS Lite and Ansible.
+**Planned platform and storage policy:** All four Kubernetes clusters use Talos Linux. All ZFS storage must be encrypted, and OS disk encryption is also a goal; these are requirements, not verified disk state. Non-Piraeus ZFS data pools are prepared and repaired manually and must be protected from automatic provisioning. Exact encryption, unlock, and Talos MD RAID1 implementation details remain TBD in [layout.md](layout.md). The three shutdown coordinators (one Raspberry Pi 2 and two Raspberry Pi 3 hosts) are separate supporting hosts, tentatively using Raspberry Pi OS Lite and Ansible.
 
 ## Vault
 
@@ -38,7 +38,7 @@ Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capac
 Shared exclusively by the **Vault and Backup clusters**:
 
 - **UPS:** 1 × Eaton 3S700 supplying power to both clusters.
-- **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to this UPS via USB to coordinate safe shutdown of both Vault and Backup. This supporting host is separate from their Talos nodes.
+- **Shutdown coordinator:** 1 × Raspberry Pi 2, connected to this UPS via USB for monitoring and safe shutdown of both Vault and Backup. Powered from the Eaton 3S700's 2 A USB power outlet. This supporting host is separate from their Talos nodes.
 
 ## Pi
 
