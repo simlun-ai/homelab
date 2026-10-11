@@ -111,8 +111,9 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **RAM:** 40 GB.
 - **SATA1:** PNY 120 GB SSD (OS MD RAID1).
 - **SATA2:** Intenso TOP 128 GB SSD (OS MD RAID1).
-- **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
-- **NVMe2:** Fanxiang 256 GB SSD.
+- **ZFS mirror pool `piraeus`:**
+  - **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
+  - **NVMe2:** Fanxiang 256 GB SSD.
 - **ZFS mirror pool `dump`:** 2 × 2 TB SATA HDDs, each connected through a SATA–USB 3 adapter.
 - **ZFS mirror pool `nas`:** 2 × 4 TB SATA HDDs, each connected through a SATA–USB 3 adapter.
 - **1 Gbit MAC address:** `1c:66:6d:98:ea:02`.
@@ -125,7 +126,8 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **SATA1:** PNY 120 GB SSD (OS MD RAID1).
 - **SATA2:** OCZ Vertex 4 128 GB SSD (OS MD RAID1).
 - **NVMe1:** Samsung SSD 990 PRO 4 TB, with an XFS filesystem labeled `ethereum`.
-- **NVMe2:** Samsung PM951 256 GB (mzvlv256hchp-000L1).
+- **ZFS single-disk pool `piraeus`:**
+  - **NVMe2:** Samsung PM951 256 GB (mzvlv256hchp-000L1).
 - **ZFS mirror pool `bitcoin`:** 2 × Samsung 870 EVO 2 TB SATA SSDs, each connected through a USB 3–SATA adapter.
 - **1 Gbit MAC address:** `4C:CC:6A:C3:C7:15`.
 - **2.5 Gbit MAC address:** `1C:86:0B:2B:38:42`.
@@ -140,8 +142,9 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **SATA3:** 1500 GB SATA HDD.
 - **SATA4:** 1500 GB SATA HDD.
 - **ZFS mirror pool `nvr`:** 2 × 1500 GB SATA HDDs (SATA3 and SATA4).
-- **NVMe1:** Fanxiang S500Pro 256 GB SSD.
-- **NVMe2:** Patriot P320 256 GB SSD.
+- **ZFS mirror pool `piraeus`:**
+  - **NVMe1:** Fanxiang S500Pro 256 GB SSD.
+  - **NVMe2:** Patriot P320 256 GB SSD.
 - **1 Gbit MAC address:** TBD.
 - **2.5 Gbit MAC address:** TBD.
 
