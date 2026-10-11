@@ -1,99 +1,74 @@
 # Emergency Recovery Guide
 
-**Homelab Recovery Kit — non-secret single-file guide, initial draft.**
+**Homelab Recovery Kit — non-secret, single-file draft.** For recovering Vault and OpenBao when the original hardware or services are unavailable.
 
-Purpose: recover the homelab's foundational Vault cluster and its OpenBao backups when the original node, disks, or running services are unavailable. Keep this single file on a USB stick with each of the four YubiKeys, with the four token/guide pairs at different locations.
-
-This draft records the agreed design and the fields to complete. Exact commands and metadata must be added and verified before the guide can serve as a complete emergency procedure.
+Exact commands and recovery metadata must be completed and tested before use. Essential instructions are included here because the USB copy must work without other local documents.
 
 ## Revision and recovery metadata
 
+All entries must be non-secret.
+
 | Field | Value |
 | --- | --- |
-| Guide revision / repository commit | TBD when this kit is prepared. |
-| Last verified restore | TBD. |
-| Core-secret protocol version | TBD. |
-| YubiKey HMAC slot | TBD; physical touch is required. |
-| Effective challenge bytes and encoding for each recovery role | TBD; record exact public values and purpose identifiers. |
-| Challenge length/padding settings | TBD; must match all four tokens and the software fallback. |
-| Downstream derivation/wrapping algorithm and non-secret parameters | TBD. |
-| OpenBao version compatible with the selected backup | TBD. |
-| Recovery tool versions and independent acquisition locations | TBD. |
-| Integrity/checksum verification for tools and backup artifacts | TBD. |
-| R2 account, endpoint, bucket, and snapshot object convention | TBD; no credentials here. |
-| Independent locations/references for required encrypted recovery payloads | TBD; include a route that works without Vault and without R2 credentials. |
-| Snapshot selection and additional encryption details | TBD. |
+| Guide revision / repository commit; last verified restore | TBD. |
+| Core-secret protocol version and YubiKey HMAC slot | TBD; touch required. |
+| Effective challenge bytes, encoding, purpose identifiers, length/padding | TBD; match tokens and software fallback. |
+| Derivation/wrapping algorithms, output encoding, public parameters | TBD. |
+| Compatible OpenBao and recovery-tool versions; independent acquisition locations | TBD. |
+| Tool and backup integrity/checksum verification | TBD. |
+| R2 account, endpoint, bucket, object convention; snapshot selection | TBD. |
+| Additional backup-encryption details | TBD. |
+| Independent encrypted-payload references | TBD; accessible without Vault or existing R2 credentials. |
 | Golden-key retrieval procedure reference | TBD; never record the key here. |
-| Device power-return limitations and manual startup procedure | TBD per device. |
+| Per-device power-return limitations and manual startup procedure | TBD. |
 
-All values added to this table must be non-secret. HMAC responses and derived values are secret even when the challenge itself is public.
+## Required access and operating rules
 
-## What accompanies this guide
+Use one working YubiKey and its paired USB guide, independently stored encrypted recovery payloads, and a recovery workstation with the specified tools. All four tokens share the golden key and HMAC-SHA1 settings and are kept at separate locations; identical effective challenges produce identical responses. One token suffices; if none works, obtain the separately held offline golden key.
 
-- One of four YubiKeys programmed with the same HMAC-SHA1 golden key and matching challenge settings.
-- A USB stick containing this guide only as the initial documentation kit.
-- Access to the independently stored encrypted recovery payloads, if the selected protocol wraps existing credentials.
-- Access to a suitable recovery workstation and the specified tools.
-- If no token is usable, access to the separately held offline golden key and the software fallback procedure.
-
-The golden key is held separately offline. Do not store it on this USB stick or in this guide. Do not put credentials, unseal shares, HMAC responses, private keys, or secret-bearing configuration files on the documentation USB stick.
-
-## Operating rules
-
-1. Never write secrets or snapshot contents to the recovery workstation's disk, including temporary files, the checkout, shell history, logs, caches, or saved plans. Use verified memory-only handling; account for swap, hibernation, and failure paths.
-2. A token challenge-response operation requires physical touch. The software fallback uses the separately held golden key and has no hardware touch requirement.
-3. Preserve non-Piraeus ZFS data disks and pools. Do not let node installation initialize or wipe them.
-4. After a UPS-triggered shutdown, start machines manually, one at a time. Bring Vault services up before dependent clusters. Disable automatic power-return startup and automatic wake sources where supported.
-5. Vault recovery must not require the failed OpenBao service or another homelab cluster.
+- Keep the documentation USB non-secret: no golden key, HMAC responses, derived values, credentials, unseal shares, private keys, secret-bearing configuration, or encrypted secret bundles.
+- Never write secrets or snapshots to workstation disk, including temporary files, caches, shell history, logs, state, or saved plans. Verify memory-only handling, including swap, hibernation, subprocesses, and failure paths.
+- Hardware challenge-response requires touch; the golden-key software fallback cannot enforce it.
+- Preserve manual non-Piraeus ZFS pools during node installation or repair; do not wipe or initialize them.
+- Vault recovery must work without its failed OpenBao instance or another cluster.
+- After UPS-triggered shutdown, power machines on manually, one at a time, with Vault services ready before dependent clusters. Disable automatic power-return startup and wake sources where supported; account for device limitations.
 
 ## Recover core-secret access
 
-1. Identify the intended HMAC slot and the protocol version from the metadata table.
-2. Load the required public challenge and downstream parameters using the specified helper.
-3. Query one YubiKey and touch it when requested. Keep the response and subsequent secret values in memory.
-4. Derive secret values or unwrap the independently stored payloads according to the recorded protocol. An HMAC response alone cannot recreate externally issued credentials or OpenBao-generated unseal material.
-5. Make R2 access, required backup-decryption material, OpenBao unseal/recovery material, and node bootstrap/unlock material available to the restore operation without writing them to workstation disk.
+1. Select the recorded HMAC slot and protocol version. Obtain the specified helper and verify its integrity.
+2. Load the exact public challenge and derivation/wrapping parameters.
+3. Query the token and touch it; keep responses and subsequent secret values in memory.
+4. Derive or unwrap R2 access, backup-decryption, OpenBao unseal/recovery, and node bootstrap/unlock material using the independent payloads. HMAC alone cannot recreate externally issued credentials or OpenBao-generated material.
 
-If the token is lost or fails, use a token/guide pair from another location. All four tokens are intended to produce identical responses for identical effective challenges. If no token is usable, use the golden-key fallback below.
+If a token fails, obtain another token/guide pair. Never guess encoding or overwrite an occupied slot.
 
 ## Golden-key fallback and replacement token
 
-Retrieve the separately held offline golden key using its custody procedure. Load it into the verified memory-only session without logging it. The fallback helper must compute HMAC-SHA1 over the exact same effective challenge bytes, then perform the same derivation/unwrap steps.
+Retrieve the offline golden key using its separate custody procedure. Load it into the verified memory-only session without logging. The helper must compute HMAC-SHA1 over identical effective challenge bytes, then apply the same derivation/unwrap steps.
 
-Use the same key to program replacement tokens under the configuration runbook, with matching challenge settings and **touch required**. Record the replacement's non-secret identity and return a token/guide pair to the appropriate location.
-
-Exact helper acquisition, commands, slot selection, and verification steps are TBD. Do not guess challenge encoding or overwrite an occupied slot during recovery.
+Replacement programming must use the same key/settings with **touch required**, preserve occupied slots unless explicitly approved, verify behavior, record the non-secret device identity, and return a current token/guide pair to its location. Exact helper acquisition, programming commands, and verification steps remain TBD.
 
 ## Restore Vault and OpenBao
 
-1. Recover access to the R2 destination and any wrapped/decryption material using the steps above.
-2. Select the required online Raft snapshot. Record its non-secret identity and validate the specified integrity information.
-3. Obtain replacement hardware if needed and bootstrap the single-node Talos Vault cluster using the validated procedure. Preserve existing manual ZFS data storage.
-4. Restore OpenBao's Raft snapshot through the validated restore procedure. Use the seal/unseal material associated with that backup. The exact initialization, restore, and unseal sequence is TBD.
-5. Verify access to expected secrets and authentication/policies; then verify certificate distribution and other required Vault services.
-6. Confirm that the in-cluster snapshot job can upload new encrypted backups to R2.
-7. Start dependent clusters manually, one machine at a time, checking each cluster's dependencies and storage.
+OpenBao backups are online Raft snapshots uploaded by a job inside Vault to Cloudflare R2.
 
-OpenBao backups are scheduled online Raft snapshots uploaded by a job inside Vault to Cloudflare R2. No existing Vault service is required to retrieve the emergency access material.
+1. Recover R2 access and any wrapped/decryption material.
+2. Select a snapshot and validate its recorded identity/integrity; do not stage it on workstation disk.
+3. Bootstrap replacement single-node Talos Vault infrastructure if needed, preserving manual ZFS storage.
+4. Restore the snapshot with its corresponding seal/unseal material. **Exact initialization, restore, and unseal ordering is TBD and must be validated; new-instance material may not unlock an older snapshot.**
+5. Verify expected secrets, authentication/policies, certificate distribution, and other required Vault services.
+6. Verify resumed encrypted snapshot uploads to R2.
+7. Start dependent clusters manually, one machine at a time, checking dependencies and storage.
 
 ## Complete before distributing a usable kit
 
-- Fill every recovery-critical metadata field with verified non-secret values.
-- Embed the exact tool acquisition and operating steps here so this file is usable without other local documentation files.
-- Complete and test the detailed Vault/OpenBao restore sequence, including failure handling.
-- Verify touch enforcement and equivalent responses on all four tokens without recording responses in the kit.
-- Verify an actual restore from R2 using a separate token/guide pair.
-- Verify that the golden-key software fallback reproduces the same recovery path.
-- Copy the same current guide to all four paired USB sticks after every relevant change.
+Fill every recovery-critical field and embed exact acquisition, operating, and failure-handling commands in this file. Test touch enforcement and matching responses across all tokens and the software fallback without recording secret output. Prove an R2 restore with a separately held token/guide pair and with the golden-key fallback. Refresh every USB copy after relevant changes.
 
-## Reference locations
+## Maintenance references
 
-These links help maintain the guide but must not become its only source of emergency instructions.
+These references do not replace embedded emergency instructions.
 
-- Security policy: `docs/security.md`.
-- Backup architecture: `docs/backup-and-restore.md`.
-- Planned YubiKey setup procedure: `runbooks/configure-yubikey-challenge-response.md`.
-- Planned Vault bootstrap procedure: `runbooks/bootstrap-vault.md`.
-- Planned OpenBao restore procedure: `runbooks/restore-openbao.md`.
+- Policies: `docs/security.md` and `docs/backup-and-restore.md`.
+- Planned runbooks: `runbooks/configure-yubikey-challenge-response.md`, `runbooks/bootstrap-vault.md`, `runbooks/restore-openbao.md`.
 - [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/).
-- [Yubico personalization tool manual](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html).
+- [Yubico personalization manual](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html).

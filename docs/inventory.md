@@ -13,9 +13,7 @@ Raw disk capacity, RAM and equipment counts include cold spares and all drives l
 
 Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capacity of its smallest member. Figures include OS disks and exclude filesystem overhead and any additional Piraeus replication. Unlisted boot media are not counted.
 
-**Planned platform and storage policy:** All four Kubernetes clusters use Talos Linux. All ZFS storage must be encrypted, and OS disk encryption is also a goal; these are requirements, not verified disk state. Non-Piraeus ZFS data pools are prepared and repaired manually and must be protected from automatic provisioning. Exact encryption and unlock details remain TBD in [security.md](security.md); Talos MD RAID1 implementation is tracked in [layout.md](layout.md). The three shutdown coordinators (one Raspberry Pi 2 and two Raspberry Pi 3 hosts) are separate supporting hosts, tentatively using Raspberry Pi OS Lite and Ansible.
-
-**Planned power-return policy:** After a UPS-triggered shutdown, systems should remain off until manually started, one machine at a time. Configure BIOS/UEFI to stay off after power restoration and disable Wake-on-LAN and other automatic wake sources wherever supported. Per-device support, settings, and verification are TBD, including Raspberry Pi boards, shutdown coordinators, and UPS outlet behavior; no hardware capability or completed configuration is assumed. See [layout.md](layout.md#power-loss-shutdown-and-manual-startup).
+Architecture is in [clusters.md](clusters.md), encryption in [security.md](security.md#disk-encryption-and-opentofu), and provisioning/power-return policy in [layout.md](layout.md). Per-device power-return support, settings, and verification remain TBD, including Pis, coordinators, and UPS outlets.
 
 ## Vault
 
@@ -25,7 +23,7 @@ Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capac
 - **OS drives:** 2 × 128 GB Intenso USB SSDs in MD RAID1 (128 GB nominal usable).
 - **Storage:** ZFS mirror (RAID 1) using the other 2 × 128 GB Intenso USB SSDs.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
-- **Network:** 1 Gbit router connectivity, as for the pi cluster.
+- **Network:** 1 Gbit router connectivity, as for the Pi cluster.
 - **Boot configuration:** Latest EEPROM firmware, with USB boot given priority.
 
 ## Backup
@@ -44,10 +42,10 @@ Shared exclusively by the **Vault and Backup clusters**:
 
 ## Pi
 
-- **Compute:** 5 × Raspberry Pi 4, each with 8 GB RAM. One Raspberry Pi 4 8 GB RAM cold spare as well.
+- **Compute:** 5 active Raspberry Pi 4 nodes and 1 cold spare, each with 8 GB RAM.
 - **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to the Eaton UPS via USB to coordinate safe shutdown of the cluster.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub per Pi.
-- **Disks:** 15 × 128 GB SATA SSDs in total, three per Raspberry Pi 4; models and layout listed below.
+- **Disks:** SATA SSDs through SATA-to-USB 3 adapters; [models and allocation](#ssd-inventory-and-layout) below.
 - **Power:** Official USB-C power adapters for both the Pis and hubs, supplied from 230 V mains.
 - **Network:** One Netgear 1 Gbit router connecting all five Pis.
 - **UPS:** Everything powered through an Eaton 3S850.
@@ -55,7 +53,7 @@ Shared exclusively by the **Vault and Backup clusters**:
 
 ### SSD inventory and layout
 
-15 × cheap DRAM-less 128 GB SATA SSDs available for the cluster, connected through SATA-to-USB 3 adapters:
+All SSDs are inexpensive, DRAM-less, and 128 GB:
 
 | Model | Quantity | Capacity per SSD / combined sum |
 | --- | --- | --- |
@@ -65,14 +63,9 @@ Shared exclusively by the **Vault and Backup clusters**:
 | Fanxiang S101 | 3 | 128 GB |
 | **Sum** | **15** | **1,920 GB** |
 
-Each of the five Raspberry Pi 4 nodes gets three SSDs:
-
-- **OS:** Two SSDs per Pi in MD RAID1 (10 SSDs across the cluster).
-- **Piraeus data plane:** One SSD per Pi (5 SSDs across the cluster).
-
 ### SSD allocation
 
-Planned allocation; Pi 1–3 are control-plane nodes and Pi 4–5 are workers. All SSDs are 128 GB. OS disk 1 and OS disk 2 form each node's MD RAID1; the data SSD joins the Piraeus data plane.
+Planned allocation: each node has an MD RAID1 OS pair and one Piraeus data SSD (10 OS + 5 data SSDs).
 
 | Node | Role | OS disk 1 | OS disk 2 | Piraeus data SSD |
 | --- | --- | --- | --- | --- |
@@ -82,7 +75,7 @@ Planned allocation; Pi 1–3 are control-plane nodes and Pi 4–5 are workers. A
 | Pi 4 | Worker | Silicon Power A5X | Intenso TOP | Patriot P220 |
 | Pi 5 | Worker | Patriot P220 | Silicon Power A5X | Intenso TOP |
 
-The three control-plane data SSDs have different brands, and the two worker data SSDs have different brands. Each Pi's OS pair also has different brands; this allocation gives every Pi three different SSD brands in total. All 15 SSDs are allocated, with none left over.
+Each node has three different SSD brands; data brands also differ within each role group. All 15 SSDs are allocated.
 
 ## Metal
 
@@ -113,8 +106,8 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 
 - **Compute:** Lenovo ThinkCentre M900, Intel Core i5-6400.
 - **RAM:** 40 GB.
-- **SATA1:** PNY 120 GB SSD (OS MD RAID1).
-- **SATA2:** Intenso TOP 128 GB SSD (OS MD RAID1).
+- **SATA1:** PNY 120 GB SSD.
+- **SATA2:** Intenso TOP 128 GB SSD.
 - **ZFS mirror pool `piraeus`:**
   - **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
   - **NVMe2:** Patriot P320 256 GB SSD.
@@ -128,8 +121,8 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 
 - **Compute:** Lenovo ThinkCentre M900, Intel Core i5-6400.
 - **RAM:** 40 GB.
-- **SATA1:** PNY 120 GB SSD (OS MD RAID1).
-- **SATA2:** Intenso TOP 128 GB SSD (OS MD RAID1).
+- **SATA1:** PNY 120 GB SSD.
+- **SATA2:** Intenso TOP 128 GB SSD.
 - **ZFS mirror pool `piraeus`:**
   - **NVMe1:** Transcend PCIe SSD 110S 256 GB (TS256GMTE110S).
   - **NVMe2:** Fanxiang 256 GB SSD.
@@ -142,8 +135,8 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 
 - **Compute:** Lenovo ThinkCentre M900, Intel Core i7-6700.
 - **RAM:** 40 GB.
-- **SATA1:** PNY 120 GB SSD (OS MD RAID1).
-- **SATA2:** OCZ Vertex 4 128 GB SSD (OS MD RAID1).
+- **SATA1:** PNY 120 GB SSD.
+- **SATA2:** OCZ Vertex 4 128 GB SSD.
 - **NVMe1:** Samsung SSD 990 PRO 4 TB, with an XFS filesystem labeled `ethereum`.
 - **ZFS single-disk pool `piraeus`:**
   - **NVMe2:** Samsung PM951 256 GB (mzvlv256hchp-000L1).
@@ -156,8 +149,8 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 - **Compute:** Desktop chassis with an MSI H77MA-G43 motherboard.
 - **RAM:** 32 GB.
 - **Accelerator:** Coral USB Accelerator with an Edge TPU coprocessor.
-- **SATA1:** Silicon Power A5X 128 GB SSD (OS MD RAID1).
-- **SATA2:** Patriot P220 128 GB SSD (OS MD RAID1).
+- **SATA1:** Silicon Power A5X 128 GB SSD.
+- **SATA2:** Patriot P220 128 GB SSD.
 - **ZFS mirror pool `nvr`:**
   - **SATA3:** 1500 GB SATA HDD.
   - **SATA4:** 1500 GB SATA HDD.
@@ -170,12 +163,11 @@ All workers use MD RAID1 across SATA1 and SATA2 for the OS.
 ### Dedicated storage network
 
 - **Available switches:** 2 × five-port 2.5 Gbit/s Ethernet switches; models TBD.
-- **Planned use:** Metal's 2.5 Gbit/s interfaces carry Piraeus/DRBD data only.
-- **Tentative topology:** One switch for control-plane nodes and one for workers, with a possible inter-switch link. Final cabling and addressing are TBD.
+- **Use and topology:** See [cluster networking](clusters.md#dedicated-storage-network).
 
 ### UPS and shutdown coordination
 
-Three Eaton UPS units protect the metal cluster:
+Three Eaton UPS units protect Metal:
 
 | UPS | Model | Protected equipment |
 | --- | --- | --- |
@@ -187,7 +179,7 @@ Three Eaton UPS units protect the metal cluster:
 
 ## Security keys
 
-Four YubiKeys available. Their planned core-secret role is decided; programming and verification have not been performed as part of this documentation.
+Four YubiKeys available; planned use and configuration belong in [security.md](security.md#core-secret-foundation).
 
 | Model | Firmware | Enabled interfaces | Quantity |
 | --- | --- | --- | --- |
@@ -196,9 +188,7 @@ Four YubiKeys available. Their planned core-secret role is decided; programming 
 | YubiKey Standard | 2.4.1 | OTP | 1 |
 | **Sum** | | | **4** |
 
-All four will use the same golden key and matching HMAC-SHA1 challenge-response settings, with physical touch required. They will be kept at four different locations, each paired with a USB stick carrying the non-secret [Emergency Recovery Guide](emergency-recovery-guide.md). The golden key will be held separately offline for token replacement and software recovery. See [security.md](security.md#core-secret-foundation) and [backup-and-restore.md](backup-and-restore.md#emergency-recovery-guide-custody).
-
-OTP slot assignments and actual programming remain TBD. The four documentation USB sticks are planned media; their models, capacities, and acquisition are TBD, so they are not added to the physical disk totals.
+The four documentation USB sticks are planned media; their models, capacities, and acquisition are TBD, so they are not added to the physical disk totals.
 
 ## Spare drives
 

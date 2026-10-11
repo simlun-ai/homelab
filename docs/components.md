@@ -1,6 +1,6 @@
 # Components
 
-This is a component catalog, not a record of deployed versions. The draft [repository layout](layout.md) gives each cluster independent tool and component pins; catalog versions do not force a simultaneous upgrade of all clusters.
+Catalog versions, not deployed-version records. Independent operational pins are defined by the [tool-scope contract](layout.md#tool-versions-and-command-scopes).
 
 ## Infrastructure
 
@@ -20,21 +20,16 @@ This is a component catalog, not a record of deployed versions. The draft [repos
 - cert-manager (v1.21.2)
 - Garage (v2.4.1)
 - PostgreSQL (v18.6)
-
 - Headlamp (v0.45.0)
 
 ### Management tooling and supporting hosts (planned)
 
-- Make (version TBD; checked bootstrap prerequisite).
-- Python (version and dependency locking TBD; shared helper logic with runtime requirements pinned per scope).
-- Bash (version TBD; suitable small scripts).
-- kubectl (version TBD per cluster).
-- talosctl (version TBD per cluster, compatible with that cluster's Talos version).
-- Helm (version TBD per cluster).
-- OpenBao CLI (`bao`; version TBD per scope where required).
-- OpenTofu CLI (`tofu`; independently pinned per scope; OpenTofu is cataloged above).
-- Raspberry Pi OS Lite (candidate OS for UPS shutdown coordinators; version TBD).
-- Ansible (candidate management tool for UPS shutdown coordinators; version TBD).
+| Tool / OS | Version |
+| --- | --- |
+| Make, Python, Bash | TBD. |
+| kubectl, talosctl, Helm, OpenBao CLI (`bao`) | TBD per scope; talosctl must be compatible with Talos. |
+| OpenTofu CLI (`tofu`) | Independently pinned per scope; catalog version above. |
+| Raspberry Pi OS Lite, Ansible | TBD; [candidate UPS-host stack](layout.md#ups-shutdown-coordinators). |
 
 ## Workloads
 
