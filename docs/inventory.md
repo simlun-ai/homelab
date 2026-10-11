@@ -13,12 +13,7 @@ Raw disk capacity, RAM and equipment counts include cold spares and all drives l
 
 Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capacity of its smallest member. Figures include OS disks and exclude filesystem overhead and any additional Piraeus replication. Unlisted boot media are not counted.
 
-## Shared infrastructure nodes
-
-- **UPS:** One Eaton 3S700 shared by the vault and backup clusters.
-- **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to the Eaton UPS via USB to coordinate safe shutdown of the cluster.
-
-### vault (single-node)
+## Vault
 
 - **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
@@ -29,14 +24,14 @@ Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capac
 - **Network:** 1 Gbit router connectivity, as for the pi cluster.
 - **Boot configuration:** Latest EEPROM firmware, with USB boot given priority.
 
-### backup (single-node)
+## Backup
 
 - **Compute:** Lenovo ThinkCentre M93p Tiny.
 - **RAM:** 8 GB.
 - **OS drive:** Intel 180 GB SSD.
 - **Storage:** ZFS mirror (RAID 1), consisting of two 8 TB Samsung USB HDDs, each with a 3.5-inch form factor.
 
-## pi cluster
+## Pi
 
 - **Compute:** 5 × Raspberry Pi 4, each with 8 GB RAM. One Raspberry Pi 4 8 GB RAM cold spare as well.
 - **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to the Eaton UPS via USB to coordinate safe shutdown of the cluster.
@@ -78,7 +73,7 @@ Planned allocation; Pi 1–3 are control-plane nodes and Pi 4–5 are workers. A
 
 The three control-plane data SSDs have different brands, and the two worker data SSDs have different brands. Each Pi's OS pair also has different brands; this allocation gives every Pi three different SSD brands in total. All 15 SSDs are allocated, with none left over.
 
-## metal cluster
+## Metal
 
 ### Control plane
 
@@ -173,7 +168,12 @@ Three Eaton UPS units protect the metal cluster:
 
 **Shutdown coordinator:** 1 × Raspberry Pi 3 for the whole cluster.
 
-## Spare Drives
+## Shared infrastructure
+
+- **UPS:** One Eaton 3S700 shared by the Vault and Backup clusters.
+- **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to the Eaton UPS via USB to coordinate safe shutdown of those clusters.
+
+## Spare drives
 
 - Samsung SSD 870 EVO 2 TB.
 - Samsung USB SSD T7 1 TB.
