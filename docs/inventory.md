@@ -2,13 +2,13 @@
 
 ## Summary
 
-- **Total disk capacity before mirroring:** 79,116 GB.
-- **Total nominal usable capacity after mirroring:** 34,264 GB, excluding spare drives and cold-spare disks.
-- **Total RAM:** 248 GB documented, plus the RAM in three Raspberry Pi 3 shutdown coordinators (not specified).
-- **Total computers:** 19, including two cold spares and three shutdown coordinators.
-- **Total disks:** 71, including eight spare drives.
+- **Total disk capacity before mirroring:** 115,116 GB.
+- **Total nominal usable capacity after mirroring:** 62,264 GB, excluding spare drives and cold-spare disks.
+- **Total RAM:** 248 GB documented, plus unspecified RAM in three Raspberry Pi 3 shutdown coordinators and the old NAS computer.
+- **Total computers:** 20, including two cold spares, three shutdown coordinators and the old NAS computer.
+- **Total disks:** 76, including eight spare drives.
 
-Raw disk capacity, RAM and equipment counts include cold spares and all drives listed under Spare Drives. Usable capacity excludes the eight spare drives (15,768 GB) and the M920x cold spare's disks (512 GB after its OS mirror).
+Raw disk capacity, RAM and equipment counts include cold spares and all drives listed under Spare Drives and Other disks. Usable capacity excludes the eight spare drives (15,768 GB) and the M920x cold spare's disks (512 GB after its OS mirror).
 
 Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capacity of its smallest member. Figures include OS disks and exclude filesystem overhead and any additional Piraeus replication. Unlisted boot media are not counted.
 
@@ -182,3 +182,8 @@ Three Eaton UPS units protect the metal cluster:
 - Intenso 128 GB Portable SSD Premium USB.
 - Seagate Expansion 3.5-inch 8 TB USB HDD.
 - Seagate Portable Drive 2.5-inch 4 TB USB HDD.
+
+## Other disks
+
+- **Restore disk:** 1 × Seagate 3.5" HDD, 20 TB, connected via USB (20,000 GB usable).
+- **Old NAS storage:** 4 × 4 TB 2.5" USB HDDs in ZFS RAID10 (two mirrored vdevs): 16,000 GB raw, 8,000 GB nominal usable.
