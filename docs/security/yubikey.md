@@ -52,7 +52,7 @@ These identifiers propose coverage for the credential roles already documented i
 
 | Identifier suffix | Protected material | Consumer |
 | --- | --- | --- |
-| `vault/openbao-unseal/share-<n>/r1` | OpenBao-generated unseal share; share count and threshold TBD. | Workstation unseal/restore helper. |
+| `vault/openbao-unseal/share-1/r1` | OpenBao-generated unseal share; one share, threshold one under the [unseal policy](openbao-unseal.md). | Workstation unseal/restore helper. |
 | `vault/kms/<node-id>/<volume>/r1` | Wrapping context for Talos-generated Vault system-volume unlock material. Volume mapping TBD. | Coordinator bootstrap KMS. |
 | `support-vault-backup/dns-api/cloudflare/r1` | DNS API credential for independent KMS DNS-01 renewal. | Coordinator ACME integration. |
 | `support-vault-backup/tls-private-key/kms/r1` | Coordinator KMS TLS private key. | Coordinator TLS service. |
@@ -65,7 +65,7 @@ These identifiers propose coverage for the credential roles already documented i
 
 The KMS wrapping authority expires after its short boot session. Coordinator DNS, TLS, and ACME plaintext may remain in process memory for the coordinator's running lifetime, as specified in [security.md](security.md#vault-bootstrap-kms).
 
-Unseal shares and recovery keys are different OpenBao concepts. A separate recovery-key identifier is needed only if the selected seal configuration produces recovery keys.
+The selected Shamir seal uses an unseal share, not auto-unseal recovery keys. Recovery administration access is separate and remains TBD in the [unseal policy](openbao-unseal.md).
 
 ## Manual ZFS keys
 

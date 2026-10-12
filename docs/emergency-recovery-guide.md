@@ -19,7 +19,7 @@ All entries must be non-secret.
 | Tool and backup integrity/checksum verification | TBD. |
 | R2 account, endpoint, bucket, object convention; snapshot selection | TBD. |
 | Additional backup-encryption details | TBD. |
-| Independent encrypted-payload references | Wrapped records and public manifest under `secrets/wrapped/` in the USB's full repository clone; exact records TBD. Accessible without Vault, GitHub, or existing R2 credentials. |
+| Independent encrypted-payload references | Wrapped records and public manifest under `secrets/wrapped/` in the USB's full repository clone. OpenBao Shamir seal: one share, threshold one; identifier `homelab/v1/vault/openbao-unseal/share-1/r1`. Exact filenames and recovery administration credential TBD. Accessible without Vault, GitHub, or existing R2 credentials. |
 | Golden-key retrieval procedure reference | Level 1 Password Management system; exact retrieval steps outside this repository. Never record the key here. |
 | Vault coordinator KMS endpoint, public TLS/DNS-01, preboot DNS/NTP, session controls | TBD; include service acquisition, independent wrapped-payload references, and coordinator rebuild instructions. |
 | KMS adapter endpoint, TLS trust, early-boot networking, transit key mapping/versions | TBD; include adapter acquisition and independent bootstrap-payload references. |

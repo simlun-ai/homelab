@@ -24,7 +24,7 @@ We treat the YubiKeys as **mini hardware security modules (HSMs)** for the homel
 - Keep the golden key separately offline for replacement-token programming and software recovery.
 - Use OTP slot 1 under the [approved setup](yubikey-setup.md). Neither slot is currently used on any token; inspect before programming and do not overwrite unexpected occupied slots without explicit approval.
 
-These are interchangeable copies of one HMAC secret, providing location redundancy rather than a multi-token threshold. OpenBao's Shamir share count and threshold are separate decisions.
+These are interchangeable copies of one HMAC secret, providing location redundancy rather than a multi-token threshold. OpenBao uses the [approved one-share, threshold-one Shamir design](openbao-unseal.md).
 
 Verify programming/query tools and matching behavior on every actual device, including older Standard models; one modern CLI may not support all models.
 
@@ -152,7 +152,7 @@ Topic placeholders for the remaining decisions and implementation work:
 - [Encrypted-record storage](encrypted-record-storage.md) — decision approved; implementation pending.
 - [YubiKey setup](yubikey-setup.md) — decision approved; programming and verification pending.
 - [Golden-key custody](golden-key-custody.md) — decision approved; backup and recovery verification pending.
-- [OpenBao unseal](openbao-unseal.md) — TBD.
+- [OpenBao unseal](openbao-unseal.md) — unseal decision approved; implementation, recovery administration, and restore verification pending.
 - [Credential catalogue](credential-catalogue.md) — TBD.
 - [Coordinator sessions](coordinator-sessions.md) — TBD.
 - [Helper implementation](helper-implementation.md) — TBD.
