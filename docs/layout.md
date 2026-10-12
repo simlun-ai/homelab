@@ -12,7 +12,7 @@
 | This document | Directory ownership, tool scopes, provisioning boundaries, operating entry points. |
 | [Security](security/security.md) | Core secrets, YubiKeys, custody, workstation handling, encryption. |
 | [YubiKey catalogue](security/yubikey.md) | Credential/use-case catalogue, lookup identifiers, challenge construction, unresolved bootstrap coverage. |
-| [Security work areas](security/security.md#remaining-decisions) | Nine topic placeholders under `docs/security/` for outstanding decisions and implementation work. |
+| [Security work areas](security/security.md#remaining-decisions) | Topic documents under `docs/security/`, recording approved decisions and remaining TBD work. |
 | [Backup and restore](backup-and-restore.md) | Backup design, independent recovery dependencies, restore planning. |
 | [Emergency Recovery Guide](emergency-recovery-guide.md) | Standalone, non-secret USB recovery instructions. |
 
@@ -28,6 +28,7 @@ Keep details in their owning document and link from other documents. The USB gui
 | `/.gitignore` | Downloaded tools and non-secret caches; subject to [secret-handling rules](security/security.md#secret-handling-boundary). |
 | `/pyproject.toml` | Shared Python helper package/development configuration; locking format TBD. |
 | `/docs/` | Documents listed above. |
+| `/secrets/wrapped/` | Authenticated encrypted credential records and public identifier-to-file manifest; [storage policy](security/encrypted-record-storage.md). |
 | `/clusters/{vault,backup,pi,metal}/` | Independent cluster configuration and operational pins. |
 | `/make/` | Shared Make implementation, without global cluster-version defaults. |
 | `/scripts/` | Python helpers and small Bash scripts. |
@@ -62,7 +63,7 @@ Every cluster follows this contract; optional directories appear only where need
 
 Keep machine-readable node assignments synchronized with the inventory. A declaration does not authorize disk initialization.
 
-Secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered configuration, tokens, and keys have no workstation-disk location. The required runtime workspace remains TBD under [security.md](security/security.md#secret-handling-boundary).
+Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered configuration, tokens, and keys have no workstation-disk location. Wrapped credential records are permitted in `/secrets/wrapped/`. The required runtime workspace remains TBD under [security.md](security/security.md#secret-handling-boundary).
 
 ## Shared implementation
 
@@ -136,7 +137,7 @@ Use one `/support/ups/` scope because a coordinator serves both Vault and Backup
 | `ansible/templates/` | Non-secret service templates. |
 | `ansible/requirements.yml` | Pinned external roles/collections if selected. |
 
-Raspberry Pi OS Lite and Ansible are tentative choices. The Vault/Backup coordinator also hosts the planned [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. OpenTofu has no assigned coordinator role. Shutdown software, credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security/security.md#secret-handling-boundary).
+Raspberry Pi OS Lite and Ansible are tentative choices. The Vault/Backup coordinator also hosts the planned [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. Deploy its [wrapped credentials](security/encrypted-record-storage.md#coordinator-deployment) to local persistent storage; if Ansible is selected, it copies ciphertext without decrypting it. OpenTofu has no assigned coordinator role. Shutdown software, credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security/security.md#secret-handling-boundary).
 
 ### Power-loss shutdown and manual startup
 

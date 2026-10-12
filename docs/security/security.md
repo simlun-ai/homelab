@@ -4,11 +4,13 @@
 
 ## Secret-handling boundary
 
-Never commit secrets or write them to workstation disk, including ignored files, temporary files, caches, shell history, logs, saved plans, local state, and crash dumps. Use process memory, streams, or a verified memory-only workspace; account for swap, hibernation, subprocesses, and failure paths.
+Never commit plaintext secrets, golden-key material, HMAC responses, or derived keys, or write them to workstation disk, including ignored files, temporary files, caches, shell history, logs, saved plans, local state, and crash dumps. Use process memory, streams, or a verified memory-only workspace; account for swap, hibernation, subprocesses, and failure paths.
+
+Authenticated `homelab-wrap-v1` credential records may be committed and persisted on workstation disk, recovery USBs, and consuming hosts under the [encrypted-record storage policy](encrypted-record-storage.md). Decryption remains memory-only.
 
 Public challenges, secret references, and protocol metadata may be committed. HMAC responses, derived values, golden-key material, and plaintext credentials or unseal/recovery material are secret. Keep them out of documentation, fixtures, and test output.
 
-Encrypted persistence in cluster services, remote state, and backups is allowed, including protected Talos state, appropriately encrypted Kubernetes secret storage, and OpenBao storage. Secret and snapshot transport must not stage sensitive contents on workstation disk. The separately held offline golden-key record is outside the repository and workstation storage.
+Encrypted persistence in cluster services, remote state, and backups is allowed, including protected Talos state, appropriately encrypted Kubernetes secret storage, and OpenBao storage. Transport must not stage decrypted secrets or OpenBao snapshots on workstation disk. The separately held offline golden-key record is outside the repository and workstation storage.
 
 ## Core-secret foundation
 
@@ -18,7 +20,7 @@ We treat the YubiKeys as **mini hardware security modules (HSMs)** for the homel
 
 - Program all four with the same **golden key** and challenge-processing settings: identical effective challenge bytes must produce identical responses.
 - Require physical touch for every hardware challenge-response operation.
-- Keep the tokens at four separate locations, each with a USB stick carrying the non-secret [Emergency Recovery Guide](../emergency-recovery-guide.md).
+- Keep the tokens at four separate locations, each paired with a USB stick containing a [full repository clone](encrypted-record-storage.md#recovery-usb-clones), including wrapped records and the non-secret [Emergency Recovery Guide](../emergency-recovery-guide.md).
 - Keep the golden key separately offline for replacement-token programming and software recovery.
 - Inspect existing OTP slots before selecting a slot; do not overwrite an occupied slot without explicit approval.
 
@@ -28,7 +30,7 @@ Verify programming/query tools and matching behavior on every actual device, inc
 
 ## Golden key and software recovery
 
-Generate the golden key once with suitable randomness and handle it only in memory during programming. Never print, log, or export it to the checkout or documentation USB sticks.
+Generate the golden key once with suitable randomness and handle it only in memory during programming. Never print, log, or export it to the checkout or recovery USB sticks.
 
 The offline record enables replacement tokens and software recovery. The fallback must reproduce the exact effective challenge bytes, HMAC-SHA1 operation, and subsequent derivation/unwrap steps. It cannot enforce touch: possession of the golden key gives access to the entire foundation.
 
@@ -91,7 +93,7 @@ Challenge-response needs helper logic; it is not native ZFS unlock integration o
 
 [Vault's independent bootstrap](../clusters.md#vault) requires manual secret supply. Manual disk unlock and OpenBao unseal are acceptable during operator-controlled startup.
 
-Application/service secrets are fetched from OpenBao; dependent clusters use External Secrets Operator where applicable. A helper on the workstation queries a YubiKey with touch, derives the wrapping key, unwraps the required unseal material, and unseals OpenBao entirely in memory. This is operator-driven unseal, not native YubiKey auto-unseal. The wrapping format is defined above; helper integration and delivery into Talos, scripts, and OpenTofu remain TBD. Encrypted payload storage in Git is undecided.
+Application/service secrets are fetched from OpenBao; dependent clusters use External Secrets Operator where applicable. A helper on the workstation queries a YubiKey with touch, derives the wrapping key, unwraps the required unseal material, and unseals OpenBao entirely in memory. This is operator-driven unseal, not native YubiKey auto-unseal. The wrapping format is defined above; helper integration and delivery into Talos, scripts, and OpenTofu remain TBD. Wrapped credential records are stored under the [encrypted-record storage policy](encrypted-record-storage.md).
 
 Touch is required when querying a token, not for each scheduled backup. Runtime credentials may be provisioned at setup and held securely server-side; backup-job authentication and lifecycle belong in [backup-and-restore.md](../backup-and-restore.md#openbao-online-backups).
 
@@ -147,7 +149,7 @@ Write `/runbooks/configure-yubikey-challenge-response.md` covering:
 
 Topic placeholders for the remaining decisions and implementation work:
 
-- [Encrypted-record storage](encrypted-record-storage.md) — TBD.
+- [Encrypted-record storage](encrypted-record-storage.md) — decision approved; implementation pending.
 - [YubiKey setup](yubikey-setup.md) — TBD.
 - [Golden-key custody](golden-key-custody.md) — TBD.
 - [OpenBao unseal](openbao-unseal.md) — TBD.

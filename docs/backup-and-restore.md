@@ -39,7 +39,7 @@ Use the [YubiKey or offline golden-key path](security/security.md#core-secret-fo
 | Talos bootstrap/administration material | Rebuild Vault before its control plane or OpenBao is usable. |
 | Helpers, protocol metadata, compatible tools | Obtainable without the failed homelab. |
 
-Protected-payload locations remain TBD. Proposed credential lookups belong in [yubikey.md](security/yubikey.md); secret custody and handling in [security.md](security/security.md).
+Wrapped credential records live in the private repository and full recovery USB clones; coordinator records are also deployed locally under the [storage policy](security/encrypted-record-storage.md). Exact record mappings and other recovery artifacts remain TBD. Proposed credential lookups belong in [yubikey.md](security/yubikey.md); secret custody and handling in [security.md](security/security.md).
 
 ## Required recovery targets
 
@@ -60,7 +60,7 @@ Run isolated restore drills without the original Vault/coordinator or other clus
 
 ## Vault restore outline
 
-Recover/verify the [coordinator bootstrap KMS](security/security.md#vault-bootstrap-kms) before Vault system-volume unlock. Router/network, DNS, and public NTP must work independently; Internet is an accepted cold-start dependency. Coordinator-loss recovery and expired-certificate renewal must be tested without OpenBao or workstation-disk secrets.
+Recover/verify the [coordinator bootstrap KMS](security/security.md#vault-bootstrap-kms) before Vault system-volume unlock. Router/network, DNS, and public NTP must work independently; Internet is an accepted cold-start dependency. Coordinator-loss recovery and expired-certificate renewal must be tested without OpenBao or workstation-disk plaintext secrets.
 
 Plan `/runbooks/operate-vault-bootstrap-kms.md`, `/runbooks/bootstrap-vault.md`, and `/runbooks/restore-openbao.md` around the [Emergency Recovery Guide's restore outline](emergency-recovery-guide.md#restore-vault-and-openbao).
 
@@ -68,11 +68,11 @@ After restoring OpenBao, verify transit key versions and KMS adapter readiness b
 
 ## Emergency Recovery Guide custody
 
-The **Homelab Recovery Kit** starts with one non-secret, standalone [Emergency Recovery Guide](emergency-recovery-guide.md) on each token's paired USB stick. Token and golden-key custody belong in [security.md](security/security.md#core-secret-foundation).
+The **Homelab Recovery Kit** includes a full repository clone on each token's paired USB stick, including wrapped records and the non-secret, standalone [Emergency Recovery Guide](emergency-recovery-guide.md). Clone contents and refresh requirements belong in [encrypted-record storage](security/encrypted-record-storage.md#recovery-usb-clones); token and golden-key custody in [security.md](security/security.md#core-secret-foundation).
 
-The documentation-only kit excludes secrets, secret-bearing configuration, and encrypted secret bundles; store protected payloads separately with independent access. Complete the guide with exact public protocol parameters, tool acquisition, backup locations, and validated recovery commands. It must work without other local documents or the homelab.
+The clone contains committed wrapped ciphertext, with no plaintext credentials or golden-key material. Snapshots remain in R2. Complete the guide with exact public protocol parameters, independent tool acquisition, backup locations, and validated recovery commands. The guide must remain understandable without other local documents; executing recovery requires the recorded payloads and tools.
 
-After protocol, tool-pin, destination, or procedure changes, refresh every copy and record its revision. Refresh frequency and verification procedure remain TBD.
+Refresh every clone after recovery-critical record, protocol, helper, guide, tool-pin, destination, or procedure changes and record its commit. Refresh commands and verification procedures remain TBD.
 
 ## Other backup coverage
 
