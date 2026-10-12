@@ -17,7 +17,7 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | Loki | v3.7.8 |  |  |  |  |
 | ZFS LocalPV | v2.11.1 | v2.11.1 |  |  |  |
 | OpenBao | v2.7.1 | v2.7.1 |  |  |  |
-| [Talos KMS adapter](security.md#talos-kms-adapter) (repository-owned Python service) | TBD | TBD |  |  |  |
+| [Talos KMS adapter](security/security.md#talos-kms-adapter) (repository-owned Python service) | TBD | TBD |  |  |  |
 | OpenTofu | v1.13.1 |  |  |  |  |
 | External Secrets Operator | v2.11.0 | v2.11.0 | v2.11.0 | v2.11.0 | v2.11.0 |
 | cert-manager | v1.21.2 | v1.21.2 |  |  |  |
@@ -41,8 +41,8 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | Tool / OS | Version |
 | --- | --- |
 | Make, Python, Bash | TBD. |
-| Python cryptography (HKDF/AESGCM), RFC 8785-compatible JSON serializer | TBD; [planned v1 wrapping implementation](security.md#challenges-derivation-and-wrapped-credentials). |
+| Python cryptography (HKDF/AESGCM), RFC 8785-compatible JSON serializer | TBD; [planned v1 wrapping implementation](security/security.md#challenges-derivation-and-wrapped-credentials). |
 | kubectl, talosctl, Helm, OpenBao CLI (`bao`) | TBD per scope; talosctl must be compatible with Talos. |
 | OpenTofu CLI (`tofu`) | Independently pinned per scope; catalog version above. |
 | Raspberry Pi OS Lite, Ansible | TBD; [candidate UPS-host stack](layout.md#ups-shutdown-coordinators). |
-| [Vault bootstrap KMS](security.md#vault-bootstrap-kms) (repository-owned Python gRPC service), ACME client | TBD; planned on the Vault/Backup coordinator, independently of cluster services. |
+| [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms) (repository-owned Python gRPC service), ACME client | TBD; planned on the Vault/Backup coordinator, independently of cluster services. |

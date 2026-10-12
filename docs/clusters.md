@@ -2,7 +2,7 @@
 
 **Planned architecture; deployment is unverified.** All four Kubernetes clusters target Talos Linux.
 
-Hardware and disk assignments belong in [inventory.md](inventory.md); tool scopes and provisioning rules in [layout.md](layout.md); secret handling and encryption in [security.md](security.md).
+Hardware and disk assignments belong in [inventory.md](inventory.md); tool scopes and provisioning rules in [layout.md](layout.md); secret handling and encryption in [security.md](security/security.md).
 
 ## Vault
 
@@ -17,7 +17,7 @@ Independent, single-node foundation. All other clusters depend on its services. 
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
 | Certificates | cert-manager with Let's Encrypt and Cloudflare DNS-01; External Secrets Operator PushSecret publishes certificates to OpenBao, and dependent clusters pull them through External Secrets Operator. |
 
-Backup, Pi, and Metal depend on Vault's unsealed OpenBao and KMS adapter for [Talos system-volume unlock](security.md#talos-kms-adapter). Vault's own system-volume unlock uses the independent [YubiKey-backed coordinator KMS](security.md#vault-bootstrap-kms).
+Backup, Pi, and Metal depend on Vault's unsealed OpenBao and KMS adapter for [Talos system-volume unlock](security/security.md#talos-kms-adapter). Vault's own system-volume unlock uses the independent [YubiKey-backed coordinator KMS](security/security.md#vault-bootstrap-kms).
 
 OpenBao storage, backups, and recovery are specified in [backup-and-restore.md](backup-and-restore.md#openbao-online-backups).
 
@@ -27,7 +27,7 @@ Single-node cluster on the [Lenovo ThinkCentre M93p Tiny](inventory.md#backup), 
 
 ## Shared infrastructure
 
-Vault and Backup share the [UPS and shutdown coordinator](inventory.md#shared-infrastructure). The coordinator also hosts Vault's planned [bootstrap KMS](security.md#vault-bootstrap-kms).
+Vault and Backup share the [UPS and shutdown coordinator](inventory.md#shared-infrastructure). The coordinator also hosts Vault's planned [bootstrap KMS](security/security.md#vault-bootstrap-kms).
 
 ## Pi
 
@@ -54,7 +54,7 @@ Pi and Metal each propose one Piraeus data plane spanning control-plane and work
 
 Names are provisional. The likely default is **Placement Count 2**: two diskful replicas per volume. Diskless quorum participants/tiebreakers may cross role boundaries and do not add data copies. Replica placement and workload scheduling are separate policies.
 
-Pool preparation, LINSTOR properties, preference versus strict constraints, fallback, quorum, and the [encryption path](security.md#disk-encryption-and-opentofu) remain TBD. Validate maintenance and loss of a node, switch, or inter-switch link before adoption; two replicas alone do not establish availability guarantees.
+Pool preparation, LINSTOR properties, preference versus strict constraints, fallback, quorum, and the [encryption path](security/security.md#disk-encryption-and-opentofu) remain TBD. Validate maintenance and loss of a node, switch, or inter-switch link before adoption; two replicas alone do not establish availability guarantees.
 
 [Piraeus replicated volumes](https://piraeus.io/docs/stable/tutorial/replicated-volumes/) documents Placement Count.
 

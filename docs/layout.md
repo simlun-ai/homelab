@@ -10,8 +10,9 @@
 | [Clusters](clusters.md) | Topology, dependencies, services, networking, workload and replica placement. |
 | [Components](components.md) | Software catalog and versions; operational pins remain scope-owned. |
 | This document | Directory ownership, tool scopes, provisioning boundaries, operating entry points. |
-| [Security](security.md) | Core secrets, YubiKeys, custody, workstation handling, encryption. |
-| [YubiKey catalogue](yubikey.md) | Credential/use-case catalogue, lookup identifiers, challenge construction, unresolved bootstrap coverage. |
+| [Security](security/security.md) | Core secrets, YubiKeys, custody, workstation handling, encryption. |
+| [YubiKey catalogue](security/yubikey.md) | Credential/use-case catalogue, lookup identifiers, challenge construction, unresolved bootstrap coverage. |
+| [Security work areas](security/security.md#remaining-decisions) | Nine topic placeholders under `docs/security/` for outstanding decisions and implementation work. |
 | [Backup and restore](backup-and-restore.md) | Backup design, independent recovery dependencies, restore planning. |
 | [Emergency Recovery Guide](emergency-recovery-guide.md) | Standalone, non-secret USB recovery instructions. |
 
@@ -24,7 +25,7 @@ Keep details in their owning document and link from other documents. The USB gui
 | `/README.md` | Brief overview, dependency order, and links to cluster READMEs, docs, and runbooks. |
 | `/AGENTS.md` | Repository editing rules. |
 | `/Makefile` | Help and explicit dispatch to one cluster or supporting-host scope. |
-| `/.gitignore` | Downloaded tools and non-secret caches; subject to [secret-handling rules](security.md#secret-handling-boundary). |
+| `/.gitignore` | Downloaded tools and non-secret caches; subject to [secret-handling rules](security/security.md#secret-handling-boundary). |
 | `/pyproject.toml` | Shared Python helper package/development configuration; locking format TBD. |
 | `/docs/` | Documents listed above. |
 | `/clusters/{vault,backup,pi,metal}/` | Independent cluster configuration and operational pins. |
@@ -61,7 +62,7 @@ Every cluster follows this contract; optional directories appear only where need
 
 Keep machine-readable node assignments synchronized with the inventory. A declaration does not authorize disk initialization.
 
-Secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered configuration, tokens, and keys have no workstation-disk location. The required runtime workspace remains TBD under [security.md](security.md#secret-handling-boundary).
+Secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered configuration, tokens, and keys have no workstation-disk location. The required runtime workspace remains TBD under [security.md](security/security.md#secret-handling-boundary).
 
 ## Shared implementation
 
@@ -73,7 +74,7 @@ Secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered configuratio
 | `/make/helm.mk` | Render/deploy selected releases. |
 | `/make/tofu.mk` | Operate the selected root/state. |
 | `/make/storage.mk` | Validate disks, coordinate assigned Piraeus preparation, inspect manual pools. |
-| `/scripts/homelab/` | Python tool installation, validation, secret transport, orchestration; planned workstation unseal helper, [Talos KMS adapter](security.md#talos-kms-adapter), and [Vault bootstrap KMS](security.md#vault-bootstrap-kms). |
+| `/scripts/homelab/` | Python tool installation, validation, secret transport, orchestration; planned workstation unseal helper, [Talos KMS adapter](security/security.md#talos-kms-adapter), and [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms). |
 | `/scripts/bash/` | Small shell helpers. |
 | `/charts/<chart>/` | Chart definition, values, templates, dependency locks. |
 | `/tofu/modules/<module>/` | Shared definitions without credentials or ownership of other scopes' state. |
@@ -118,7 +119,7 @@ Use stable disk identities and validate mappings, especially through USB adapter
 
 The inventory identifies protected storage: Vault/Backup data mirrors, Metal's non-`piraeus` ZFS pools, old NAS storage, and worker3's separate `ethereum` XFS filesystem.
 
-Manual-pool declarations may drive non-destructive checks/integration. Import, unlock, mounting, or volume provisioning need separately defined automation; missing/unexpected storage is an error, never grounds to recreate a pool. Destructive maintenance belongs in manual runbooks. Encryption requirements belong in [security.md](security.md#disk-encryption-and-opentofu).
+Manual-pool declarations may drive non-destructive checks/integration. Import, unlock, mounting, or volume provisioning need separately defined automation; missing/unexpected storage is an error, never grounds to recreate a pool. Destructive maintenance belongs in manual runbooks. Encryption requirements belong in [security.md](security/security.md#disk-encryption-and-opentofu).
 
 ## UPS shutdown coordinators
 
@@ -135,7 +136,7 @@ Use one `/support/ups/` scope because a coordinator serves both Vault and Backup
 | `ansible/templates/` | Non-secret service templates. |
 | `ansible/requirements.yml` | Pinned external roles/collections if selected. |
 
-Raspberry Pi OS Lite and Ansible are tentative choices. The Vault/Backup coordinator also hosts the planned [Vault bootstrap KMS](security.md#vault-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. OpenTofu has no assigned coordinator role. Shutdown software, credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security.md#secret-handling-boundary).
+Raspberry Pi OS Lite and Ansible are tentative choices. The Vault/Backup coordinator also hosts the planned [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. OpenTofu has no assigned coordinator role. Shutdown software, credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security/security.md#secret-handling-boundary).
 
 ### Power-loss shutdown and manual startup
 
@@ -164,11 +165,11 @@ Each runbook states scope, prerequisites, secret-source references, expected sta
 | `replace-zfs-mirror-member.md` | Replace deliberately; verify resilvering. |
 | `replace-md-raid1-os-disk.md` | Replace OS member; restore bootability and verify. |
 | `recover-piraeus-volume.md` | Recover replicas/placement after failure or maintenance. |
-| `recover-encryption-access.md` | Recover/rotate unlock access under [security.md](security.md). |
+| `recover-encryption-access.md` | Recover/rotate unlock access under [security.md](security/security.md). |
 | `unseal-openbao.md` | Workstation/YubiKey unseal with memory-only secret handling. |
 | `operate-talos-kms.md` | Deploy/verify the adapter, rotate transit keys, and recover dependent-node unlock. |
 | `operate-vault-bootstrap-kms.md` | Configure/recover the coordinator KMS, touch-authorized sessions, DNS-01 renewal, time readiness, and network hardening. |
-| `configure-yubikey-challenge-response.md` | Write the [specified configuration runbook](security.md#planned-yubikey-configuration-runbook). |
+| `configure-yubikey-challenge-response.md` | Write the [specified configuration runbook](security/security.md#planned-yubikey-configuration-runbook). |
 | `restore-openbao.md` | Implement/test [snapshot recovery to a replacement Pi 4 or memory-backed workstation container](backup-and-restore.md#required-recovery-targets). |
 | `ups-shutdown-and-startup.md` | Verify shutdown, stay-off behavior, manual dependency-ordered startup. |
 

@@ -2,7 +2,7 @@
 
 **Planned design:** The v1 challenge/wrapping format is selected; concrete lookup identifiers remain proposed. Programming, helpers, and credential records are not implemented.
 
-This document owns the lookup catalogue. Hardware inventory belongs in [inventory.md](inventory.md#security-keys); golden-key custody, secret handling, and encryption policy belong in [security.md](security.md); recovery requirements belong in [backup-and-restore.md](backup-and-restore.md).
+This document owns the lookup catalogue. Hardware inventory belongs in [inventory.md](../inventory.md#security-keys); golden-key custody, secret handling, and encryption policy belong in [security.md](security.md); recovery requirements belong in [backup-and-restore.md](../backup-and-restore.md).
 
 ## Model
 
@@ -127,4 +127,4 @@ Each registered credential needs its exact identifier, consumer, encrypted-paylo
 
 Record identifiers and metadata only. Never record golden-key bytes, HMAC responses, derived keys, or plaintext credentials.
 
-Retain required older generations and payloads until migration and restore tests pass. Public protocol metadata must also appear in every standalone [Emergency Recovery Guide](emergency-recovery-guide.md); encrypted credential records remain separate from its documentation USB.
+Retain required older generations and payloads until migration and restore tests pass. Public protocol metadata must also appear in every standalone [Emergency Recovery Guide](../emergency-recovery-guide.md); encrypted credential records remain separate from its documentation USB.

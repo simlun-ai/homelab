@@ -12,13 +12,13 @@ Encrypted persistence in cluster services, remote state, and backups is allowed,
 
 ## Core-secret foundation
 
-**Decision:** The **20-byte golden key** held in the four [inventory YubiKeys](inventory.md#security-keys) is the root of trust for **all homelab secrets**, through **OTP HMAC-SHA1 challenge-response**. Secrets are derived from its responses, wrapped under response-derived keys, or protected by OpenBao, whose unseal material is wrapped under this foundation. Generated or externally issued secrets are not necessarily deterministic derivatives of the golden key.
+**Decision:** The **20-byte golden key** held in the four [inventory YubiKeys](../inventory.md#security-keys) is the root of trust for **all homelab secrets**, through **OTP HMAC-SHA1 challenge-response**. Secrets are derived from its responses, wrapped under response-derived keys, or protected by OpenBao, whose unseal material is wrapped under this foundation. Generated or externally issued secrets are not necessarily deterministic derivatives of the golden key.
 
 We treat the YubiKeys as **mini hardware security modules (HSMs)** for the homelab: they hold the golden key and perform HMAC-SHA1 challenge-response on-device, with physical touch required.
 
 - Program all four with the same **golden key** and challenge-processing settings: identical effective challenge bytes must produce identical responses.
 - Require physical touch for every hardware challenge-response operation.
-- Keep the tokens at four separate locations, each with a USB stick carrying the non-secret [Emergency Recovery Guide](emergency-recovery-guide.md).
+- Keep the tokens at four separate locations, each with a USB stick carrying the non-secret [Emergency Recovery Guide](../emergency-recovery-guide.md).
 - Keep the golden key separately offline for replacement-token programming and software recovery.
 - Inspect existing OTP slots before selecting a slot; do not overwrite an occupied slot without explicit approval.
 
@@ -80,7 +80,7 @@ The caller supplies the expected `key_id` and allowed root generation independen
 - Updating or rewrapping a record increments `revision` and generates fresh salt and nonce. The identifier's `r1` suffix tracks the wrapping-context generation separately.
 - Changing `r1` to `r2` changes the HMAC response. Every token holding the same golden key can calculate either; revoking a lost token requires replacing that shared key, rewrapping records, and rotating underlying credentials where old records could expose them.
 - Authentication does not prevent replay of an older valid record. Enforcing freshness requires an independently trusted expected revision or record digest; its storage and recovery mechanism remain TBD.
-- Preserve the root generation, exact identifier, encrypted record, and any trusted freshness metadata needed for each retained disk or backup. HMAC cannot reconstruct externally issued credentials or OpenBao-generated material. Independent-access requirements belong in [backup-and-restore.md](backup-and-restore.md#independent-recovery-material).
+- Preserve the root generation, exact identifier, encrypted record, and any trusted freshness metadata needed for each retained disk or backup. HMAC cannot reconstruct externally issued credentials or OpenBao-generated material. Independent-access requirements belong in [backup-and-restore.md](../backup-and-restore.md#independent-recovery-material).
 - Keep responses and derived keys within their authorized memory-only lifetime. KMS expiry must discard both, including copies that could recreate wrapping authority.
 
 Use Python `cryptography`'s HKDF and AESGCM APIs plus an RFC 8785-compatible serializer; dependency versions and packaging remain TBD. Before use, verify public test vectors with disposable test keys, matching behavior across all four tokens and the software fallback, malformed/tampered records, identifier substitution, rotation, and memory handling. Never use or publish real golden-key responses as test vectors.
@@ -89,23 +89,23 @@ Challenge-response needs helper logic; it is not native ZFS unlock integration o
 
 ## Vault and runtime secret delivery
 
-[Vault's independent bootstrap](clusters.md#vault) requires manual secret supply. Manual disk unlock and OpenBao unseal are acceptable during operator-controlled startup.
+[Vault's independent bootstrap](../clusters.md#vault) requires manual secret supply. Manual disk unlock and OpenBao unseal are acceptable during operator-controlled startup.
 
 Application/service secrets are fetched from OpenBao; dependent clusters use External Secrets Operator where applicable. A helper on the workstation queries a YubiKey with touch, derives the wrapping key, unwraps the required unseal material, and unseals OpenBao entirely in memory. This is operator-driven unseal, not native YubiKey auto-unseal. The wrapping format is defined above; helper integration and delivery into Talos, scripts, and OpenTofu remain TBD. Encrypted payload storage in Git is undecided.
 
-Touch is required when querying a token, not for each scheduled backup. Runtime credentials may be provisioned at setup and held securely server-side; backup-job authentication and lifecycle belong in [backup-and-restore.md](backup-and-restore.md#openbao-online-backups).
+Touch is required when querying a token, not for each scheduled backup. Runtime credentials may be provisioned at setup and held securely server-side; backup-job authentication and lifecycle belong in [backup-and-restore.md](../backup-and-restore.md#openbao-online-backups).
 
 ## Disk encryption and OpenTofu
 
 - **All ZFS storage:** require encryption, including Piraeus backing storage and manual pools. Native ZFS encryption needs dataset/zvol coverage and inheritance checks; it does not encrypt all pool metadata. Layer and provisioning sequence are TBD.
 - **OS disks:** All clusters target Talos KMS-backed LUKS2 encryption for sensitive system volumes, including `STATE` and `EPHEMERAL`. Vault uses the independent [coordinator KMS](#vault-bootstrap-kms); Backup, Pi, and Metal use the [OpenBao-backed adapter](#talos-kms-adapter). This does not encrypt every boot partition. Validate volume coverage and compatibility with the assigned OS disks/MD RAID1 on each platform.
-- **Manual pools:** preparation and migration must preserve the [manual-storage boundary](layout.md#provisioning-and-storage-ownership).
-- **OpenTofu:** encrypted remote state is allowed. Secret-bearing state, plans, provider output, and failure-recovery files must stay off workstation disk. Backend, locking, key delivery, and provider behavior are TBD; state ownership belongs in [layout.md](layout.md#common-cluster-layout).
+- **Manual pools:** preparation and migration must preserve the [manual-storage boundary](../layout.md#provisioning-and-storage-ownership).
+- **OpenTofu:** encrypted remote state is allowed. Secret-bearing state, plans, provider output, and failure-recovery files must stay off workstation disk. Backend, locking, key delivery, and provider behavior are TBD; state ownership belongs in [layout.md](../layout.md#common-cluster-layout).
 - **Bootstrap:** Vault's state backend and unlock services must work before its protected storage or OpenBao is available.
 
 ## Vault bootstrap KMS
 
-**Decision:** Run a dedicated Python gRPC Talos KMS service on the [Vault/Backup UPS coordinator](inventory.md#shared-infrastructure), serving Vault only. It must work without OpenBao, a Kubernetes cluster, or a workstation. UPS shutdown management remains operational while KMS is locked.
+**Decision:** Run a dedicated Python gRPC Talos KMS service on the [Vault/Backup UPS coordinator](../inventory.md#shared-infrastructure), serving Vault only. It must work without OpenBao, a Kubernetes cluster, or a workstation. UPS shutdown management remains operational while KMS is locked.
 
 - Use purpose-specific YubiKey challenges and the [v1 wrapping format](#challenges-derivation-and-wrapped-credentials) for Talos-generated unlock material. Talos retains the sealed payload in LUKS metadata; node/volume-to-identifier mapping, gRPC payload integration, and recovery copies remain TBD.
 - A touched YubiKey enables a short boot session covering system-volume unlock and retries. Keep KMS responses and wrapping keys only in memory and discard them, including copies, when the window expires; already unlocked volumes continue running. Subsequent unlock requires another authorized session; duration and operator controls are TBD.
@@ -116,7 +116,7 @@ Touch is required when querying a token, not for each scheduled backup. Runtime 
 
 Startup is **coordinator/time readiness → YubiKey-authorized KMS session → Vault system-volume unlock → manual ZFS unlock and workstation/YubiKey OpenBao unseal → transit/KMS readiness → dependent clusters**. Starting hosts remains operator-controlled.
 
-Independent coordinator-loss recovery remains TBD in [backup-and-restore.md](backup-and-restore.md#independent-recovery-material). The [temporary OpenBao container recovery path](backup-and-restore.md#required-recovery-targets) bypasses the coordinator to recover OpenBao access; it does not by itself restore Vault's Talos unlock service.
+Independent coordinator-loss recovery remains TBD in [backup-and-restore.md](../backup-and-restore.md#independent-recovery-material). The [temporary OpenBao container recovery path](../backup-and-restore.md#required-recovery-targets) bypasses the coordinator to recover OpenBao access; it does not by itself restore Vault's Talos unlock service.
 
 ## Talos KMS adapter
 
@@ -145,7 +145,19 @@ Write `/runbooks/configure-yubikey-challenge-response.md` covering:
 
 ## Remaining decisions
 
-Programming protection and verification/rotation procedures remain TBD. Other open choices are marked in the relevant sections above.
+Topic placeholders for the remaining decisions and implementation work:
+
+- [Encrypted-record storage](encrypted-record-storage.md) — TBD.
+- [YubiKey setup](yubikey-setup.md) — TBD.
+- [Golden-key custody](golden-key-custody.md) — TBD.
+- [OpenBao unseal](openbao-unseal.md) — TBD.
+- [Credential catalogue](credential-catalogue.md) — TBD.
+- [Coordinator sessions](coordinator-sessions.md) — TBD.
+- [Helper implementation](helper-implementation.md) — TBD.
+- [Rotation and rollback](rotation-and-rollback.md) — TBD.
+- [Recovery procedures](recovery-procedures.md) — TBD.
+
+Existing decisions remain in this document and the [YubiKey catalogue](yubikey.md).
 
 ## Upstream references
 

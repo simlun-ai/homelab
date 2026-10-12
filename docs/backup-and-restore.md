@@ -6,7 +6,7 @@
 
 Recover Vault without its original node/disks, a running OpenBao instance, or another homelab cluster. Credentials, decryption/unseal material, encrypted payloads, helpers, and protocol metadata must be independently accessible.
 
-Recovery follows the [secret-handling boundary](security.md#secret-handling-boundary), [storage ownership rules](layout.md#provisioning-and-storage-ownership), and [manual startup policy](layout.md#power-loss-shutdown-and-manual-startup).
+Recovery follows the [secret-handling boundary](security/security.md#secret-handling-boundary), [storage ownership rules](layout.md#provisioning-and-storage-ownership), and [manual startup policy](layout.md#power-loss-shutdown-and-manual-startup).
 
 ## OpenBao online backups
 
@@ -21,11 +21,11 @@ Recovery follows the [secret-handling boundary](security.md#secret-handling-boun
 | Schedule / retention | TBD. |
 | Verification | Failed/partial exports or uploads must not count as success. Report failures and prove usability through a separate restore exercise; exact checks TBD. |
 
-Provision job credentials without circular recovery dependencies. R2 restore credentials may differ from upload credentials. Keep public destination/object metadata in the recovery guide; protect actual credentials under the [HMAC wrapping protocol](security.md#challenges-derivation-and-wrapped-credentials).
+Provision job credentials without circular recovery dependencies. R2 restore credentials may differ from upload credentials. Keep public destination/object metadata in the recovery guide; protect actual credentials under the [HMAC wrapping protocol](security/security.md#challenges-derivation-and-wrapped-credentials).
 
 ## Independent recovery material
 
-Use the [YubiKey or offline golden-key path](security.md#core-secret-foundation). For wrapped secrets, also recover the encrypted payload, root-key generation, exact identifier/public protocol parameters, and any independently trusted expected revision or record digest. The [v1 record and rotation rules](security.md#updates-rotation-and-recovery) apply.
+Use the [YubiKey or offline golden-key path](security/security.md#core-secret-foundation). For wrapped secrets, also recover the encrypted payload, root-key generation, exact identifier/public protocol parameters, and any independently trusted expected revision or record digest. The [v1 record and rotation rules](security/security.md#updates-rotation-and-recovery) apply.
 
 | Material | Needed for / independence requirement |
 | --- | --- |
@@ -39,7 +39,7 @@ Use the [YubiKey or offline golden-key path](security.md#core-secret-foundation)
 | Talos bootstrap/administration material | Rebuild Vault before its control plane or OpenBao is usable. |
 | Helpers, protocol metadata, compatible tools | Obtainable without the failed homelab. |
 
-Protected-payload locations remain TBD. Proposed credential lookups belong in [yubikey.md](yubikey.md); secret custody and handling in [security.md](security.md).
+Protected-payload locations remain TBD. Proposed credential lookups belong in [yubikey.md](security/yubikey.md); secret custody and handling in [security.md](security/security.md).
 
 ## Required recovery targets
 
@@ -60,15 +60,15 @@ Run isolated restore drills without the original Vault/coordinator or other clus
 
 ## Vault restore outline
 
-Recover/verify the [coordinator bootstrap KMS](security.md#vault-bootstrap-kms) before Vault system-volume unlock. Router/network, DNS, and public NTP must work independently; Internet is an accepted cold-start dependency. Coordinator-loss recovery and expired-certificate renewal must be tested without OpenBao or workstation-disk secrets.
+Recover/verify the [coordinator bootstrap KMS](security/security.md#vault-bootstrap-kms) before Vault system-volume unlock. Router/network, DNS, and public NTP must work independently; Internet is an accepted cold-start dependency. Coordinator-loss recovery and expired-certificate renewal must be tested without OpenBao or workstation-disk secrets.
 
 Plan `/runbooks/operate-vault-bootstrap-kms.md`, `/runbooks/bootstrap-vault.md`, and `/runbooks/restore-openbao.md` around the [Emergency Recovery Guide's restore outline](emergency-recovery-guide.md#restore-vault-and-openbao).
 
-After restoring OpenBao, verify transit key versions and KMS adapter readiness before starting dependent nodes. Verify snapshot coverage after transit key creation/rotation; an older snapshot may lack keys required by newer disks. The [startup dependency](security.md#talos-kms-adapter) must not depend on an encrypted Backup, Pi, or Metal node.
+After restoring OpenBao, verify transit key versions and KMS adapter readiness before starting dependent nodes. Verify snapshot coverage after transit key creation/rotation; an older snapshot may lack keys required by newer disks. The [startup dependency](security/security.md#talos-kms-adapter) must not depend on an encrypted Backup, Pi, or Metal node.
 
 ## Emergency Recovery Guide custody
 
-The **Homelab Recovery Kit** starts with one non-secret, standalone [Emergency Recovery Guide](emergency-recovery-guide.md) on each token's paired USB stick. Token and golden-key custody belong in [security.md](security.md#core-secret-foundation).
+The **Homelab Recovery Kit** starts with one non-secret, standalone [Emergency Recovery Guide](emergency-recovery-guide.md) on each token's paired USB stick. Token and golden-key custody belong in [security.md](security/security.md#core-secret-foundation).
 
 The documentation-only kit excludes secrets, secret-bearing configuration, and encrypted secret bundles; store protected payloads separately with independent access. Complete the guide with exact public protocol parameters, tool acquisition, backup locations, and validated recovery commands. It must work without other local documents or the homelab.
 
@@ -80,7 +80,7 @@ Other cluster data, manual pools, cluster state, and supporting hosts still need
 
 ## Planned work
 
-Implement and test the snapshot/upload job, settle the open decisions above, write the restore runbooks, and complete/distribute the tested recovery guide. YubiKey setup is tracked in [security.md](security.md#planned-yubikey-configuration-runbook); the runbook index is in [layout.md](layout.md#central-runbooks).
+Implement and test the snapshot/upload job, settle the open decisions above, write the restore runbooks, and complete/distribute the tested recovery guide. YubiKey setup is tracked in [security.md](security/security.md#planned-yubikey-configuration-runbook); the runbook index is in [layout.md](layout.md#central-runbooks).
 
 ## Upstream references
 
