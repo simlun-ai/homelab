@@ -67,6 +67,8 @@ All SSDs are inexpensive, DRAM-less, and 128 GB:
 
 Planned allocation: each node has an MD RAID1 OS pair and one Piraeus data SSD (10 OS + 5 data SSDs).
 
+Each of the five data SSDs forms a single-disk ZFS pool named `piraeus` to leverage ZFS checksumming. These pools follow the [Workload and Piraeus placement strategy](clusters.md#workload-and-piraeus-placement).
+
 | Node | Role | OS disk 1 | OS disk 2 | Piraeus data SSD |
 | --- | --- | --- | --- | --- |
 | Pi 1 | Control plane | Silicon Power A5X | Fanxiang S101 | Patriot P220 |
