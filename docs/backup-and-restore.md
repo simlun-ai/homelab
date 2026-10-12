@@ -39,7 +39,7 @@ Use the [YubiKey or offline golden-key path](security.md#core-secret-foundation)
 | Talos bootstrap/administration material | Rebuild Vault before its control plane or OpenBao is usable. |
 | Helpers, protocol metadata, compatible tools | Obtainable without the failed homelab. |
 
-Protected-payload locations remain TBD. Secret custody and handling belong in [security.md](security.md).
+Protected-payload locations remain TBD. Proposed credential lookups belong in [yubikey.md](yubikey.md); secret custody and handling in [security.md](security.md).
 
 ## Required recovery targets
 

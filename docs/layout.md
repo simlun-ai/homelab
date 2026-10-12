@@ -11,6 +11,7 @@
 | [Components](components.md) | Software catalog and versions; operational pins remain scope-owned. |
 | This document | Directory ownership, tool scopes, provisioning boundaries, operating entry points. |
 | [Security](security.md) | Core secrets, YubiKeys, custody, workstation handling, encryption. |
+| [YubiKey catalogue](yubikey.md) | Credential/use-case catalogue, lookup identifiers, challenge construction, unresolved bootstrap coverage. |
 | [Backup and restore](backup-and-restore.md) | Backup design, independent recovery dependencies, restore planning. |
 | [Emergency Recovery Guide](emergency-recovery-guide.md) | Standalone, non-secret USB recovery instructions. |
 

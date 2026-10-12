@@ -36,20 +36,11 @@ Offline format, location, access, and refresh/verification procedures remain TBD
 
 ## Challenges, derivation, and wrapped credentials
 
-The protocol remains TBD. Version the exact challenge bytes, encoding, length/padding, purpose identifiers, output encoding, and any downstream key derivation or authenticated wrapping. Preserve public recovery parameters in the Emergency Recovery Guide.
+The [YubiKey catalogue](yubikey.md) owns use cases, proposed lookup identifiers, and challenge construction. The protocol is not implemented or verified; HMAC slot, downstream derivation, wrapping, and payload format remain TBD. Version exact challenge processing, output encoding, and derivation/wrapping parameters, and preserve public recovery parameters in the Emergency Recovery Guide.
 
 Use purpose-specific challenges and a documented key derivation scheme to turn HMAC responses into suitable wrapping keys. Helpers use authenticated encryption to wrap/unwrap secret payloads; HMAC-SHA1 itself is not an encryption algorithm. Exact algorithms and payload format remain TBD.
 
-| Secret role | Intended use of HMAC foundation |
-| --- | --- |
-| Manual ZFS data-pool unlock | Wrap/unwrap encryption keys using HMAC-response-derived keys; helper integration TBD. |
-| OpenBao unseal/recovery | Workstation helper unwraps OpenBao-generated unseal material using a YubiKey response, then submits it to OpenBao; share/threshold TBD. |
-| Vault Talos system-volume unlock | Dedicated coordinator KMS wraps/unwraps Talos-generated unlock material using the YubiKey foundation; see [Vault bootstrap KMS](#vault-bootstrap-kms). |
-| Coordinator KMS TLS and DNS-01 credentials | Wrap private keys and the DNS API credential; decrypt only into coordinator memory after touch. |
-| Dependent Talos system-volume unlock | Talos KMS adapter delegates sealing/unsealing to OpenBao transit; see below. |
-| Application/service secrets | Fetch from OpenBao after unseal, rather than querying a YubiKey for each secret. |
-| R2 restore access | Wrap externally issued credentials. |
-| Talos bootstrap/administration and other core secrets | Specify derivation/wrapping in a versioned recovery manifest; format TBD. |
+Direct YubiKey lookups, manual ZFS keys, OpenBao-mediated secrets, and unresolved bootstrap coverage are listed once in [yubikey.md](yubikey.md).
 
 HMAC cannot recreate externally issued credentials or OpenBao-generated material. Wrapped secrets require both the HMAC path and a recoverable encrypted payload; independent-access requirements belong in [backup-and-restore.md](backup-and-restore.md#independent-recovery-material).
 

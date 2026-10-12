@@ -12,7 +12,7 @@ All entries must be non-secret.
 | --- | --- |
 | Guide revision / repository commit; last verified restore | TBD. |
 | Core-secret protocol version and YubiKey HMAC slot | TBD; touch required. |
-| Effective challenge bytes, encoding, purpose identifiers, length/padding | TBD; match tokens and software fallback. |
+| Effective challenge bytes, encoding, purpose identifiers, length/padding | TBD pending implementation/verification of the catalogue proposal; embed the finalized protocol here and match tokens/software fallback. |
 | Derivation/wrapping algorithms, output encoding, public parameters | TBD. |
 | Snapshot OpenBao version, ARM64 Pi and workstation recovery images/tools; independent acquisition locations | TBD. |
 | Container memory mounts, required RAM, runtime/swap/logging checks; tested Pi/container procedures | TBD. |
@@ -72,6 +72,7 @@ Fill every recovery-critical field and embed exact acquisition, operating, and f
 These references do not replace embedded emergency instructions.
 
 - Policies: `docs/security.md` and `docs/backup-and-restore.md`.
+- Credential catalogue and proposed lookup/challenge format: `docs/yubikey.md`. Embed finalized recovery-critical identifiers and protocol parameters here before distributing the guide.
 - Planned runbooks: `runbooks/configure-yubikey-challenge-response.md`, `runbooks/bootstrap-vault.md`, `runbooks/restore-openbao.md`, `runbooks/unseal-openbao.md`, `runbooks/operate-talos-kms.md`, `runbooks/operate-vault-bootstrap-kms.md`.
 - [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/).
 - [Yubico personalization manual](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html).

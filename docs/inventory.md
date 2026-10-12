@@ -181,7 +181,7 @@ Three Eaton UPS units protect Metal:
 
 ## Security keys
 
-Four YubiKeys available; planned use and configuration belong in [security.md](security.md#core-secret-foundation).
+Four YubiKeys available; use cases and proposed lookups belong in [yubikey.md](yubikey.md), and configuration/custody policy in [security.md](security.md#core-secret-foundation).
 
 | Model | Firmware | Enabled interfaces | Quantity |
 | --- | --- | --- | --- |
