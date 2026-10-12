@@ -107,12 +107,12 @@ Touch is required when querying a token, not for each scheduled backup. Runtime 
 
 ## Vault bootstrap KMS
 
-**Decision:** Run a dedicated Python gRPC Talos KMS service on the [Vault/Backup UPS coordinator](../inventory.md#shared-infrastructure), serving Vault only. It must work without OpenBao, a Kubernetes cluster, or a workstation. UPS shutdown management remains operational while KMS is locked.
+**Decision:** Run a dedicated Python gRPC Talos KMS service on the [Vault/Backup UPS coordinator](../inventory.md#shared-infrastructure), serving Vault only. It must work without OpenBao or a Kubernetes cluster and operate independently of the workstation after [SSH authorization](coordinator-sessions.md). UPS shutdown management remains operational while KMS is locked.
 
 - Use purpose-specific YubiKey challenges and the [v1 wrapping format](#challenges-derivation-and-wrapped-credentials) for Talos-generated unlock material. Talos retains the sealed payload in LUKS metadata; node/volume-to-identifier mapping, gRPC payload integration, and recovery copies remain TBD.
-- A touched YubiKey enables a short boot session covering system-volume unlock and retries. Keep KMS responses and wrapping keys only in memory and discard them, including copies, when the window expires; already unlocked volumes continue running. Subsequent unlock requires another authorized session; duration and operator controls are TBD.
+- Authorize a one-hour KMS boot window from the workstation over SSH using the operator's existing SSH key and account. The YubiKey stays in the laptop; delivery, expiry, and operator controls belong in [coordinator sessions](coordinator-sessions.md).
 - Serve TLS with a publicly trusted certificate, renewed through DNS-01 on the coordinator independently of Vault's cert-manager/OpenBao. No private CA or custom Talos build is planned for KMS trust.
-- Persist the DNS API credential and TLS private key only as authenticated encrypted payloads under separate YubiKey-derived wrapping contexts. After touch, retain plaintext only in coordinator process memory for its running lifetime, independently of the shorter KMS window. Restart/power loss requires touch again. Apply the same protection to ACME account/bootstrap secrets; prevent credential files, swap, dumps, and persistent secret logs. ACME integration and renewal/storage behavior require validation.
+- Persist DNS API, TLS private-key, and ACME account/bootstrap secrets only as authenticated encrypted payloads under separate YubiKey-derived contexts. The workstation unwraps them after touch and supplies plaintext over SSH for coordinator process-memory use under the [session policy](coordinator-sessions.md). ACME integration and renewal/storage behavior require validation.
 - Coordinator and Vault use the same public NTP service. Working Internet/time service is an accepted cold-start dependency; no RTC is required. Configure Vault's networking, DNS, and NTP before encrypted `STATE` loads, using boot-level settings. Establish usable time before TLS-dependent operations; endpoints and cold-boot synchronization/KMS retry tests are TBD.
 - **Trusted-network boundary:** TLS authenticates the coordinator to Vault. The stock Talos KMS client does not present client credentials; request UUIDs are identifiers, not authentication. The trusted network is accepted as the client admission boundary. Make an effort to secure communication between these hosts; additional network restrictions/hardening are **TBD exactly how**. Fail closed on locked state, expiry, or unwrap errors.
 
@@ -154,7 +154,7 @@ Topic placeholders for the remaining decisions and implementation work:
 - [Golden-key custody](golden-key-custody.md) — decision approved; backup and recovery verification pending.
 - [OpenBao unseal](openbao-unseal.md) — unseal decision approved; implementation, recovery administration, and restore verification pending.
 - [Credential catalogue](credential-catalogue.md) — catalogue rules approved; concrete entries and implementation pending.
-- [Coordinator sessions](coordinator-sessions.md) — TBD.
+- [Coordinator sessions](coordinator-sessions.md) — decision approved; implementation and verification pending.
 - [Helper implementation](helper-implementation.md) — TBD.
 - [Rotation and rollback](rotation-and-rollback.md) — TBD.
 - [Recovery procedures](recovery-procedures.md) — TBD.

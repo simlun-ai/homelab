@@ -63,7 +63,7 @@ These identifiers propose coverage for the credential roles already documented i
 | `vault/talos/administration/r1` | Talos administration credentials. | Operator tooling. |
 | `vault/kubernetes/administration/r1` | Kubernetes administration credentials. | Operator tooling. |
 
-The KMS wrapping authority expires after its short boot session. Coordinator DNS, TLS, and ACME plaintext may remain in process memory for the coordinator's running lifetime, as specified in [security.md](security.md#vault-bootstrap-kms).
+KMS authority and coordinator credentials are supplied from the workstation over SSH under the [session policy](coordinator-sessions.md): KMS expires after one hour; DNS, TLS, and ACME plaintext lasts for the coordinator process lifetime.
 
 The selected Shamir seal uses an unseal share, not auto-unseal recovery keys. Recovery administration access is separate and remains TBD in the [unseal policy](openbao-unseal.md).
 
