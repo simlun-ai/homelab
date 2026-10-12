@@ -41,17 +41,30 @@ Use the [YubiKey or offline golden-key path](security.md#core-secret-foundation)
 
 Protected-payload locations remain TBD. Secret custody and handling belong in [security.md](security.md).
 
+## Required recovery targets
+
+Both paths restore OpenBao from an R2 Raft snapshot and independently held, YubiKey-wrapped unseal material. Neither path is implemented or tested.
+
+| Target | Required outcome |
+| --- | --- |
+| Replacement Raspberry Pi 4 | Rebuild the full single-node Talos Vault cluster, including independent coordinator KMS access, manually managed encrypted ZFS storage, OpenBao, and foundation services. |
+| Linux container on a trusted workstation | Recover a temporary single-node OpenBao instance without Talos, Kubernetes, ZFS, or the coordinator; allow recovery access to secrets and transit keys. |
+
+Start with the OpenBao version recorded for the snapshot and a pinned, independently obtainable recovery image/binary. Preserve non-secret server configuration and required plugin/secret references separately: a Raft snapshot is not a complete host or Kubernetes backup.
+
+The container uses a normal Raft-backed server with its storage, snapshot input, secret-bearing configuration, and temporary files on verified memory-backed mounts, not development mode or the in-memory storage backend. Prevent writes to the container's disk-backed writable layer, host volumes, engine credential metadata/logs, swap, hibernation, and dumps. Verify the actual workstation/container runtime, including any VM-backed engine; RAM capacity and exact launch configuration remain TBD. Termination loses the temporary restored state; preserve any required recovery changes as a fresh encrypted snapshot through a compliant transfer before teardown.
+
+Document both branches in `/runbooks/restore-openbao.md`. Prove snapshot retrieval and identity/integrity, the exact initialize/restore/reseal/unseal sequence, recovery administration access, representative secret reads, and transit decryption of previously sealed test material. New-instance unseal material does not replace the material associated with the snapshot; any forced restore bypasses consistency checks, not encryption.
+
+Run isolated restore drills without the original Vault/coordinator or other clusters. Test ARM64 Pi restoration and the actual workstation architecture/runtime, a separately held token/guide pair, and the offline golden-key fallback. Record snapshot identity/version, recovery time, required RAM, and verification results without secret output; check workstation-disk compliance. Pi recovery additionally verifies manual-storage preservation, cold boot, dependent-node unlock, and resumed backups.
+
 ## Vault restore outline
 
 Recover/verify the [coordinator bootstrap KMS](security.md#vault-bootstrap-kms) before Vault system-volume unlock. Router/network, DNS, and public NTP must work independently; Internet is an accepted cold-start dependency. Coordinator-loss recovery and expired-certificate renewal must be tested without OpenBao or workstation-disk secrets.
 
 Plan `/runbooks/operate-vault-bootstrap-kms.md`, `/runbooks/bootstrap-vault.md`, and `/runbooks/restore-openbao.md` around the [Emergency Recovery Guide's restore outline](emergency-recovery-guide.md#restore-vault-and-openbao).
 
-Validate snapshot identity/integrity, replacement-node bootstrap, the exact initialization/seal/restore/unseal sequence, expected secrets and authentication/policies, dependent Vault services, and resumed backups. Use the seal/unseal material associated with the selected snapshot; newly initialized material must not be assumed to unlock an older backup.
-
-After restoring OpenBao, verify transit key versions and KMS adapter readiness before starting dependent nodes. Include a cold-boot unlock test and snapshot coverage after transit key creation/rotation; an older snapshot may lack keys required by newer disks. The [startup dependency](security.md#talos-kms-adapter) must not depend on an encrypted Backup, Pi, or Metal node.
-
-Test recovery from a separately held token/guide pair and through the golden-key software fallback, without workstation-disk secrets.
+After restoring OpenBao, verify transit key versions and KMS adapter readiness before starting dependent nodes. Verify snapshot coverage after transit key creation/rotation; an older snapshot may lack keys required by newer disks. The [startup dependency](security.md#talos-kms-adapter) must not depend on an encrypted Backup, Pi, or Metal node.
 
 ## Emergency Recovery Guide custody
 
@@ -74,3 +87,5 @@ Implement and test the snapshot/upload job, settle the open decisions above, wri
 - [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/).
 - [OpenBao Raft commands](https://openbao.org/docs/commands/operator/raft/).
 - [OpenBao security model](https://openbao.org/docs/internals/security/).
+- [OpenBao Raft storage configuration](https://openbao.org/docs/configuration/storage/raft/).
+- [Docker tmpfs mounts](https://docs.docker.com/engine/storage/tmpfs/) (including host swap caveats).

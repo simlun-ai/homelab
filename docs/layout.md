@@ -168,7 +168,7 @@ Each runbook states scope, prerequisites, secret-source references, expected sta
 | `operate-talos-kms.md` | Deploy/verify the adapter, rotate transit keys, and recover dependent-node unlock. |
 | `operate-vault-bootstrap-kms.md` | Configure/recover the coordinator KMS, touch-authorized sessions, DNS-01 renewal, time readiness, and network hardening. |
 | `configure-yubikey-challenge-response.md` | Write the [specified configuration runbook](security.md#planned-yubikey-configuration-runbook). |
-| `restore-openbao.md` | Implement the [restore plan](backup-and-restore.md#vault-restore-outline). |
+| `restore-openbao.md` | Implement/test [snapshot recovery to a replacement Pi 4 or memory-backed workstation container](backup-and-restore.md#required-recovery-targets). |
 | `ups-shutdown-and-startup.md` | Verify shutdown, stay-off behavior, manual dependency-ordered startup. |
 
 ## Open decisions

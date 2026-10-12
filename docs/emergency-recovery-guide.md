@@ -14,7 +14,8 @@ All entries must be non-secret.
 | Core-secret protocol version and YubiKey HMAC slot | TBD; touch required. |
 | Effective challenge bytes, encoding, purpose identifiers, length/padding | TBD; match tokens and software fallback. |
 | Derivation/wrapping algorithms, output encoding, public parameters | TBD. |
-| Compatible OpenBao and recovery-tool versions; independent acquisition locations | TBD. |
+| Snapshot OpenBao version, ARM64 Pi and workstation recovery images/tools; independent acquisition locations | TBD. |
+| Container memory mounts, required RAM, runtime/swap/logging checks; tested Pi/container procedures | TBD. |
 | Tool and backup integrity/checksum verification | TBD. |
 | R2 account, endpoint, bucket, object convention; snapshot selection | TBD. |
 | Additional backup-encryption details | TBD. |
@@ -52,19 +53,19 @@ Replacement programming must use the same key/settings with **touch required**, 
 
 ## Restore Vault and OpenBao
 
-OpenBao backups are online Raft snapshots uploaded by a job inside Vault to Cloudflare R2.
+OpenBao backups are online Raft snapshots uploaded by a job inside Vault to Cloudflare R2. Required targets are a full Vault rebuild on a replacement Raspberry Pi 4 and temporary OpenBao recovery in a Linux container on a trusted workstation. Both require documented, tested procedures; neither is verified yet. Start with the OpenBao version recorded for the snapshot and independently obtainable configuration/tools.
 
 1. Recover R2 access and any wrapped/decryption material.
 2. Select a snapshot and validate its recorded identity/integrity; do not stage it on workstation disk.
-3. Recover/start the coordinator and establish time, DNS, and valid public KMS TLS. Touch a YubiKey to enable its independent KMS boot session, then bootstrap/unlock single-node Talos Vault infrastructure as needed, preserving manual ZFS storage. Coordinator rebuild, expired-certificate renewal, and exact commands remain TBD.
+3. Choose a target. **Full Pi 4 rebuild:** recover/start the coordinator, establish time/DNS/public KMS TLS, touch a YubiKey for the KMS boot session, and bootstrap/unlock Talos while preserving manual ZFS storage. **Temporary container:** run a normal single-node Raft-backed OpenBao server with data, snapshot input, secret-bearing configuration, and temporary files on verified memory-backed mounts. It needs no Talos/coordinator. Prevent disk writes through writable layers, host volumes, swap/hibernation, dumps, and engine metadata/logs; account for VM-backed runtimes. Exact commands and resource sizing remain TBD.
 4. Restore the snapshot with its corresponding seal/unseal material. Use the workstation helper and a touched YubiKey (or the software fallback) to unwrap and submit the required unseal material in memory. **Exact initialization, restore, and unseal ordering is TBD and must be validated; new-instance material may not unlock an older snapshot.**
-5. Verify expected secrets, authentication/policies, certificate distribution, and resumed encrypted snapshot uploads to R2.
-6. Restore/verify the Python gRPC KMS adapter and required OpenBao transit key versions. Backup, Pi, and Metal need this service to unlock Talos system volumes; Vault must unlock independently. An older snapshot may lack transit keys required by newer disks. Verify early-boot network access and TLS trust before starting nodes.
-7. Start dependent clusters manually, one machine at a time, checking KMS unlock, dependencies, and storage.
+5. Verify recovery administration access, expected secrets/authentication/policies, and transit decryption of previously sealed test material. Keep drills isolated from production integrations. For full Pi recovery, also verify certificate distribution and resumed encrypted snapshot uploads. For a temporary container, preserve any required changes in a fresh encrypted snapshot through compliant transfer before teardown; memory-backed state is lost when the container ends.
+6. For full Pi recovery, restore/verify the Python gRPC KMS adapter and required OpenBao transit key versions. Backup, Pi, and Metal need this service to unlock Talos system volumes; Vault must unlock independently. An older snapshot may lack transit keys required by newer disks. Verify early-boot network access and TLS trust before starting nodes.
+7. After foundation services are restored and verified, start dependent clusters manually, one machine at a time, checking KMS unlock, dependencies, and storage. A temporary OpenBao container alone does not restore the cluster's KMS endpoints or other services.
 
 ## Complete before distributing a usable kit
 
-Fill every recovery-critical field and embed exact acquisition, operating, and failure-handling commands in this file. Test touch enforcement and matching responses across all tokens and the software fallback without recording secret output. Prove an R2 restore with a separately held token/guide pair and with the golden-key fallback. Refresh every USB copy after relevant changes.
+Fill every recovery-critical field and embed exact acquisition, operating, and failure-handling commands in this file. Test touch enforcement and matching responses across all tokens and the software fallback without recording secret output. Prove both replacement-Pi and workstation-container R2 restores with a separately held token/guide pair and with the golden-key fallback, without the original Vault/coordinator or workstation-disk secrets. Refresh every USB copy after relevant changes.
 
 ## Maintenance references
 

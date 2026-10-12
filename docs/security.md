@@ -84,7 +84,7 @@ Touch is required when querying a token, not for each scheduled backup. Runtime 
 
 Startup is **coordinator/time readiness → YubiKey-authorized KMS session → Vault system-volume unlock → manual ZFS unlock and workstation/YubiKey OpenBao unseal → transit/KMS readiness → dependent clusters**. Starting hosts remains operator-controlled.
 
-Independent coordinator-loss recovery remains TBD in [backup-and-restore.md](backup-and-restore.md#independent-recovery-material).
+Independent coordinator-loss recovery remains TBD in [backup-and-restore.md](backup-and-restore.md#independent-recovery-material). The [temporary OpenBao container recovery path](backup-and-restore.md#required-recovery-targets) bypasses the coordinator to recover OpenBao access; it does not by itself restore Vault's Talos unlock service.
 
 ## Talos KMS adapter
 
