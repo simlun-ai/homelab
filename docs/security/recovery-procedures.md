@@ -1,5 +1,45 @@
 # Recovery procedures
 
-**TBD.**
+**Recovery requirements approved; commands and drills pending.**
 
-Actual commands, independent tool/payload acquisition, coordinator rebuild, replacement-Pi and workstation-container restore tests, and refresh procedures for the four full repository clones on the recovery USB sticks.
+Exact operating commands belong in the central runbooks and the standalone
+[Emergency Recovery Guide](../emergency-recovery-guide.md).
+[Backup architecture](../backup-and-restore.md) owns snapshot storage
+and restore targets.
+
+## Required scenarios
+
+| Scenario | Required proof |
+| --- | --- |
+| Token failure | Recover with another token; separately test the Level 1 golden-key software fallback. |
+| Coordinator loss | Rebuild without Vault/OpenBao, deploy wrapped records, restore independent SSH access and verified host identity, and authorize the existing node KMS key from the workstation. |
+| Vault loss | Restore to a replacement Raspberry Pi 4, preserving manual storage and restoring OpenBao from R2 with the corresponding unseal material. |
+| Emergency secret access | Restore OpenBao into a RAM-backed Linux container on a trusted workstation, without the original Vault or coordinator. |
+| Recovery-kit refresh | Update all four USB repository clones and verify required records, the guide, and independently usable recovery tooling. |
+
+Perform drills in isolation from production integrations and without
+relying on the failed infrastructure. Keep secrets and snapshots off
+workstation disk under the [handling policy](security.md#secret-handling-boundary).
+
+Internet access for R2, DNS, and public NTP remains an accepted dependency.
+Recovery tooling must be independently available under the
+[helper design](helper-implementation.md).
+
+## Evidence and completion
+
+Record the repository commit, snapshot identity, required key generations,
+tool versions, test result, and recovery time without secret output.
+
+Verify administrative access and representative secret reads. Where
+applicable, also verify disk unlock, transit decryption, manual-storage
+preservation, and resumed backups.
+
+A recovery procedure is complete only after successful testing on its
+required target. Written commands alone do not establish verified recovery.
+
+## Remaining implementation work
+
+Write and test acquisition, coordinator rebuild, Pi and container restore,
+failure-handling, and USB refresh commands. Record actual hardware/runtime
+details and resource requirements; complete the standalone recovery guide
+and refresh all four kits after recovery-critical changes.

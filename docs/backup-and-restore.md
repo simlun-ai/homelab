@@ -80,6 +80,8 @@ Other cluster data, manual pools, cluster state, and supporting hosts still need
 
 ## Planned work
 
+Required drill scenarios and completion evidence belong in [recovery procedures](security/recovery-procedures.md). Recovery is verified only after successful testing on the required target.
+
 Implement and test the snapshot/upload job, settle the open decisions above, write the restore runbooks, and complete/distribute the tested recovery guide. YubiKey setup is tracked in [security.md](security/security.md#planned-yubikey-configuration-runbook); the runbook index is in [layout.md](layout.md#central-runbooks).
 
 ## Upstream references

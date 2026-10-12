@@ -147,7 +147,7 @@ Write `/runbooks/configure-yubikey-challenge-response.md` covering:
 
 ## Remaining decisions
 
-Topic placeholders for the remaining decisions and implementation work:
+Approved topic decisions and remaining implementation work:
 
 - [Encrypted-record storage](encrypted-record-storage.md) — decision approved; implementation pending.
 - [YubiKey setup](yubikey-setup.md) — decision approved; programming and verification pending.
@@ -157,7 +157,7 @@ Topic placeholders for the remaining decisions and implementation work:
 - [Coordinator sessions](coordinator-sessions.md) — decision approved; implementation and verification pending.
 - [Helper implementation](helper-implementation.md) — helper and two-layer KMS design approved; implementation and verification pending.
 - [Rotation and rollback](rotation-and-rollback.md) — decision approved; procedures and verification pending. Strong rollback enforcement deferred.
-- [Recovery procedures](recovery-procedures.md) — TBD.
+- [Recovery procedures](recovery-procedures.md) — recovery requirements approved; commands and drills pending.
 
 Existing decisions remain in this document and the [YubiKey catalogue](yubikey.md).
 

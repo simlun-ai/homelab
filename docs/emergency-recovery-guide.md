@@ -97,6 +97,8 @@ OpenBao backups are online Raft snapshots uploaded by a job inside Vault to Clou
 
 ## Complete before distributing a usable kit
 
+Test token failure and the Level 1 fallback, coordinator rebuild with independent SSH access, replacement-Pi restore, RAM-backed container restore, and recovery-kit refresh. Record the repository commit, snapshot identity, key generations, tool versions, result, and recovery time without secrets. A procedure is verified only after successful testing on its required target.
+
 Fill every recovery-critical field and embed exact acquisition, operating, and failure-handling commands in this file. Test touch enforcement and matching responses across all tokens and the software fallback without recording secret output. Prove both replacement-Pi and workstation-container R2 restores with a separately held token/guide pair and with the golden-key fallback, without the original Vault/coordinator or workstation-disk plaintext secrets. Refresh and verify every USB repository clone after recovery-critical changes.
 
 ## Maintenance references
