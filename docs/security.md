@@ -4,7 +4,7 @@
 
 ## Secret-handling boundary
 
-Never commit core secrets or write them to workstation disk, including ignored files, temporary files, caches, shell history, logs, saved plans, local state, and crash dumps. Use process memory, streams, or a verified memory-only workspace; account for swap, hibernation, subprocesses, and failure paths.
+Never commit secrets or write them to workstation disk, including ignored files, temporary files, caches, shell history, logs, saved plans, local state, and crash dumps. Use process memory, streams, or a verified memory-only workspace; account for swap, hibernation, subprocesses, and failure paths.
 
 Public challenges, secret references, and protocol metadata may be committed. HMAC responses, derived values, golden-key material, and plaintext credentials or unseal/recovery material are secret. Keep them out of documentation, fixtures, and test output.
 
@@ -12,7 +12,7 @@ Encrypted persistence in cluster services, remote state, and backups is allowed,
 
 ## Core-secret foundation
 
-**Decision:** All core monorepo secrets rely on **OTP HMAC-SHA1 challenge-response** from the four [inventory YubiKeys](inventory.md#security-keys).
+**Decision:** The **20-byte golden key** held in the four [inventory YubiKeys](inventory.md#security-keys) is the root of trust for **all homelab secrets**, through **OTP HMAC-SHA1 challenge-response**. Secrets are derived from its responses, wrapped under response-derived keys, or protected by OpenBao, whose unseal material is wrapped under this foundation. Generated or externally issued secrets are not necessarily deterministic derivatives of the golden key.
 
 - Program all four with the same **golden key** and challenge-processing settings: identical effective challenge bytes must produce identical responses.
 - Require physical touch for every hardware challenge-response operation.
@@ -22,7 +22,7 @@ Encrypted persistence in cluster services, remote state, and backups is allowed,
 
 These are interchangeable copies of one HMAC secret, providing location redundancy rather than a multi-token threshold. OpenBao's Shamir share count and threshold are separate decisions.
 
-Yubico specifies a 20-byte HMAC secret. Verify programming/query tools and matching behavior on every actual device, including older Standard models; one modern CLI may not support all models.
+Verify programming/query tools and matching behavior on every actual device, including older Standard models; one modern CLI may not support all models.
 
 ## Golden key and software recovery
 
@@ -36,12 +36,14 @@ Offline format, location, access, and refresh/verification procedures remain TBD
 
 The protocol remains TBD. Version the exact challenge bytes, encoding, length/padding, purpose identifiers, output encoding, and any downstream key derivation or authenticated wrapping. Preserve public recovery parameters in the Emergency Recovery Guide.
 
-Use purpose-specific challenges or a documented derivation scheme. Sharing a golden key across tokens does not imply one response for every role; a shared disk-unlock key remains an option.
+Use purpose-specific challenges and a documented key derivation scheme to turn HMAC responses into suitable wrapping keys. Helpers use authenticated encryption to wrap/unwrap secret payloads; HMAC-SHA1 itself is not an encryption algorithm. Exact algorithms and payload format remain TBD.
 
 | Secret role | Intended use of HMAC foundation |
 | --- | --- |
-| Disk unlock | Derive an unlock value or unwrap existing key material; ZFS/Talos integration TBD. |
-| OpenBao unseal/recovery | Wrap OpenBao-generated material; share/threshold and wrapping TBD. |
+| Manual ZFS data-pool unlock | Wrap/unwrap encryption keys using HMAC-response-derived keys; helper integration TBD. |
+| OpenBao unseal/recovery | Workstation helper unwraps OpenBao-generated unseal material using a YubiKey response, then submits it to OpenBao; share/threshold TBD. |
+| Dependent Talos system-volume unlock | Talos KMS adapter delegates sealing/unsealing to OpenBao transit; see below. |
+| Application/service secrets | Fetch from OpenBao after unseal, rather than querying a YubiKey for each secret. |
 | R2 restore access | Wrap externally issued credentials. |
 | Talos bootstrap/administration and other core secrets | Specify derivation/wrapping in a versioned recovery manifest; format TBD. |
 
@@ -53,17 +55,29 @@ Challenge-response needs helper logic; it is not native ZFS unlock integration o
 
 [Vault's independent bootstrap](clusters.md#vault) requires manual secret supply. Manual disk unlock and OpenBao unseal are acceptable during operator-controlled startup.
 
-Dependent clusters may consume OpenBao secrets. Delivery into Talos, Kubernetes, scripts, and OpenTofu is TBD. An external secret service or SOPS + age may be evaluated, preserving this HMAC foundation and handling boundary; encrypted payload storage in Git is undecided.
+Application/service secrets are fetched from OpenBao; dependent clusters use External Secrets Operator where applicable. A helper on the workstation queries a YubiKey with touch, derives the wrapping key, unwraps the required unseal material, and unseals OpenBao entirely in memory. This is operator-driven unseal, not native YubiKey auto-unseal. Exact helper protocol and delivery into Talos, scripts, and OpenTofu remain TBD; encrypted payload storage in Git is undecided.
 
 Touch is required when querying a token, not for each scheduled backup. Runtime credentials may be provisioned at setup and held securely server-side; backup-job authentication and lifecycle belong in [backup-and-restore.md](backup-and-restore.md#openbao-online-backups).
 
 ## Disk encryption and OpenTofu
 
 - **All ZFS storage:** require encryption, including Piraeus backing storage and manual pools. Native ZFS encryption needs dataset/zvol coverage and inheritance checks; it does not encrypt all pool metadata. Layer and provisioning sequence are TBD.
-- **OS disks:** encryption is a goal. Validate Talos encryption with MD RAID1 on each platform. System-volume encryption does not establish encryption of every boot partition; assess a static STATE key stored in META against the intended protection.
+- **OS disks:** Backup, Pi, and Metal target Talos KMS-backed LUKS2 encryption for sensitive system volumes, including `STATE` and `EPHEMERAL`. This does not encrypt every boot partition. Validate volume coverage and compatibility with the assigned OS disks/MD RAID1 on each platform. Vault is excluded from this OpenBao-backed KMS path; its independent OS-unlock method remains TBD.
 - **Manual pools:** preparation and migration must preserve the [manual-storage boundary](layout.md#provisioning-and-storage-ownership).
 - **OpenTofu:** encrypted remote state is allowed. Secret-bearing state, plans, provider output, and failure-recovery files must stay off workstation disk. Backend, locking, key delivery, and provider behavior are TBD; state ownership belongs in [layout.md](layout.md#common-cluster-layout).
 - **Bootstrap:** Vault's state backend and unlock services must work before its protected storage or OpenBao is available.
+
+## Talos KMS adapter
+
+**Decision:** Implement a small Python service using the [Talos KMS protocol](https://github.com/siderolabs/kms-client/blob/main/api/kms/kms.proto), with OpenBao's transit engine performing the cryptography. The protocol is **gRPC**, with `Seal` and `Unseal` RPCs, not a plain HTTP/JSON web API.
+
+- `Seal`: pass the Talos-generated unlock material to transit `encrypt`; return its ciphertext in the protocol's response bytes.
+- `Unseal`: pass the stored ciphertext to transit `decrypt`; return the decoded unlock material. Preserve a versioned payload format and the necessary transit key versions.
+- Use TLS and scoped transit permissions. Node UUIDs in requests are identifiers, not proof of identity; client authorization compatible with Talos remains TBD. Fail closed on backend or decryption errors.
+
+Planned placement is Vault, beside OpenBao, so the adapter is available before dependent nodes boot. Its credentials and TLS configuration must bootstrap without those nodes. Startup order is **Vault → workstation/YubiKey OpenBao unseal → transit/KMS readiness → Backup, Pi, and Metal**. Nodes need KMS access again when unlocking after a reboot; touch is required for OpenBao unseal, not each KMS request.
+
+For encrypted `STATE`, networking must work before the machine configuration can be read, and custom CA certificates stored in `STATE` cannot establish KMS trust. Settle early-boot addressing/DNS and a Talos-supported TLS trust path before rollout. Adapter packaging, endpoint, authentication, timeouts, key mapping/rotation, and restore tests remain TBD; do not copy the reference test server's random-data fallback behavior.
 
 ## Planned YubiKey configuration runbook
 
@@ -91,3 +105,5 @@ Programming protection and verification/rotation procedures remain TBD. Other op
 - [OpenTofu state/plan encryption](https://opentofu.org/docs/language/state/encryption/).
 - [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
 - [OpenBao security model](https://openbao.org/docs/internals/security/).
+- [Talos KMS reference implementation](https://github.com/siderolabs/kms-client).
+- [OpenBao transit API](https://openbao.org/docs/api/secret/transit/).

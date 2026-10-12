@@ -72,7 +72,7 @@ Secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered configuratio
 | `/make/helm.mk` | Render/deploy selected releases. |
 | `/make/tofu.mk` | Operate the selected root/state. |
 | `/make/storage.mk` | Validate disks, coordinate assigned Piraeus preparation, inspect manual pools. |
-| `/scripts/homelab/` | Python tool installation, validation, secret transport, orchestration. |
+| `/scripts/homelab/` | Python tool installation, validation, secret transport, orchestration; planned workstation unseal helper and [Talos KMS adapter](security.md#talos-kms-adapter). |
 | `/scripts/bash/` | Small shell helpers. |
 | `/charts/<chart>/` | Chart definition, values, templates, dependency locks. |
 | `/tofu/modules/<module>/` | Shared definitions without credentials or ownership of other scopes' state. |
@@ -164,6 +164,8 @@ Each runbook states scope, prerequisites, secret-source references, expected sta
 | `replace-md-raid1-os-disk.md` | Replace OS member; restore bootability and verify. |
 | `recover-piraeus-volume.md` | Recover replicas/placement after failure or maintenance. |
 | `recover-encryption-access.md` | Recover/rotate unlock access under [security.md](security.md). |
+| `unseal-openbao.md` | Workstation/YubiKey unseal with memory-only secret handling. |
+| `operate-talos-kms.md` | Deploy/verify the adapter, rotate transit keys, and recover dependent-node unlock. |
 | `configure-yubikey-challenge-response.md` | Write the [specified configuration runbook](security.md#planned-yubikey-configuration-runbook). |
 | `restore-openbao.md` | Implement the [restore plan](backup-and-restore.md#vault-restore-outline). |
 | `ups-shutdown-and-startup.md` | Verify shutdown, stay-off behavior, manual dependency-ordered startup. |

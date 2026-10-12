@@ -17,6 +17,7 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | Loki | v3.7.8 |  |  |  |  |
 | ZFS LocalPV | v2.11.1 | v2.11.1 |  |  |  |
 | OpenBao | v2.7.1 | v2.7.1 |  |  |  |
+| [Talos KMS adapter](security.md#talos-kms-adapter) (repository-owned Python service) | TBD | TBD |  |  |  |
 | OpenTofu | v1.13.1 |  |  |  |  |
 | External Secrets Operator | v2.11.0 | v2.11.0 | v2.11.0 | v2.11.0 | v2.11.0 |
 | cert-manager | v1.21.2 | v1.21.2 |  |  |  |

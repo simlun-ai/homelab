@@ -14,8 +14,10 @@ Independent, single-node foundation. All other clusters depend on its services. 
 | Management | Headlamp. |
 | Storage | Local persistent volumes via ZFS LocalPV on the [Vault data mirror](inventory.md#vault), separate from the OS mirror. |
 | Monitoring | kube-prometheus-stack (Prometheus, Grafana, Alertmanager), with Telegram notifications. |
-| Secrets | OpenBao for dependent clusters. |
+| Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
 | Certificates | cert-manager with Let's Encrypt and Cloudflare DNS-01; External Secrets Operator PushSecret publishes certificates to OpenBao, and dependent clusters pull them through External Secrets Operator. |
+
+Backup, Pi, and Metal depend on Vault's unsealed OpenBao and KMS adapter for [Talos system-volume unlock](security.md#talos-kms-adapter). Vault's own unlock remains independent.
 
 OpenBao storage, backups, and recovery are specified in [backup-and-restore.md](backup-and-restore.md#openbao-online-backups).
 

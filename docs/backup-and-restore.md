@@ -33,6 +33,8 @@ Use the [YubiKey or offline golden-key path](security.md#core-secret-foundation)
 | OpenBao unseal/recovery material and wrapped payload | Access restored data without the original Vault instance or disks. |
 | Additional backup-decryption material, if used | Available before opening the backup. |
 | Disk-unlock material | Access surviving or replacement storage without relying on that storage already being unlocked. |
+| OpenBao transit key versions and Talos sealed payloads | Restore KMS unlock for Backup, Pi, and Metal; retain every key version needed by surviving disks. |
+| KMS adapter configuration/bootstrap credentials | Re-establish its endpoint, TLS, and authorized transit access before dependent nodes unlock. |
 | Talos bootstrap/administration material | Rebuild Vault before its control plane or OpenBao is usable. |
 | Helpers, protocol metadata, compatible tools | Obtainable without the failed homelab. |
 
@@ -43,6 +45,8 @@ Protected-payload locations remain TBD. Secret custody and handling belong in [s
 Plan `/runbooks/bootstrap-vault.md` and `/runbooks/restore-openbao.md` around the [Emergency Recovery Guide's restore outline](emergency-recovery-guide.md#restore-vault-and-openbao).
 
 Validate snapshot identity/integrity, replacement-node bootstrap, the exact initialization/seal/restore/unseal sequence, expected secrets and authentication/policies, dependent Vault services, and resumed backups. Use the seal/unseal material associated with the selected snapshot; newly initialized material must not be assumed to unlock an older backup.
+
+After restoring OpenBao, verify transit key versions and KMS adapter readiness before starting dependent nodes. Include a cold-boot unlock test and snapshot coverage after transit key creation/rotation; an older snapshot may lack keys required by newer disks. The [startup dependency](security.md#talos-kms-adapter) must not depend on an encrypted Backup, Pi, or Metal node.
 
 Test recovery from a separately held token/guide pair and through the golden-key software fallback, without workstation-disk secrets.
 

@@ -20,11 +20,12 @@ All entries must be non-secret.
 | Additional backup-encryption details | TBD. |
 | Independent encrypted-payload references | TBD; accessible without Vault or existing R2 credentials. |
 | Golden-key retrieval procedure reference | TBD; never record the key here. |
+| KMS adapter endpoint, TLS trust, early-boot networking, transit key mapping/versions | TBD; include adapter acquisition and independent bootstrap-payload references. |
 | Per-device power-return limitations and manual startup procedure | TBD. |
 
 ## Required access and operating rules
 
-Use one working YubiKey and its paired USB guide, independently stored encrypted recovery payloads, and a recovery workstation with the specified tools. All four tokens share the golden key and HMAC-SHA1 settings and are kept at separate locations; identical effective challenges produce identical responses. One token suffices; if none works, obtain the separately held offline golden key.
+Use one working YubiKey and its paired USB guide, independently stored encrypted recovery payloads, and a recovery workstation with the specified tools. All homelab secrets are rooted in the 20-byte golden key through derivation, wrapping, or OpenBao protected by wrapped unseal material. All four tokens share the golden key and HMAC-SHA1 settings and are kept at separate locations; identical effective challenges produce identical responses. One token suffices; if none works, obtain the separately held offline golden key.
 
 - Keep the documentation USB non-secret: no golden key, HMAC responses, derived values, credentials, unseal shares, private keys, secret-bearing configuration, or encrypted secret bundles.
 - Never write secrets or snapshots to workstation disk, including temporary files, caches, shell history, logs, state, or saved plans. Verify memory-only handling, including swap, hibernation, subprocesses, and failure paths.
@@ -55,10 +56,10 @@ OpenBao backups are online Raft snapshots uploaded by a job inside Vault to Clou
 1. Recover R2 access and any wrapped/decryption material.
 2. Select a snapshot and validate its recorded identity/integrity; do not stage it on workstation disk.
 3. Bootstrap replacement single-node Talos Vault infrastructure if needed, preserving manual ZFS storage.
-4. Restore the snapshot with its corresponding seal/unseal material. **Exact initialization, restore, and unseal ordering is TBD and must be validated; new-instance material may not unlock an older snapshot.**
-5. Verify expected secrets, authentication/policies, certificate distribution, and other required Vault services.
-6. Verify resumed encrypted snapshot uploads to R2.
-7. Start dependent clusters manually, one machine at a time, checking dependencies and storage.
+4. Restore the snapshot with its corresponding seal/unseal material. Use the workstation helper and a touched YubiKey (or the software fallback) to unwrap and submit the required unseal material in memory. **Exact initialization, restore, and unseal ordering is TBD and must be validated; new-instance material may not unlock an older snapshot.**
+5. Verify expected secrets, authentication/policies, certificate distribution, and resumed encrypted snapshot uploads to R2.
+6. Restore/verify the Python gRPC KMS adapter and required OpenBao transit key versions. Backup, Pi, and Metal need this service to unlock Talos system volumes; Vault must unlock independently. An older snapshot may lack transit keys required by newer disks. Verify early-boot network access and TLS trust before starting nodes.
+7. Start dependent clusters manually, one machine at a time, checking KMS unlock, dependencies, and storage.
 
 ## Complete before distributing a usable kit
 
@@ -69,6 +70,6 @@ Fill every recovery-critical field and embed exact acquisition, operating, and f
 These references do not replace embedded emergency instructions.
 
 - Policies: `docs/security.md` and `docs/backup-and-restore.md`.
-- Planned runbooks: `runbooks/configure-yubikey-challenge-response.md`, `runbooks/bootstrap-vault.md`, `runbooks/restore-openbao.md`.
+- Planned runbooks: `runbooks/configure-yubikey-challenge-response.md`, `runbooks/bootstrap-vault.md`, `runbooks/restore-openbao.md`, `runbooks/unseal-openbao.md`, `runbooks/operate-talos-kms.md`.
 - [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/).
 - [Yubico personalization manual](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html).
