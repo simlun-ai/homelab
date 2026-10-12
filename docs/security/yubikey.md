@@ -53,7 +53,7 @@ These identifiers propose coverage for the credential roles already documented i
 | Identifier suffix | Protected material | Consumer |
 | --- | --- | --- |
 | `vault/openbao-unseal/share-1/r1` | OpenBao-generated unseal share; one share, threshold one under the [unseal policy](openbao-unseal.md). | Workstation unseal/restore helper. |
-| `vault/kms/<node-id>/<volume>/r1` | Wrapping context for Talos-generated Vault system-volume unlock material. Volume mapping TBD. | Coordinator bootstrap KMS. |
+| `vault/kms/<node-id>/r1` | Random 32-byte node KMS key protecting Talos system-volume unlock payloads under the [two-layer design](helper-implementation.md#vault-kms-two-layers). Node mapping TBD. | Coordinator bootstrap KMS. |
 | `support-vault-backup/dns-api/cloudflare/r1` | DNS API credential for independent KMS DNS-01 renewal. | Coordinator ACME integration. |
 | `support-vault-backup/tls-private-key/kms/r1` | Coordinator KMS TLS private key. | Coordinator TLS service. |
 | `support-vault-backup/acme-account/kms/r1` | ACME account private key and required account secrets. | Coordinator ACME integration. |

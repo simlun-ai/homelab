@@ -109,7 +109,7 @@ Touch is required when querying a token, not for each scheduled backup. Runtime 
 
 **Decision:** Run a dedicated Python gRPC Talos KMS service on the [Vault/Backup UPS coordinator](../inventory.md#shared-infrastructure), serving Vault only. It must work without OpenBao or a Kubernetes cluster and operate independently of the workstation after [SSH authorization](coordinator-sessions.md). UPS shutdown management remains operational while KMS is locked.
 
-- Use purpose-specific YubiKey challenges and the [v1 wrapping format](#challenges-derivation-and-wrapped-credentials) for Talos-generated unlock material. Talos retains the sealed payload in LUKS metadata; node/volume-to-identifier mapping, gRPC payload integration, and recovery copies remain TBD.
+- Wrap a random 32-byte KMS key per Vault node using the [v1 wrapping format](#challenges-derivation-and-wrapped-credentials). The [two-layer KMS design](helper-implementation.md#vault-kms-two-layers) uses that key to protect Talos unlock material in a separate `homelab-kms-v1` envelope retained in LUKS metadata. Exact envelope specification, node mappings, and gRPC integration remain pending.
 - Authorize a one-hour KMS boot window from the workstation over SSH using the operator's existing SSH key and account. The YubiKey stays in the laptop; delivery, expiry, and operator controls belong in [coordinator sessions](coordinator-sessions.md).
 - Serve TLS with a publicly trusted certificate, renewed through DNS-01 on the coordinator independently of Vault's cert-manager/OpenBao. No private CA or custom Talos build is planned for KMS trust.
 - Persist DNS API, TLS private-key, and ACME account/bootstrap secrets only as authenticated encrypted payloads under separate YubiKey-derived contexts. The workstation unwraps them after touch and supplies plaintext over SSH for coordinator process-memory use under the [session policy](coordinator-sessions.md). ACME integration and renewal/storage behavior require validation.
@@ -155,7 +155,7 @@ Topic placeholders for the remaining decisions and implementation work:
 - [OpenBao unseal](openbao-unseal.md) — unseal decision approved; implementation, recovery administration, and restore verification pending.
 - [Credential catalogue](credential-catalogue.md) — catalogue rules approved; concrete entries and implementation pending.
 - [Coordinator sessions](coordinator-sessions.md) — decision approved; implementation and verification pending.
-- [Helper implementation](helper-implementation.md) — TBD.
+- [Helper implementation](helper-implementation.md) — helper and two-layer KMS design approved; implementation and verification pending.
 - [Rotation and rollback](rotation-and-rollback.md) — TBD.
 - [Recovery procedures](recovery-procedures.md) — TBD.
 

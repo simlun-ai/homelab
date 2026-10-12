@@ -33,7 +33,7 @@ on both hosts.
 
 | Material delivered | Lifetime |
 | --- | --- |
-| Derived wrapping keys for explicitly authorized Vault KMS records/contexts | One-hour boot window. |
+| Unwrapped random 32-byte KMS keys for explicitly authorized Vault nodes | One-hour boot window. |
 | Decrypted DNS API credential, TLS private key, and ACME account secrets | Coordinator process lifetime. |
 
 Start the one-hour window on successful KMS activation, measured by the
@@ -63,7 +63,8 @@ Define the SSH payload, command, socket permissions, daemon validation,
 failure handling, and memory cleanup. Verify disconnect, expiry, lock,
 restart, and certificate-renewal behavior.
 
-Finalize how KMS `Seal` derives fresh per-record wrapping keys and how
-`Unseal` obtains keys for existing salts. The delivery protocol must
-support the approved wrapping format without giving the coordinator raw
-HMAC responses or indefinite KMS authority.
+The [two-layer KMS design](helper-implementation.md#vault-kms-two-layers)
+uses YubiKey-wrapped node KMS keys to support fresh Seal payloads and
+existing Unseal payloads. Exact envelope and delivery specifications
+remain pending; do not give the coordinator raw HMAC responses or
+indefinite KMS authority.
