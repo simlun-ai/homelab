@@ -1,6 +1,6 @@
 # YubiKey Credential Catalogue
 
-**Draft:** Known use cases and proposed lookup identifiers. Programming, helpers, and credential records are not implemented.
+**Planned design:** The v1 challenge/wrapping format is selected; concrete lookup identifiers remain proposed. Programming, helpers, and credential records are not implemented.
 
 This document owns the lookup catalogue. Hardware inventory belongs in [inventory.md](inventory.md#security-keys); golden-key custody, secret handling, and encryption policy belong in [security.md](security.md); recovery requirements belong in [backup-and-restore.md](backup-and-restore.md).
 
@@ -18,7 +18,7 @@ The token stores the golden key. Credential records live separately. Retrieving 
 
 [HMAC-SHA1 challenge-response](https://developers.yubico.com/Developer_Program/Guides/Touch_triggered_OTP.html) accepts challenges up to 64 bytes and returns a deterministic response for the same challenge and secret. It does not itself encrypt or store arbitrary credential values.
 
-## Proposed identifier and challenge format
+## Identifier and challenge format
 
 ```text
 homelab/v1/<scope>/<purpose>/<resource>/r<generation>
@@ -32,9 +32,9 @@ homelab/v1/<scope>/<purpose>/<resource>/r<generation>
 | `resource` | Stable resource identifier; may contain multiple path segments. |
 | `r<generation>` | Wrapping-key generation, starting at `r1`. |
 
-Identifiers use lowercase ASCII letters, digits, hyphens, and `/`. No whitespace, implicit case conversion, or trailing newline. Preserve identifiers when moving storage or renaming hosts.
+Identifiers use lowercase ASCII letters, digits, hyphens, and `/`, with nonempty path segments. No whitespace, implicit case conversion, or trailing newline. Preserve identifiers when moving storage or renaming hosts.
 
-Proposed challenge construction:
+V1 challenge construction:
 
 ```text
 challenge = ASCII(lowercase_hex(SHA256(ASCII(identifier))))
@@ -42,7 +42,7 @@ challenge = ASCII(lowercase_hex(SHA256(ASCII(identifier))))
 
 This produces exactly 64 challenge bytes. Configure matching fixed-length processing on all four tokens and verify it against the software fallback. [Yubico documents](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html) the HMAC and touch flags for firmware 2.2 and later; actual device verification remains required.
 
-The response feeds a purpose-specific KDF and authenticated wrapping scheme defined in [security.md](security.md#challenges-derivation-and-wrapped-credentials). Algorithms and encrypted-record format remain TBD.
+The raw response feeds HKDF-SHA-256 and AES-256-GCM using the [v1 encrypted-record format](security.md#challenges-derivation-and-wrapped-credentials). That section owns derivation, authenticated metadata, revision/rotation rules, and validation; implementation remains pending.
 
 The examples below omit the common `homelab/v1/` prefix.
 
@@ -123,7 +123,7 @@ Vault bootstrap material must remain accessible without its own OpenBao instance
 
 ## Record and maintenance requirements
 
-Each registered credential needs its exact identifier, consumer, encrypted-payload reference, public protocol parameters, generation, recovery dependency, and status: planned, configured, or verified.
+Each registered credential needs its exact identifier, consumer, encrypted-payload reference, public protocol parameters, root-key and wrapping-context generations, record revision, recovery dependency, and status: planned, configured, or verified.
 
 Record identifiers and metadata only. Never record golden-key bytes, HMAC responses, derived keys, or plaintext credentials.
 

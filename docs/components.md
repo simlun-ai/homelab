@@ -41,6 +41,7 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | Tool / OS | Version |
 | --- | --- |
 | Make, Python, Bash | TBD. |
+| Python cryptography (HKDF/AESGCM), RFC 8785-compatible JSON serializer | TBD; [planned v1 wrapping implementation](security.md#challenges-derivation-and-wrapped-credentials). |
 | kubectl, talosctl, Helm, OpenBao CLI (`bao`) | TBD per scope; talosctl must be compatible with Talos. |
 | OpenTofu CLI (`tofu`) | Independently pinned per scope; catalog version above. |
 | Raspberry Pi OS Lite, Ansible | TBD; [candidate UPS-host stack](layout.md#ups-shutdown-coordinators). |

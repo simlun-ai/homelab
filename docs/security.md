@@ -36,13 +36,54 @@ Offline format, location, access, and refresh/verification procedures remain TBD
 
 ## Challenges, derivation, and wrapped credentials
 
-The [YubiKey catalogue](yubikey.md) owns use cases, proposed lookup identifiers, and challenge construction. The protocol is not implemented or verified; HMAC slot, downstream derivation, wrapping, and payload format remain TBD. Version exact challenge processing, output encoding, and derivation/wrapping parameters, and preserve public recovery parameters in the Emergency Recovery Guide.
+**Decision:** Use HKDF-SHA-256 and AES-256-GCM for direct YubiKey wrapping, with the `homelab-wrap-v1` JSON record below. Implementation and verification are pending. The [YubiKey catalogue](yubikey.md) owns identifiers, challenge construction, consumers, and unresolved bootstrap coverage; the HMAC slot remains TBD.
 
-Use purpose-specific challenges and a documented key derivation scheme to turn HMAC responses into suitable wrapping keys. Helpers use authenticated encryption to wrap/unwrap secret payloads; HMAC-SHA1 itself is not an encryption algorithm. Exact algorithms and payload format remain TBD.
+### Derivation and encryption
 
-Direct YubiKey lookups, manual ZFS keys, OpenBao-mediated secrets, and unresolved bootstrap coverage are listed once in [yubikey.md](yubikey.md).
+Use the raw 20-byte HMAC-SHA1 response as HKDF input; decode any tool's hexadecimal output first. For each encryption, generate a fresh 32-byte salt and 12-byte nonce using the operating system's cryptographic RNG. Both are public. Never reuse an AES-GCM key/nonce pair.
 
-HMAC cannot recreate externally issued credentials or OpenBao-generated material. Wrapped secrets require both the HMAC path and a recoverable encrypted payload; independent-access requirements belong in [backup-and-restore.md](backup-and-restore.md#independent-recovery-material).
+```text
+response = YubiKey(challenge(key_id))
+info = ASCII("homelab-wrap-v1") || NUL || ASCII(root_key) || NUL || ASCII(key_id)
+wrapping_key = HKDF-SHA-256(input=response, salt=salt, info=info, length=32)
+header = record without ciphertext
+aad = UTF8(JCS(header))
+ciphertext = AES-256-GCM.encrypt(wrapping_key, nonce, secret_bytes, aad)
+```
+
+`||` means byte concatenation; `NUL` is one zero byte. Use full HKDF extract-and-expand. JCS is RFC 8785 JSON canonicalization. Encrypt the credential's native bytes directly and retain the full 16-byte authentication tag, appended to the ciphertext.
+
+A fresh salt derives a new wrapping key for each encryption of a credential. The protocol label, golden-key generation, and complete identifier in `info` separate contexts. A 32-byte output does not increase the entropy of the 160-bit foundation.
+
+### Encrypted record
+
+Illustrative placeholders, not an actual encrypted record:
+
+```json
+{
+  "format": "homelab-wrap-v1",
+  "root_key": "golden-1",
+  "key_id": "homelab/v1/support-vault-backup/dns-api/cloudflare/r1",
+  "revision": 1,
+  "salt": "<base64: 32 bytes>",
+  "nonce": "<base64: 12 bytes>",
+  "ciphertext": "<base64: ciphertext followed by 16-byte tag>"
+}
+```
+
+The format fixes the algorithms, sizes, and encodings; no per-record algorithm negotiation. `root_key` is a public golden-key-generation label using lowercase ASCII letters, digits, and hyphens. `key_id` follows the catalogue format. `revision` is an integer from 1 through 9007199254740991. Binary fields use canonical padded standard Base64 without whitespace. Authenticate all six header fields using their JCS representation.
+
+The caller supplies the expected `key_id` and allowed root generation independently of the record. Validate them before querying the token. Reject unknown formats, missing/extra/duplicate fields, invalid types/encodings/lengths, and authentication failures; release plaintext only after successful authentication. Set input-size limits before implementation.
+
+### Updates, rotation, and recovery
+
+- Updating or rewrapping a record increments `revision` and generates fresh salt and nonce. The identifier's `r1` suffix tracks the wrapping-context generation separately.
+- Changing `r1` to `r2` changes the HMAC response. Every token holding the same golden key can calculate either; revoking a lost token requires replacing that shared key, rewrapping records, and rotating underlying credentials where old records could expose them.
+- Authentication does not prevent replay of an older valid record. Enforcing freshness requires an independently trusted expected revision or record digest; its storage and recovery mechanism remain TBD.
+- Preserve the root generation, exact identifier, encrypted record, and any trusted freshness metadata needed for each retained disk or backup. HMAC cannot reconstruct externally issued credentials or OpenBao-generated material. Independent-access requirements belong in [backup-and-restore.md](backup-and-restore.md#independent-recovery-material).
+- Keep responses and derived keys within their authorized memory-only lifetime. KMS expiry must discard both, including copies that could recreate wrapping authority.
+
+Use Python `cryptography`'s HKDF and AESGCM APIs plus an RFC 8785-compatible serializer; dependency versions and packaging remain TBD. Before use, verify public test vectors with disposable test keys, matching behavior across all four tokens and the software fallback, malformed/tampered records, identifier substitution, rotation, and memory handling. Never use or publish real golden-key responses as test vectors.
 
 Challenge-response needs helper logic; it is not native ZFS unlock integration or an OpenBao seal mechanism. OpenPGP and PKCS#11 are outside the chosen foundation.
 
@@ -50,7 +91,7 @@ Challenge-response needs helper logic; it is not native ZFS unlock integration o
 
 [Vault's independent bootstrap](clusters.md#vault) requires manual secret supply. Manual disk unlock and OpenBao unseal are acceptable during operator-controlled startup.
 
-Application/service secrets are fetched from OpenBao; dependent clusters use External Secrets Operator where applicable. A helper on the workstation queries a YubiKey with touch, derives the wrapping key, unwraps the required unseal material, and unseals OpenBao entirely in memory. This is operator-driven unseal, not native YubiKey auto-unseal. Exact helper protocol and delivery into Talos, scripts, and OpenTofu remain TBD; encrypted payload storage in Git is undecided.
+Application/service secrets are fetched from OpenBao; dependent clusters use External Secrets Operator where applicable. A helper on the workstation queries a YubiKey with touch, derives the wrapping key, unwraps the required unseal material, and unseals OpenBao entirely in memory. This is operator-driven unseal, not native YubiKey auto-unseal. The wrapping format is defined above; helper integration and delivery into Talos, scripts, and OpenTofu remain TBD. Encrypted payload storage in Git is undecided.
 
 Touch is required when querying a token, not for each scheduled backup. Runtime credentials may be provisioned at setup and held securely server-side; backup-job authentication and lifecycle belong in [backup-and-restore.md](backup-and-restore.md#openbao-online-backups).
 
@@ -66,8 +107,8 @@ Touch is required when querying a token, not for each scheduled backup. Runtime 
 
 **Decision:** Run a dedicated Python gRPC Talos KMS service on the [Vault/Backup UPS coordinator](inventory.md#shared-infrastructure), serving Vault only. It must work without OpenBao, a Kubernetes cluster, or a workstation. UPS shutdown management remains operational while KMS is locked.
 
-- Use purpose-specific YubiKey challenge-response and a KDF/authenticated wrapping scheme to seal/unseal Talos-generated unlock material. Talos retains the sealed payload in LUKS metadata; exact protocol, payload format, and recovery copies remain TBD.
-- A touched YubiKey enables a short boot session covering system-volume unlock and retries. Keep the KMS wrapping key only in memory and discard it when the window expires; already unlocked volumes continue running. Subsequent unlock requires another authorized session; duration and operator controls are TBD.
+- Use purpose-specific YubiKey challenges and the [v1 wrapping format](#challenges-derivation-and-wrapped-credentials) for Talos-generated unlock material. Talos retains the sealed payload in LUKS metadata; node/volume-to-identifier mapping, gRPC payload integration, and recovery copies remain TBD.
+- A touched YubiKey enables a short boot session covering system-volume unlock and retries. Keep KMS responses and wrapping keys only in memory and discard them, including copies, when the window expires; already unlocked volumes continue running. Subsequent unlock requires another authorized session; duration and operator controls are TBD.
 - Serve TLS with a publicly trusted certificate, renewed through DNS-01 on the coordinator independently of Vault's cert-manager/OpenBao. No private CA or custom Talos build is planned for KMS trust.
 - Persist the DNS API credential and TLS private key only as authenticated encrypted payloads under separate YubiKey-derived wrapping contexts. After touch, retain plaintext only in coordinator process memory for its running lifetime, independently of the shorter KMS window. Restart/power loss requires touch again. Apply the same protection to ACME account/bootstrap secrets; prevent credential files, swap, dumps, and persistent secret logs. ACME integration and renewal/storage behavior require validation.
 - Coordinator and Vault use the same public NTP service. Working Internet/time service is an accepted cold-start dependency; no RTC is required. Configure Vault's networking, DNS, and NTP before encrypted `STATE` loads, using boot-level settings. Establish usable time before TLS-dependent operations; endpoints and cold-boot synchronization/KMS retry tests are TBD.
@@ -108,6 +149,9 @@ Programming protection and verification/rotation procedures remain TBD. Other op
 
 ## Upstream references
 
+- [HKDF (RFC 5869)](https://www.rfc-editor.org/rfc/rfc5869).
+- [JSON canonicalization (RFC 8785)](https://www.rfc-editor.org/rfc/rfc8785).
+- [Python cryptography HKDF](https://cryptography.io/en/stable/hazmat/primitives/key-derivation-functions/#hkdf) and [AESGCM](https://cryptography.io/en/stable/hazmat/primitives/aead/#cryptography.hazmat.primitives.ciphers.aead.AESGCM).
 - [Yubico challenge-response](https://docs.yubico.com/yesdk/users-manual/application-otp/challenge-response.html).
 - [Yubico personalization manual](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html), including legacy firmware flags.
 - [Talos disk encryption](https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/disk-encryption).

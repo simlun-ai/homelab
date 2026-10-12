@@ -11,9 +11,9 @@ All entries must be non-secret.
 | Field | Value |
 | --- | --- |
 | Guide revision / repository commit; last verified restore | TBD. |
-| Core-secret protocol version and YubiKey HMAC slot | TBD; touch required. |
-| Effective challenge bytes, encoding, purpose identifiers, length/padding | TBD pending implementation/verification of the catalogue proposal; embed the finalized protocol here and match tokens/software fallback. |
-| Derivation/wrapping algorithms, output encoding, public parameters | TBD. |
+| Core-secret protocol version and YubiKey HMAC slot | `homelab-wrap-v1`; slot TBD, touch required. Implementation/verification pending. |
+| Effective challenge bytes, encoding, purpose identifiers, length/padding | V1 construction below; exact recovery identifiers and device verification TBD. |
+| Derivation/wrapping algorithms, output encoding, public parameters | HKDF-SHA-256 + AES-256-GCM; JSON/JCS and padded Base64 as specified below. |
 | Snapshot OpenBao version, ARM64 Pi and workstation recovery images/tools; independent acquisition locations | TBD. |
 | Container memory mounts, required RAM, runtime/swap/logging checks; tested Pi/container procedures | TBD. |
 | Tool and backup integrity/checksum verification | TBD. |
@@ -45,6 +45,32 @@ Use one working YubiKey and its paired USB guide, independently stored encrypted
 
 If a token fails, obtain another token/guide pair. Never guess encoding or overwrite an occupied slot.
 
+## V1 wrapping protocol
+
+**Selected design; helper and device verification pending.** This embedded specification must remain synchronized with the maintained security policy.
+
+Records have exactly seven fields: `format` (`homelab-wrap-v1`), `root_key` (public generation label, initially `golden-1`), `key_id`, `revision`, `salt`, `nonce`, and `ciphertext`. Root labels use lowercase ASCII letters, digits, and hyphens. Identifiers follow `homelab/v1/<scope>/<purpose>/<resource>/r<generation>`, with lowercase ASCII letters, digits, hyphens, and slash-separated nonempty segments; no whitespace or trailing newline. Exact resource identifiers remain to be recorded.
+
+`revision` is an integer from 1 through 9007199254740991. Salt, nonce, and ciphertext use canonical padded standard Base64 without whitespace. Decode a 32-byte salt, a 12-byte nonce, and ciphertext ending in the full 16-byte GCM tag.
+
+```text
+challenge = ASCII(lowercase_hex(SHA256(ASCII(key_id))))
+response = HMAC-SHA1(golden_key, challenge)
+info = ASCII("homelab-wrap-v1") || NUL || ASCII(root_key) || NUL || ASCII(key_id)
+wrapping_key = HKDF-SHA-256(input=response, salt=salt, info=info, length=32)
+header = record without ciphertext
+aad = UTF8(JCS(header))
+secret_bytes = AES-256-GCM.decrypt(wrapping_key, nonce, ciphertext, aad)
+```
+
+The token computes the HMAC with touch; software fallback performs the identical operation. The challenge is exactly 64 bytes with fixed-length processing. Use the raw 20-byte response, full HKDF extract-and-expand, one zero byte for each `NUL`, byte concatenation for `||`, and RFC 8785 canonicalization for `JCS`.
+
+Obtain the expected identifier and allowed root generation independently; compare them before querying the token. Reject unknown formats, missing/extra/duplicate fields, invalid types/encodings/lengths, and failed authentication. Release plaintext only after authentication succeeds. Helper size limits and trusted freshness-metadata storage remain TBD.
+
+Every encryption uses fresh cryptographic random salt and nonce; never reuse a key/nonce pair. Updates/rewrapping increment the record revision. An old authentic record can still decrypt: freshness requires an independently trusted expected revision or record digest. Retain the generations and records needed by the selected disk or snapshot. Changing the identifier's wrapping generation cannot revoke a token sharing the golden key.
+
+The helper uses Python `cryptography` HKDF/AESGCM and an RFC 8785-compatible serializer; pinned versions and acquisition commands remain TBD. KMS session expiry discards its HMAC responses, derived keys, and copies, separately from the coordinator's longer-lived DNS/TLS/ACME material.
+
 ## Golden-key fallback and replacement token
 
 Retrieve the offline golden key using its separate custody procedure. Load it into the verified memory-only session without logging. The helper must compute HMAC-SHA1 over identical effective challenge bytes, then apply the same derivation/unwrap steps.
@@ -72,7 +98,7 @@ Fill every recovery-critical field and embed exact acquisition, operating, and f
 These references do not replace embedded emergency instructions.
 
 - Policies: `docs/security.md` and `docs/backup-and-restore.md`.
-- Credential catalogue and proposed lookup/challenge format: `docs/yubikey.md`. Embed finalized recovery-critical identifiers and protocol parameters here before distributing the guide.
+- Credential catalogue and v1 challenge format: `docs/yubikey.md`; wrapping specification: `docs/security.md`. Keep the embedded protocol synchronized and add exact recovery-critical identifiers before distributing the guide.
 - Planned runbooks: `runbooks/configure-yubikey-challenge-response.md`, `runbooks/bootstrap-vault.md`, `runbooks/restore-openbao.md`, `runbooks/unseal-openbao.md`, `runbooks/operate-talos-kms.md`, `runbooks/operate-vault-bootstrap-kms.md`.
 - [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/).
 - [Yubico personalization manual](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html).
