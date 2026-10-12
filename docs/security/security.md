@@ -134,7 +134,7 @@ For encrypted `STATE`, networking must work before the machine configuration can
 
 ## Planned YubiKey configuration runbook
 
-Write `/runbooks/configure-yubikey-challenge-response.md` covering:
+Develop [00 - YubiKey setup](../installation/00-yubikey-setup.md) for a trusted air-gapped laptop, covering:
 
 1. Inventory firmware, interfaces, occupied slots, and non-secret device identifiers.
 2. Pin compatible programming/query tools for all four devices.

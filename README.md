@@ -17,4 +17,4 @@ This repository defines and documents my planned homelab infrastructure: four Ta
 | **Pi** | Small, low-power primary workload cluster. | Home Assistant, Zigbee2MQTT, and other home automation services. |
 | **Metal** | Larger, high-performance primary workload cluster. | Frigate, Immich, Crypto, media services, databases, and other compute- or storage-intensive applications. |
 
-See [docs/clusters.md](docs/clusters.md) for cluster architecture and [docs/](docs/) for further details.
+Start with the [installation plan and TODO list](docs/installation/README.md). See [docs/clusters.md](docs/clusters.md) for cluster architecture and [docs/](docs/) for further details.

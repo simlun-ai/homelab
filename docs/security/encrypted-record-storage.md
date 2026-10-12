@@ -22,6 +22,6 @@ Refresh all four clones after recovery-critical record, protocol, helper, or gui
 
 Deploy the coordinator's required wrapped KMS, DNS, TLS, and ACME records to its local persistent storage. Startup reads these local records without fetching GitHub or OpenBao.
 
-Coordinator configuration tooling remains undecided. If Ansible is selected, it copies the wrapped records from the repository to local storage; it does not decrypt them during deployment. Local paths, permissions, and update mechanics remain implementation details. The workstation unwraps runtime credentials and supplies authorization over SSH under the [coordinator session policy](coordinator-sessions.md).
+Ansible provisioning is selected for the coordinator, with implementation tracked in [01 - Main coordinator](../installation/01-main-coordinator.md). It copies the wrapped records from the repository to local storage without decrypting them. Local paths, permissions, and update mechanics remain implementation details. The workstation unwraps runtime credentials and supplies authorization over SSH under the [coordinator session policy](coordinator-sessions.md).
 
 Git history retains old ciphertext. Credential rotation, retention, and trusted rollback detection belong to [rotation and rollback](rotation-and-rollback.md).

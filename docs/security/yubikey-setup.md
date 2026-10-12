@@ -24,7 +24,7 @@ firmware, serial number where available, and configured slot.
 
 ## Programming and verification
 
-Use a trusted workstation and program one token at a time. Handle the
+Use a trusted air-gapped laptop and program one token at a time. Handle the
 golden key and HMAC responses only in memory, following
 [security.md](security.md).
 
@@ -45,8 +45,8 @@ only after these checks pass.
 
 - Confirm compatible programming and query tools for all four devices,
   including the older YubiKey Standard models.
-- Pin tool versions and document exact commands in the configuration
-  runbook.
+- Pin tool versions and document exact commands in
+  [00 - YubiKey setup](../installation/00-yubikey-setup.md).
 - Record device identifiers and verification results.
 
 Golden-key custody and recovery procedures are covered separately in

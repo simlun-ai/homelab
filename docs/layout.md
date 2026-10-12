@@ -10,6 +10,7 @@
 | [Clusters](clusters.md) | Topology, dependencies, services, networking, workload and replica placement. |
 | [Components](components.md) | Software catalog and versions; operational pins remain scope-owned. |
 | This document | Directory ownership, tool scopes, provisioning boundaries, operating entry points. |
+| [Installation](installation/README.md) | Main implementation TODO list, numbered installation runbooks, and verification progress. |
 | [Security](security/security.md) | Core secrets, YubiKeys, custody, workstation handling, encryption. |
 | [YubiKey catalogue](security/yubikey.md) | Credential/use-case catalogue, lookup identifiers, challenge construction, unresolved bootstrap coverage. |
 | [Security work areas](security/security.md#remaining-decisions) | Topic documents under `docs/security/`, recording approved decisions and remaining TBD work. |
@@ -28,6 +29,7 @@ Keep details in their owning document and link from other documents. The USB gui
 | `/.gitignore` | Downloaded tools and non-secret caches; subject to [secret-handling rules](security/security.md#secret-handling-boundary). |
 | `/pyproject.toml` | Shared Python helper package/development configuration; locking format TBD. |
 | `/docs/` | Documents listed above. |
+| `/docs/installation/` | Installation plan and `NN-<headline>.md` runbooks; grow implementation as each step is tried. |
 | `/secrets/wrapped/` | Authenticated encrypted credential records and public identifier-to-file manifest; [storage policy](security/encrypted-record-storage.md). |
 | `/clusters/{vault,backup,pi,metal}/` | Independent cluster configuration and operational pins. |
 | `/make/` | Shared Make implementation, without global cluster-version defaults. |
@@ -35,7 +37,7 @@ Keep details in their owning document and link from other documents. The USB gui
 | `/charts/` | Repository-owned Helm source where useful. |
 | `/tofu/modules/` | Reusable modules; live roots/state stay with their scopes. |
 | `/support/ups/` | Shutdown-coordinator management and Vault bootstrap KMS configuration. |
-| `/runbooks/` | Common operating procedures. |
+| `/runbooks/` | Ongoing operation, maintenance, and recovery procedures. |
 
 ## Common cluster layout
 
@@ -80,7 +82,7 @@ Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered co
 | `/charts/<chart>/` | Chart definition, values, templates, dependency locks. |
 | `/tofu/modules/<module>/` | Shared definitions without credentials or ownership of other scopes' state. |
 
-Make supplies scope and resolved tools; helpers must not infer cluster, endpoint, version, or executable from ambient defaults. Use Python for substantial logic and Bash for small tasks. Helpers run on a workstation or suitable runner; Ansible's proposed scope is the UPS hosts.
+Make supplies scope and resolved tools; helpers must not infer cluster, endpoint, version, or executable from ambient defaults. Use Python for substantial logic and Bash for small tasks. Helpers run on a workstation or suitable runner; Ansible is selected for UPS-host configuration, with implementation pending.
 
 Reference upstream charts by version rather than copying them. Package repository-owned charts as immutable versioned artifacts so clusters can adopt changes separately; artifact source and release orchestration remain TBD.
 
@@ -137,7 +139,7 @@ Use one `/support/ups/` scope because a coordinator serves both Vault and Backup
 | `ansible/templates/` | Non-secret service templates. |
 | `ansible/requirements.yml` | Pinned external roles/collections if selected. |
 
-Raspberry Pi OS Lite and Ansible are tentative choices. The Vault/Backup coordinator also hosts the planned [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. Deploy its [wrapped credentials](security/encrypted-record-storage.md#coordinator-deployment) to local persistent storage; if Ansible is selected, it copies ciphertext without decrypting it. OpenTofu has no assigned coordinator role. Shutdown software, credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security/security.md#secret-handling-boundary).
+Raspberry Pi OS Lite remains tentative. Implement Ansible provisioning through [01 - Main coordinator](installation/01-main-coordinator.md). The Vault/Backup coordinator also hosts the planned [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. Deploy its [wrapped credentials](security/encrypted-record-storage.md#coordinator-deployment) to local persistent storage; Ansible copies ciphertext without decrypting it. OpenTofu has no assigned coordinator role. Shutdown software, credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security/security.md#secret-handling-boundary).
 
 ### Power-loss shutdown and manual startup
 
@@ -155,11 +157,11 @@ These are intended settings, not verified hardware behavior.
 
 Each runbook states scope, prerequisites, secret-source references, expected state, ordered steps, verification, and recovery actions. Link scope-specific inputs rather than copying procedures.
 
+Numbered installation procedures and their implementation progress belong in [docs/installation/](installation/README.md), beginning with YubiKeys, the main coordinator, and Vault. Add dependent-cluster installation steps there as work progresses. The operating runbooks below should reuse those procedures where applicable.
+
 | Proposed path under `/runbooks/` | Procedure |
 | --- | --- |
 | `README.md` | Index/conventions. |
-| `bootstrap-vault.md` | Recover/bootstrap the independent foundation. |
-| `bootstrap-cluster.md` | Bootstrap a dependent cluster. |
 | `bootstrap-node.md` | Add/rebuild without touching protected data. |
 | `upgrade-cluster.md` | Upgrade tools/components, verify health, record recovery options. |
 | `prepare-manual-zfs-pool.md` | Identify/prepare encrypted manual storage. |
@@ -169,8 +171,7 @@ Each runbook states scope, prerequisites, secret-source references, expected sta
 | `recover-encryption-access.md` | Recover/rotate unlock access under [security.md](security/security.md). |
 | `unseal-openbao.md` | Workstation/YubiKey unseal with memory-only secret handling. |
 | `operate-talos-kms.md` | Deploy/verify the adapter, rotate transit keys, and recover dependent-node unlock. |
-| `operate-vault-bootstrap-kms.md` | Configure/recover the coordinator KMS, touch-authorized sessions, DNS-01 renewal, time readiness, and network hardening. |
-| `configure-yubikey-challenge-response.md` | Write the [specified configuration runbook](security/security.md#planned-yubikey-configuration-runbook). |
+| `operate-vault-bootstrap-kms.md` | Operate/recover the coordinator KMS, touch-authorized sessions, DNS-01 renewal, time readiness, and network hardening; initial setup belongs in [01 - Main coordinator](installation/01-main-coordinator.md). |
 | `restore-openbao.md` | Implement/test [snapshot recovery to a replacement Pi 4 or memory-backed workstation container](backup-and-restore.md#required-recovery-targets). |
 | `ups-shutdown-and-startup.md` | Verify shutdown, stay-off behavior, manual dependency-ordered startup. |
 

@@ -62,7 +62,7 @@ Run isolated restore drills without the original Vault/coordinator or other clus
 
 Recover/verify the [coordinator bootstrap KMS](security/security.md#vault-bootstrap-kms) before Vault system-volume unlock. Router/network, DNS, and public NTP must work independently; Internet is an accepted cold-start dependency. Coordinator-loss recovery and expired-certificate renewal must be tested without OpenBao or workstation-disk plaintext secrets.
 
-Plan `/runbooks/operate-vault-bootstrap-kms.md`, `/runbooks/bootstrap-vault.md`, and `/runbooks/restore-openbao.md` around the [Emergency Recovery Guide's restore outline](emergency-recovery-guide.md#restore-vault-and-openbao).
+Coordinate [Vault installation](installation/02-vault.md), `/runbooks/operate-vault-bootstrap-kms.md`, and `/runbooks/restore-openbao.md` with the [Emergency Recovery Guide's restore outline](emergency-recovery-guide.md#restore-vault-and-openbao).
 
 After restoring OpenBao, verify transit key versions and KMS adapter readiness before starting dependent nodes. Verify snapshot coverage after transit key creation/rotation; an older snapshot may lack keys required by newer disks. The [startup dependency](security/security.md#talos-kms-adapter) must not depend on an encrypted Backup, Pi, or Metal node.
 

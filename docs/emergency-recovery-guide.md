@@ -40,7 +40,7 @@ Use one working YubiKey and its paired recovery USB containing a full, non-shall
 
 Use the USB's checked-out repository and local Git history to find `secrets/wrapped/`, its public identifier-to-file manifest, this guide, and helper source without GitHub or OpenBao. Snapshot backups remain in R2; required binaries/dependencies still need the specified acquisition procedure.
 
-Refresh all four full clones after recovery-critical changes, record each clone's commit, and verify integrity and required records. Exact refresh and verification commands remain TBD. The coordinator uses its own locally deployed wrapped records at startup; if Ansible is selected, deployment copies ciphertext without decrypting it. Ansible remains tentative.
+Refresh all four full clones after recovery-critical changes, record each clone's commit, and verify integrity and required records. Exact refresh and verification commands remain TBD. The coordinator uses its own locally deployed wrapped records at startup; planned Ansible provisioning copies ciphertext without decrypting it. Implementation remains pending.
 
 ## Recover core-secret access
 
@@ -107,6 +107,7 @@ These references do not replace embedded emergency instructions.
 
 - Policies: `docs/security/security.md` and `docs/backup-and-restore.md`.
 - Credential catalogue and v1 challenge format: `docs/security/yubikey.md`; wrapping specification: `docs/security/security.md`. Keep the embedded protocol synchronized and add exact recovery-critical identifiers before distributing the guide.
-- Planned runbooks: `runbooks/configure-yubikey-challenge-response.md`, `runbooks/bootstrap-vault.md`, `runbooks/restore-openbao.md`, `runbooks/unseal-openbao.md`, `runbooks/operate-talos-kms.md`, `runbooks/operate-vault-bootstrap-kms.md`.
+- Installation plan and placeholders: `docs/installation/README.md`, `docs/installation/00-yubikey-setup.md`, `docs/installation/01-main-coordinator.md`, `docs/installation/02-vault.md`.
+- Planned operating runbooks: `runbooks/restore-openbao.md`, `runbooks/unseal-openbao.md`, `runbooks/operate-talos-kms.md`, `runbooks/operate-vault-bootstrap-kms.md`.
 - [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/).
 - [Yubico personalization manual](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html).
