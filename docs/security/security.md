@@ -141,7 +141,7 @@ Write `/runbooks/configure-yubikey-challenge-response.md` covering:
 3. Generate or load the golden key in memory and establish its separate offline record.
 4. Program matching slots/settings with touch required, preserving other slot contents and approved uses.
 5. Verify touch enforcement on each device and compare several public challenges across all tokens and the software fallback, keeping responses and comparisons in memory.
-6. Record protocol, slot, tool versions, challenge processing, and programming-protection/access-code references without secret values.
+6. Record protocol, slot, tool versions, and challenge processing. Programming access codes are deferred to [future improvements](../future.md).
 7. Distribute token/guide pairs and verify offline recovery.
 8. Document replacement, loss, compromise, golden-key/dependent-material rotation, and guide updates.
 

@@ -117,7 +117,7 @@ Specify storage, delivery, and any direct lookup identifiers for:
 - OpenBao recovery administration access.
 - OpenTofu state-encryption and backend credentials.
 - UPS coordinator management/shutdown credentials.
-- YubiKey programming-protection access codes, if enabled.
+- YubiKey programming access codes are deferred to [future improvements](../future.md).
 
 Vault bootstrap material must remain accessible without its own OpenBao instance.
 
