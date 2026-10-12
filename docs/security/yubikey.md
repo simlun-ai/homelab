@@ -123,6 +123,8 @@ Vault bootstrap material must remain accessible without its own OpenBao instance
 
 ## Record and maintenance requirements
 
+Finalize entries under the [catalogue rules](credential-catalogue.md), with one record per independently managed credential and exact identifiers mapped to filenames in the public manifest.
+
 Each registered credential needs its exact identifier, consumer, encrypted-payload reference, public protocol parameters, root-key and wrapping-context generations, record revision, recovery dependency, and status: planned, configured, or verified.
 
 Record identifiers and metadata only. Never record golden-key bytes, HMAC responses, derived keys, or plaintext credentials.

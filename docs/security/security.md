@@ -153,7 +153,7 @@ Topic placeholders for the remaining decisions and implementation work:
 - [YubiKey setup](yubikey-setup.md) — decision approved; programming and verification pending.
 - [Golden-key custody](golden-key-custody.md) — decision approved; backup and recovery verification pending.
 - [OpenBao unseal](openbao-unseal.md) — unseal decision approved; implementation, recovery administration, and restore verification pending.
-- [Credential catalogue](credential-catalogue.md) — TBD.
+- [Credential catalogue](credential-catalogue.md) — catalogue rules approved; concrete entries and implementation pending.
 - [Coordinator sessions](coordinator-sessions.md) — TBD.
 - [Helper implementation](helper-implementation.md) — TBD.
 - [Rotation and rollback](rotation-and-rollback.md) — TBD.
