@@ -1,6 +1,6 @@
 # Components
 
-Latest versions are catalog references. Cluster cells show **planned** component use at the catalog version, not verified deployments or independent operational pins; see the [tool-scope contract](layout.md#tool-versions-and-command-scopes). Blank cells indicate no documented placement. Immich and Frigate's tentative Metal placement follows their dedicated storage pools in the [inventory](inventory.md#workers).
+Cluster entries are **planned** placements at the catalog version, not deployed versions or [operational pins](layout.md#tool-versions-and-command-scopes). Blank means placement is unspecified. Immich and Frigate's Metal assignments are tentative, inferred from [dedicated storage pools](inventory.md#workers).
 
 ## Infrastructure
 
@@ -8,12 +8,12 @@ Latest versions are catalog references. Cluster cells show **planned** component
 | --- | --- | --- | --- | --- | --- |
 | Talos | v1.14.2 | v1.14.2 | v1.14.2 | v1.14.2 | v1.14.2 |
 | Piraeus Operator | v2.12.0 |  |  | v2.12.0 | v2.12.0 |
-| ZFS | v2.4.4, Talos system extension | v2.4.4, Talos system extension | v2.4.4, Talos system extension |  | v2.4.4, Talos system extension |
+| ZFS (Talos system extension) | v2.4.4 | v2.4.4 | v2.4.4 |  | v2.4.4 |
 | Cilium | v1.20.2 |  |  |  |  |
 | Flannel | v0.28.9 | v0.28.9 |  |  |  |
 | MetalLB | v0.16.0 | v0.16.0 |  |  |  |
 | Traefik | v3.7.14 | v3.7.14 |  |  |  |
-| kube-prometheus-stack | Helm chart v92.3.0 | Helm chart v92.3.0 |  |  |  |
+| kube-prometheus-stack (Helm chart) | v92.3.0 | v92.3.0 |  |  |  |
 | Loki | v3.7.8 |  |  |  |  |
 | ZFS LocalPV | v2.11.1 | v2.11.1 |  |  |  |
 | OpenBao | v2.7.1 | v2.7.1 |  |  |  |
