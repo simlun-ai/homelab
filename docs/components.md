@@ -8,7 +8,7 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | --- | --- | --- | --- | --- | --- |
 | Talos | v1.14.2 | v1.14.2 | v1.14.2 | v1.14.2 | v1.14.2 |
 | Piraeus Operator | v2.12.0 |  |  | v2.12.0 | v2.12.0 |
-| ZFS (Talos system extension) | v2.4.4 | v2.4.4 | v2.4.4 |  | v2.4.4 |
+| ZFS (Talos system extension) | v2.4.4 | v2.4.4 | v2.4.4 | v2.4.4 | v2.4.4 |
 | Cilium | v1.20.2 |  |  |  |  |
 | Flannel | v0.28.9 | v0.28.9 |  |  |  |
 | MetalLB | v0.16.0 | v0.16.0 |  |  |  |
