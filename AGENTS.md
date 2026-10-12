@@ -28,7 +28,7 @@ These instructions apply to the entire homelab repository.
 - `docs/components.md`: Software/component catalog and versions, separated into **Infrastructure** and **Workloads**.
 - `docs/layout.md`: Draft repository structure, configuration ownership, tooling scopes, automation boundaries, and links to detailed policies.
 - `docs/security/security.md`: Authoritative core-secret/YubiKey foundation, golden-key custody, workstation secret handling, encryption intent, and security implementation decisions.
-- `docs/security/yubikey.md`: Credential/use-case catalogue, lookup identifiers and challenge construction, direct versus OpenBao-mediated access, and unresolved bootstrap coverage. Keep proposed identifiers distinct from implemented lookups.
+- `docs/security/yubikey.md`: Credential/use-case catalogue and finalization/maintenance rules, lookup identifiers and challenge construction, direct versus OpenBao-mediated access, and unresolved bootstrap coverage. Keep proposed identifiers distinct from implemented lookups.
 - Other `docs/security/*.md` topic files: Approved topic decisions and remaining TBD work, indexed in `docs/security/security.md`. `encrypted-record-storage.md` owns ciphertext storage, recovery USB clones, and coordinator deployment. Preserve established policy and catalogue ownership while developing them.
 - `docs/backup-and-restore.md`: Authoritative backup architecture, independent recovery dependencies, and restore planning.
 - `docs/emergency-recovery-guide.md`: Single-file non-secret USB recovery guide; keep it usable independently of other local documents once completed.

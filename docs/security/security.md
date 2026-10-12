@@ -153,7 +153,7 @@ Approved topic decisions and remaining implementation work:
 - [YubiKey setup](yubikey-setup.md) — decision approved; programming and verification pending.
 - [Golden-key custody](golden-key-custody.md) — decision approved; backup and recovery verification pending.
 - [OpenBao unseal](openbao-unseal.md) — unseal decision approved; implementation, recovery administration, and restore verification pending.
-- [Credential catalogue](credential-catalogue.md) — catalogue rules approved; concrete entries and implementation pending.
+- [Credential catalogue](yubikey.md#record-and-maintenance-requirements) — catalogue rules approved; concrete entries and implementation pending.
 - [Coordinator sessions](coordinator-sessions.md) — decision approved; implementation and verification pending.
 - [Helper implementation](helper-implementation.md) — helper and two-layer KMS design approved; implementation and verification pending.
 - [Rotation and rollback](rotation-and-rollback.md) — decision approved; procedures and verification pending. Strong rollback enforcement deferred.

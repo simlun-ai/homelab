@@ -123,7 +123,14 @@ Vault bootstrap material must remain accessible without its own OpenBao instance
 
 ## Record and maintenance requirements
 
-Finalize entries under the [catalogue rules](credential-catalogue.md), with one record per independently managed credential and exact identifiers mapped to filenames in the public manifest.
+**Catalogue rules approved; concrete entries and implementation pending.**
+
+- Keep one wrapped record per independently managed credential, including one per ZFS encryption root.
+- Map exact identifiers to encrypted-record filenames through the public manifest under `secrets/wrapped/`, following the [storage policy](encrypted-record-storage.md). Manifest schema and tooling belong to [helper implementation](helper-implementation.md).
+- Finalize identifiers when resource boundaries are known. Keep missing node/pool names, ZFS encryption roots, Talos volume mappings, and bootstrap bundle contents explicitly TBD.
+- Keep every bootstrap/recovery credential accessible without the service it helps recover.
+
+Concrete entries remain planned until configured and verified.
 
 Each registered credential needs its exact identifier, consumer, encrypted-payload reference, public protocol parameters, root-key and wrapping-context generations, record revision, recovery dependency, and status: planned, configured, or verified.
 
