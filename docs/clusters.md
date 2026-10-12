@@ -11,9 +11,8 @@ Independent, single-node foundation. All other clusters depend on its services. 
 | Function | Components |
 | --- | --- |
 | Networking | Flannel pod networking (no Cilium), MetalLB LoadBalancer services, Traefik ingress. |
-| Management | Headlamp. |
 | Storage | Local persistent volumes via ZFS LocalPV on the [Vault data mirror](inventory.md#vault), separate from the OS mirror. |
-| Monitoring | kube-prometheus-stack (Prometheus, Grafana, Alertmanager), with Telegram notifications. |
+| Observability | kube-prometheus-stack (Prometheus, Grafana, Alertmanager), with Telegram notifications; Headlamp for cluster visibility. |
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
 | Certificates | cert-manager with Let's Encrypt and Cloudflare DNS-01; External Secrets Operator PushSecret publishes certificates to OpenBao, and dependent clusters pull them through External Secrets Operator. |
 
