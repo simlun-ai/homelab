@@ -20,7 +20,7 @@ All entries must be non-secret.
 | R2 account, endpoint, bucket, object convention; snapshot selection | TBD. |
 | Additional backup-encryption details | TBD. |
 | Independent encrypted-payload references | Wrapped records and public manifest under `secrets/wrapped/` in the USB's full repository clone; exact records TBD. Accessible without Vault, GitHub, or existing R2 credentials. |
-| Golden-key retrieval procedure reference | TBD; never record the key here. |
+| Golden-key retrieval procedure reference | Level 1 Password Management system; exact retrieval steps outside this repository. Never record the key here. |
 | Vault coordinator KMS endpoint, public TLS/DNS-01, preboot DNS/NTP, session controls | TBD; include service acquisition, independent wrapped-payload references, and coordinator rebuild instructions. |
 | KMS adapter endpoint, TLS trust, early-boot networking, transit key mapping/versions | TBD; include adapter acquisition and independent bootstrap-payload references. |
 | Per-device power-return limitations and manual startup procedure | TBD. |
@@ -79,7 +79,7 @@ The helper uses Python `cryptography` HKDF/AESGCM and an RFC 8785-compatible ser
 
 ## Golden-key fallback and replacement token
 
-Retrieve the offline golden key using its separate custody procedure. Load it into the verified memory-only session without logging. The helper must compute HMAC-SHA1 over identical effective challenge bytes, then apply the same derivation/unwrap steps.
+Retrieve the required golden-key generation from the air-gapped, replicated Level 1 Password Management system. Each entry holds the key as exactly 40 hexadecimal characters, preserving leading zeros, and its generation label matching the record's `root_key`. Level 1's internal procedures and locations are outside this guide. Load the key into the verified memory-only session without logging. The helper must compute HMAC-SHA1 over identical effective challenge bytes, then apply the same derivation/unwrap steps.
 
 Replacement programming must use the same key/settings with **touch required**, preserve occupied slots unless explicitly approved, verify behavior, record the non-secret device identity, and return a current token/guide pair to its location. Exact helper acquisition, programming commands, and verification steps remain TBD.
 

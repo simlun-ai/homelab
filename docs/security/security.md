@@ -34,7 +34,7 @@ Generate the golden key once with suitable randomness and handle it only in memo
 
 The offline record enables replacement tokens and software recovery. The fallback must reproduce the exact effective challenge bytes, HMAC-SHA1 operation, and subsequent derivation/unwrap steps. It cannot enforce touch: possession of the golden key gives access to the entire foundation.
 
-Offline format, location, access, and refresh/verification procedures remain TBD. Loading the key into a recovery workstation must follow the memory-only rule.
+Store golden-key generations in the existing air-gapped, replicated Level 1 Password Management system under the [custody policy](golden-key-custody.md). Loading a key into a recovery workstation must follow the memory-only rule; retrieval and verification steps remain pending.
 
 ## Challenges, derivation, and wrapped credentials
 
@@ -151,7 +151,7 @@ Topic placeholders for the remaining decisions and implementation work:
 
 - [Encrypted-record storage](encrypted-record-storage.md) — decision approved; implementation pending.
 - [YubiKey setup](yubikey-setup.md) — decision approved; programming and verification pending.
-- [Golden-key custody](golden-key-custody.md) — TBD.
+- [Golden-key custody](golden-key-custody.md) — decision approved; backup and recovery verification pending.
 - [OpenBao unseal](openbao-unseal.md) — TBD.
 - [Credential catalogue](credential-catalogue.md) — TBD.
 - [Coordinator sessions](coordinator-sessions.md) — TBD.

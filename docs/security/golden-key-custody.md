@@ -1,5 +1,30 @@
 # Golden-key custody
 
-**TBD.**
+**Decision approved; backup and recovery verification pending.**
 
-Offline backup format, location, retrieval procedure, and periodic verification. The decision to retain an offline copy is already made.
+Store each golden-key generation in the existing **Level 1 Password
+Management system**: air-gapped USB drives and computers already
+replicated across multiple locations.
+
+Each entry contains:
+
+- The actual 20-byte golden key encoded as exactly 40 hexadecimal
+  characters, preserving leading zeros.
+- Its generation label, matching the wrapped records' `root_key` field
+  (initially `golden-1`).
+- A brief description identifying it as the homelab HMAC-SHA1 foundation.
+
+Retain older generations while required wrapped records or backups
+depend on them.
+
+Use this material for replacement-token programming and emergency
+software recovery. Loading it onto a workstation follows the
+[memory-only handling policy](security.md#secret-handling-boundary).
+Never include it in the repository or recovery USB clones.
+
+Verify each stored entry against a configured YubiKey before relying
+on it, comparing HMAC responses only in memory. Exact verification and
+retrieval steps remain pending.
+
+Level 1's internal procedures and physical locations are outside
+this repository's scope.
