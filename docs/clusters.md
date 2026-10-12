@@ -17,7 +17,7 @@ Independent, single-node foundation. All other clusters depend on its services. 
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
 | Certificates | cert-manager with Let's Encrypt and Cloudflare DNS-01; External Secrets Operator PushSecret publishes certificates to OpenBao, and dependent clusters pull them through External Secrets Operator. |
 
-Backup, Pi, and Metal depend on Vault's unsealed OpenBao and KMS adapter for [Talos system-volume unlock](security.md#talos-kms-adapter). Vault's own unlock remains independent.
+Backup, Pi, and Metal depend on Vault's unsealed OpenBao and KMS adapter for [Talos system-volume unlock](security.md#talos-kms-adapter). Vault's own system-volume unlock uses the independent [YubiKey-backed coordinator KMS](security.md#vault-bootstrap-kms).
 
 OpenBao storage, backups, and recovery are specified in [backup-and-restore.md](backup-and-restore.md#openbao-online-backups).
 
@@ -27,7 +27,7 @@ Single-node cluster on the [Lenovo ThinkCentre M93p Tiny](inventory.md#backup), 
 
 ## Shared infrastructure
 
-Vault and Backup share the [UPS and shutdown coordinator](inventory.md#shared-infrastructure).
+Vault and Backup share the [UPS and shutdown coordinator](inventory.md#shared-infrastructure). The coordinator also hosts Vault's planned [bootstrap KMS](security.md#vault-bootstrap-kms).
 
 ## Pi
 

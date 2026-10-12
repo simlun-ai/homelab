@@ -31,7 +31,7 @@ Keep details in their owning document and link from other documents. The USB gui
 | `/scripts/` | Python helpers and small Bash scripts. |
 | `/charts/` | Repository-owned Helm source where useful. |
 | `/tofu/modules/` | Reusable modules; live roots/state stay with their scopes. |
-| `/support/ups/` | Shutdown-coordinator management. |
+| `/support/ups/` | Shutdown-coordinator management and Vault bootstrap KMS configuration. |
 | `/runbooks/` | Common operating procedures. |
 
 ## Common cluster layout
@@ -72,7 +72,7 @@ Secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered configuratio
 | `/make/helm.mk` | Render/deploy selected releases. |
 | `/make/tofu.mk` | Operate the selected root/state. |
 | `/make/storage.mk` | Validate disks, coordinate assigned Piraeus preparation, inspect manual pools. |
-| `/scripts/homelab/` | Python tool installation, validation, secret transport, orchestration; planned workstation unseal helper and [Talos KMS adapter](security.md#talos-kms-adapter). |
+| `/scripts/homelab/` | Python tool installation, validation, secret transport, orchestration; planned workstation unseal helper, [Talos KMS adapter](security.md#talos-kms-adapter), and [Vault bootstrap KMS](security.md#vault-bootstrap-kms). |
 | `/scripts/bash/` | Small shell helpers. |
 | `/charts/<chart>/` | Chart definition, values, templates, dependency locks. |
 | `/tofu/modules/<module>/` | Shared definitions without credentials or ownership of other scopes' state. |
@@ -134,7 +134,7 @@ Use one `/support/ups/` scope because a coordinator serves both Vault and Backup
 | `ansible/templates/` | Non-secret service templates. |
 | `ansible/requirements.yml` | Pinned external roles/collections if selected. |
 
-Raspberry Pi OS Lite and Ansible are tentative choices. OpenTofu has no assigned coordinator role. Shutdown software, credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security.md#secret-handling-boundary).
+Raspberry Pi OS Lite and Ansible are tentative choices. The Vault/Backup coordinator also hosts the planned [Vault bootstrap KMS](security.md#vault-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. OpenTofu has no assigned coordinator role. Shutdown software, credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security.md#secret-handling-boundary).
 
 ### Power-loss shutdown and manual startup
 
@@ -166,6 +166,7 @@ Each runbook states scope, prerequisites, secret-source references, expected sta
 | `recover-encryption-access.md` | Recover/rotate unlock access under [security.md](security.md). |
 | `unseal-openbao.md` | Workstation/YubiKey unseal with memory-only secret handling. |
 | `operate-talos-kms.md` | Deploy/verify the adapter, rotate transit keys, and recover dependent-node unlock. |
+| `operate-vault-bootstrap-kms.md` | Configure/recover the coordinator KMS, touch-authorized sessions, DNS-01 renewal, time readiness, and network hardening. |
 | `configure-yubikey-challenge-response.md` | Write the [specified configuration runbook](security.md#planned-yubikey-configuration-runbook). |
 | `restore-openbao.md` | Implement the [restore plan](backup-and-restore.md#vault-restore-outline). |
 | `ups-shutdown-and-startup.md` | Verify shutdown, stay-off behavior, manual dependency-ordered startup. |

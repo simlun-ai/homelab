@@ -44,6 +44,8 @@ Use purpose-specific challenges and a documented key derivation scheme to turn H
 | --- | --- |
 | Manual ZFS data-pool unlock | Wrap/unwrap encryption keys using HMAC-response-derived keys; helper integration TBD. |
 | OpenBao unseal/recovery | Workstation helper unwraps OpenBao-generated unseal material using a YubiKey response, then submits it to OpenBao; share/threshold TBD. |
+| Vault Talos system-volume unlock | Dedicated coordinator KMS wraps/unwraps Talos-generated unlock material using the YubiKey foundation; see [Vault bootstrap KMS](#vault-bootstrap-kms). |
+| Coordinator KMS TLS and DNS-01 credentials | Wrap private keys and the DNS API credential; decrypt only into coordinator memory after touch. |
 | Dependent Talos system-volume unlock | Talos KMS adapter delegates sealing/unsealing to OpenBao transit; see below. |
 | Application/service secrets | Fetch from OpenBao after unseal, rather than querying a YubiKey for each secret. |
 | R2 restore access | Wrap externally issued credentials. |
@@ -64,10 +66,25 @@ Touch is required when querying a token, not for each scheduled backup. Runtime 
 ## Disk encryption and OpenTofu
 
 - **All ZFS storage:** require encryption, including Piraeus backing storage and manual pools. Native ZFS encryption needs dataset/zvol coverage and inheritance checks; it does not encrypt all pool metadata. Layer and provisioning sequence are TBD.
-- **OS disks:** Backup, Pi, and Metal target Talos KMS-backed LUKS2 encryption for sensitive system volumes, including `STATE` and `EPHEMERAL`. This does not encrypt every boot partition. Validate volume coverage and compatibility with the assigned OS disks/MD RAID1 on each platform. Vault is excluded from this OpenBao-backed KMS path; its independent OS-unlock method remains TBD.
+- **OS disks:** All clusters target Talos KMS-backed LUKS2 encryption for sensitive system volumes, including `STATE` and `EPHEMERAL`. Vault uses the independent [coordinator KMS](#vault-bootstrap-kms); Backup, Pi, and Metal use the [OpenBao-backed adapter](#talos-kms-adapter). This does not encrypt every boot partition. Validate volume coverage and compatibility with the assigned OS disks/MD RAID1 on each platform.
 - **Manual pools:** preparation and migration must preserve the [manual-storage boundary](layout.md#provisioning-and-storage-ownership).
 - **OpenTofu:** encrypted remote state is allowed. Secret-bearing state, plans, provider output, and failure-recovery files must stay off workstation disk. Backend, locking, key delivery, and provider behavior are TBD; state ownership belongs in [layout.md](layout.md#common-cluster-layout).
 - **Bootstrap:** Vault's state backend and unlock services must work before its protected storage or OpenBao is available.
+
+## Vault bootstrap KMS
+
+**Decision:** Run a dedicated Python gRPC Talos KMS service on the [Vault/Backup UPS coordinator](inventory.md#shared-infrastructure), serving Vault only. It must work without OpenBao, a Kubernetes cluster, or a workstation. UPS shutdown management remains operational while KMS is locked.
+
+- Use purpose-specific YubiKey challenge-response and a KDF/authenticated wrapping scheme to seal/unseal Talos-generated unlock material. Talos retains the sealed payload in LUKS metadata; exact protocol, payload format, and recovery copies remain TBD.
+- A touched YubiKey enables a short boot session covering system-volume unlock and retries. Keep the KMS wrapping key only in memory and discard it when the window expires; already unlocked volumes continue running. Subsequent unlock requires another authorized session; duration and operator controls are TBD.
+- Serve TLS with a publicly trusted certificate, renewed through DNS-01 on the coordinator independently of Vault's cert-manager/OpenBao. No private CA or custom Talos build is planned for KMS trust.
+- Persist the DNS API credential and TLS private key only as authenticated encrypted payloads under separate YubiKey-derived wrapping contexts. After touch, retain plaintext only in coordinator process memory for its running lifetime, independently of the shorter KMS window. Restart/power loss requires touch again. Apply the same protection to ACME account/bootstrap secrets; prevent credential files, swap, dumps, and persistent secret logs. ACME integration and renewal/storage behavior require validation.
+- Coordinator and Vault use the same public NTP service. Working Internet/time service is an accepted cold-start dependency; no RTC is required. Configure Vault's networking, DNS, and NTP before encrypted `STATE` loads, using boot-level settings. Establish usable time before TLS-dependent operations; endpoints and cold-boot synchronization/KMS retry tests are TBD.
+- **Trusted-network boundary:** TLS authenticates the coordinator to Vault. The stock Talos KMS client does not present client credentials; request UUIDs are identifiers, not authentication. The trusted network is accepted as the client admission boundary. Make an effort to secure communication between these hosts; additional network restrictions/hardening are **TBD exactly how**. Fail closed on locked state, expiry, or unwrap errors.
+
+Startup is **coordinator/time readiness → YubiKey-authorized KMS session → Vault system-volume unlock → manual ZFS unlock and workstation/YubiKey OpenBao unseal → transit/KMS readiness → dependent clusters**. Starting hosts remains operator-controlled.
+
+Independent coordinator-loss recovery remains TBD in [backup-and-restore.md](backup-and-restore.md#independent-recovery-material).
 
 ## Talos KMS adapter
 
@@ -77,7 +94,7 @@ Touch is required when querying a token, not for each scheduled backup. Runtime 
 - `Unseal`: pass the stored ciphertext to transit `decrypt`; return the decoded unlock material. Preserve a versioned payload format and the necessary transit key versions.
 - Use TLS and scoped transit permissions. Node UUIDs in requests are identifiers, not proof of identity; client authorization compatible with Talos remains TBD. Fail closed on backend or decryption errors.
 
-Planned placement is Vault, beside OpenBao, so the adapter is available before dependent nodes boot. Its credentials and TLS configuration must bootstrap without those nodes. Startup order is **Vault → workstation/YubiKey OpenBao unseal → transit/KMS readiness → Backup, Pi, and Metal**. Nodes need KMS access again when unlocking after a reboot; touch is required for OpenBao unseal, not each KMS request.
+Planned placement is Vault, beside OpenBao, so the adapter is available before dependent nodes boot. Its credentials and TLS configuration must bootstrap without those nodes. Startup follows the [coordinator-first sequence](#vault-bootstrap-kms), then **OpenBao unseal → transit/KMS readiness → Backup, Pi, and Metal**. Nodes need KMS access again when unlocking after a reboot; touch is required for OpenBao unseal, not each KMS request.
 
 For encrypted `STATE`, networking must work before the machine configuration can be read, and custom CA certificates stored in `STATE` cannot establish KMS trust. Settle early-boot addressing/DNS and a Talos-supported TLS trust path before rollout. Adapter packaging, endpoint, authentication, timeouts, key mapping/rotation, and restore tests remain TBD; do not copy the reference test server's random-data fallback behavior.
 
@@ -108,4 +125,6 @@ Programming protection and verification/rotation procedures remain TBD. Other op
 - [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
 - [OpenBao security model](https://openbao.org/docs/internals/security/).
 - [Talos KMS reference implementation](https://github.com/siderolabs/kms-client).
+- [Talos v1.14.2 KMS client and TLS behavior](https://github.com/siderolabs/talos/blob/v1.14.2/internal/pkg/encryption/keys/kms.go).
+- [Talos preboot networking/DNS/NTP kernel parameters](https://github.com/siderolabs/talos/blob/v1.14.2/website/content/v1.14/reference/kernel.md).
 - [OpenBao transit API](https://openbao.org/docs/api/secret/transit/).

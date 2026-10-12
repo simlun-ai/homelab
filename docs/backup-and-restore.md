@@ -35,6 +35,7 @@ Use the [YubiKey or offline golden-key path](security.md#core-secret-foundation)
 | Disk-unlock material | Access surviving or replacement storage without relying on that storage already being unlocked. |
 | OpenBao transit key versions and Talos sealed payloads | Restore KMS unlock for Backup, Pi, and Metal; retain every key version needed by surviving disks. |
 | KMS adapter configuration/bootstrap credentials | Re-establish its endpoint, TLS, and authorized transit access before dependent nodes unlock. |
+| Vault coordinator KMS configuration, wrapped credentials, and sealed disk payloads | Rebuild Vault's independent unlock service without its original coordinator or OpenBao; exact recovery copies/locations and procedure TBD. |
 | Talos bootstrap/administration material | Rebuild Vault before its control plane or OpenBao is usable. |
 | Helpers, protocol metadata, compatible tools | Obtainable without the failed homelab. |
 
@@ -42,7 +43,9 @@ Protected-payload locations remain TBD. Secret custody and handling belong in [s
 
 ## Vault restore outline
 
-Plan `/runbooks/bootstrap-vault.md` and `/runbooks/restore-openbao.md` around the [Emergency Recovery Guide's restore outline](emergency-recovery-guide.md#restore-vault-and-openbao).
+Recover/verify the [coordinator bootstrap KMS](security.md#vault-bootstrap-kms) before Vault system-volume unlock. Router/network, DNS, and public NTP must work independently; Internet is an accepted cold-start dependency. Coordinator-loss recovery and expired-certificate renewal must be tested without OpenBao or workstation-disk secrets.
+
+Plan `/runbooks/operate-vault-bootstrap-kms.md`, `/runbooks/bootstrap-vault.md`, and `/runbooks/restore-openbao.md` around the [Emergency Recovery Guide's restore outline](emergency-recovery-guide.md#restore-vault-and-openbao).
 
 Validate snapshot identity/integrity, replacement-node bootstrap, the exact initialization/seal/restore/unseal sequence, expected secrets and authentication/policies, dependent Vault services, and resumed backups. Use the seal/unseal material associated with the selected snapshot; newly initialized material must not be assumed to unlock an older backup.
 

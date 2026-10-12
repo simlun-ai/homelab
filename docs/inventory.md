@@ -38,7 +38,7 @@ Architecture is in [clusters.md](clusters.md), encryption in [security.md](secur
 Shared exclusively by the **Vault and Backup clusters**:
 
 - **UPS:** 1 × Eaton 3S700 supplying power to both clusters.
-- **Shutdown coordinator:** 1 × Raspberry Pi 2, connected to this UPS via USB for monitoring and safe shutdown of both Vault and Backup. Powered from the Eaton 3S700's 2 A USB power outlet. This supporting host is separate from their Talos nodes.
+- **Shutdown coordinator:** 1 × Raspberry Pi 2, connected to this UPS via USB for monitoring and safe shutdown of both Vault and Backup. Powered from the Eaton 3S700's 2 A USB power outlet. This supporting host is separate from their Talos nodes and is the planned host for [Vault's bootstrap KMS](security.md#vault-bootstrap-kms).
 
 ## Pi
 
