@@ -25,7 +25,7 @@ Provision job credentials without circular recovery dependencies. R2 restore cre
 
 ## Independent recovery material
 
-Use the [YubiKey or offline golden-key path](security/security.md#core-secret-foundation). For wrapped secrets, also recover the encrypted payload, root-key generation, exact identifier/public protocol parameters, and any independently trusted expected revision or record digest. The [v1 record and rotation rules](security/security.md#updates-rotation-and-recovery) apply.
+Use the [YubiKey or offline golden-key path](security/security.md#core-secret-foundation). For wrapped secrets, also recover the encrypted payload, root-key generation, and exact identifier/public protocol parameters. Track revisions and explicitly select recovery records under the [rotation policy](security/rotation-and-rollback.md); strong rollback enforcement is deferred. Preserve any independently trusted freshness metadata if introduced later. The [v1 record and rotation rules](security/security.md#updates-rotation-and-recovery) apply.
 
 | Material | Needed for / independence requirement |
 | --- | --- |

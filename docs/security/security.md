@@ -81,7 +81,7 @@ The caller supplies the expected `key_id` and allowed root generation independen
 
 - Updating or rewrapping a record increments `revision` and generates fresh salt and nonce. The identifier's `r1` suffix tracks the wrapping-context generation separately.
 - Changing `r1` to `r2` changes the HMAC response. Every token holding the same golden key can calculate either; revoking a lost token requires replacing that shared key, rewrapping records, and rotating underlying credentials where old records could expose them.
-- Authentication does not prevent replay of an older valid record. Enforcing freshness requires an independently trusted expected revision or record digest; its storage and recovery mechanism remain TBD.
+- Authentication does not prevent replay of an older valid record. Track revisions and explicitly select records during recovery under the [rotation policy](rotation-and-rollback.md). Strong rollback enforcement through independently trusted revision or digest state is deferred to [future improvements](../future.md).
 - Preserve the root generation, exact identifier, encrypted record, and any trusted freshness metadata needed for each retained disk or backup. HMAC cannot reconstruct externally issued credentials or OpenBao-generated material. Independent-access requirements belong in [backup-and-restore.md](../backup-and-restore.md#independent-recovery-material).
 - Keep responses and derived keys within their authorized memory-only lifetime. KMS expiry must discard both, including copies that could recreate wrapping authority.
 
@@ -156,7 +156,7 @@ Topic placeholders for the remaining decisions and implementation work:
 - [Credential catalogue](credential-catalogue.md) — catalogue rules approved; concrete entries and implementation pending.
 - [Coordinator sessions](coordinator-sessions.md) — decision approved; implementation and verification pending.
 - [Helper implementation](helper-implementation.md) — helper and two-layer KMS design approved; implementation and verification pending.
-- [Rotation and rollback](rotation-and-rollback.md) — TBD.
+- [Rotation and rollback](rotation-and-rollback.md) — decision approved; procedures and verification pending. Strong rollback enforcement deferred.
 - [Recovery procedures](recovery-procedures.md) — TBD.
 
 Existing decisions remain in this document and the [YubiKey catalogue](yubikey.md).
