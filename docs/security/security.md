@@ -38,7 +38,7 @@ Store golden-key generations in the existing air-gapped, replicated Level 1 Pass
 
 ## Challenges, derivation, and wrapped credentials
 
-**Decision:** Use HKDF-SHA-256 and AES-256-GCM for direct YubiKey wrapping, with the `homelab-wrap-v1` JSON record below. Implementation and verification are pending. The [YubiKey catalogue](yubikey.md) owns identifiers, challenge construction, consumers, and unresolved bootstrap coverage; OTP slot 1 is selected under the [approved setup](yubikey-setup.md).
+**Decision:** Use HKDF-SHA-256 and AES-256-GCM for direct YubiKey wrapping, with the `homelab-wrap-v1` JSON record below. The initial shared helper is implemented for [step 00](../installation/00-yubikey-setup.md); physical-token verification and production integrations remain pending. The [YubiKey catalogue](yubikey.md) owns identifiers, challenge construction, consumers, and unresolved bootstrap coverage; OTP slot 1 is selected under the [approved setup](yubikey-setup.md).
 
 ### Derivation and encryption
 
@@ -75,7 +75,7 @@ Illustrative placeholders, not an actual encrypted record:
 
 The format fixes the algorithms, sizes, and encodings; no per-record algorithm negotiation. `root_key` is a public golden-key-generation label using lowercase ASCII letters, digits, and hyphens. `key_id` follows the catalogue format. `revision` is an integer from 1 through 9007199254740991. Binary fields use canonical padded standard Base64 without whitespace. Authenticate all six header fields using their JCS representation.
 
-The caller supplies the expected `key_id` and allowed root generation independently of the record. Validate them before querying the token. Reject unknown formats, missing/extra/duplicate fields, invalid types/encodings/lengths, and authentication failures; release plaintext only after successful authentication. Set input-size limits before implementation.
+The caller supplies the expected `key_id` and allowed root generation independently of the record. Validate them before querying the token. Reject unknown formats, missing/extra/duplicate fields, invalid types/encodings/lengths, and authentication failures; release plaintext only after successful authentication. The initial helper caps plaintext at 1 MiB, encoded records at 2 MiB, identifiers at 1,024 ASCII characters, and root-generation labels at 64 characters.
 
 ### Updates, rotation, and recovery
 
@@ -85,7 +85,7 @@ The caller supplies the expected `key_id` and allowed root generation independen
 - Preserve the root generation, exact identifier, encrypted record, and any trusted freshness metadata needed for each retained disk or backup. HMAC cannot reconstruct externally issued credentials or OpenBao-generated material. Independent-access requirements belong in [backup-and-restore.md](../backup-and-restore.md#independent-recovery-material).
 - Keep responses and derived keys within their authorized memory-only lifetime. KMS expiry must discard both, including copies that could recreate wrapping authority.
 
-Use Python `cryptography`'s HKDF and AESGCM APIs plus an RFC 8785-compatible serializer; dependency versions and packaging remain TBD. Before use, verify public test vectors with disposable test keys, matching behavior across all four tokens and the software fallback, malformed/tampered records, identifier substitution, rotation, and memory handling. Never use or publish real golden-key responses as test vectors.
+The initial helper uses Python `cryptography`'s HKDF and AESGCM APIs. Its validated header contains only restricted ASCII strings and integers within the exact JSON range, so sorted compact JSON provides RFC 8785 canonicalization for this schema. Package pins and offline preparation belong to [step 00](../installation/00-yubikey-setup.md). Before production use, verify disposable test vectors, matching behavior across all four tokens and the software fallback, malformed/tampered records, identifier substitution, rotation, and memory handling. Never use or publish real golden-key responses as test vectors.
 
 Challenge-response needs helper logic; it is not native ZFS unlock integration or an OpenBao seal mechanism. OpenPGP and PKCS#11 are outside the chosen foundation.
 
@@ -134,16 +134,7 @@ For encrypted `STATE`, networking must work before the machine configuration can
 
 ## Planned YubiKey configuration runbook
 
-Develop [00 - YubiKey setup](../installation/00-yubikey-setup.md) for a trusted air-gapped laptop, covering:
-
-1. Inventory firmware, interfaces, occupied slots, and non-secret device identifiers.
-2. Pin compatible programming/query tools for all four devices.
-3. Generate or load the golden key in memory and establish its separate offline record.
-4. Program matching slots/settings with touch required, preserving other slot contents and approved uses.
-5. Verify touch enforcement on each device and compare several public challenges across all tokens and the software fallback, keeping responses and comparisons in memory.
-6. Record protocol, slot, tool versions, and challenge processing. Programming access codes are deferred to [future improvements](../future.md).
-7. Distribute token/guide pairs and verify offline recovery.
-8. Document replacement, loss, compromise, golden-key/dependent-material rotation, and guide updates.
+The first [00 - YubiKey setup](../installation/00-yubikey-setup.md) implementation targets a trusted Debian/Ubuntu laptop: install and verify dependencies online, then make it air-gapped before handling the golden key. It owns tooling preparation, programming, verification, and recovery-kit setup; physical trials remain pending. Replacement/loss and rotation requirements belong in [recovery procedures](recovery-procedures.md) and [rotation and rollback](rotation-and-rollback.md).
 
 ## Remaining decisions
 
@@ -153,9 +144,9 @@ Approved topic decisions and remaining implementation work:
 - [YubiKey setup](yubikey-setup.md) — decision approved; programming and verification pending.
 - [Golden-key custody](golden-key-custody.md) — decision approved; backup and recovery verification pending.
 - [OpenBao unseal](openbao-unseal.md) — unseal decision approved; implementation, recovery administration, and restore verification pending.
-- [Credential catalogue](yubikey.md#record-and-maintenance-requirements) — catalogue rules approved; concrete entries and implementation pending.
+- [Credential catalogue](yubikey.md#record-and-maintenance-requirements) — catalogue rules approved; production entries and consumer integrations pending.
 - [Coordinator sessions](coordinator-sessions.md) — decision approved; implementation and verification pending.
-- [Helper implementation](helper-implementation.md) — helper and two-layer KMS design approved; implementation and verification pending.
+- [Helper implementation](helper-implementation.md) — initial token/wrapping helpers implemented; physical verification and service helpers pending.
 - [Rotation and rollback](rotation-and-rollback.md) — decision approved; procedures and verification pending. Strong rollback enforcement deferred.
 - [Recovery procedures](recovery-procedures.md) — recovery requirements approved; commands and drills pending.
 

@@ -24,8 +24,9 @@ firmware, serial number where available, and configured slot.
 
 ## Programming and verification
 
-Use a trusted air-gapped laptop and program one token at a time. Handle the
-golden key and HMAC responses only in memory, following
+Install and verify dependencies while the trusted laptop is online, then
+make it air-gapped before handling the golden key. Program one token at a time.
+Handle the golden key and HMAC responses only in memory, following
 [security.md](security.md).
 
 Verify on every token:
@@ -43,11 +44,13 @@ only after these checks pass.
 
 ## Remaining implementation work
 
-- Confirm compatible programming and query tools for all four devices,
-  including the older YubiKey Standard models.
-- Pin tool versions and document exact commands in
-  [00 - YubiKey setup](../installation/00-yubikey-setup.md).
-- Record device identifiers and verification results.
+The first helper and pinned-tooling implementation is available in
+[00 - YubiKey setup](../installation/00-yubikey-setup.md). It refuses to
+overwrite occupied slot 1 and uses a hidden local prompt for the Level 1 key.
+
+- Test tooling preparation/installation and offline execution on the actual laptop.
+- Program and verify all four devices, including the older Standard models.
+- Record device identifiers and verification results; complete the recovery kits.
 
 Golden-key custody and recovery procedures are covered separately in
 [golden-key-custody.md](golden-key-custody.md) and

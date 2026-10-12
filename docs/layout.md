@@ -37,6 +37,7 @@ Keep details in their owning document and link from other documents. The USB gui
 | `/charts/` | Repository-owned Helm source where useful. |
 | `/tofu/modules/` | Reusable modules; live roots/state stay with their scopes. |
 | `/support/ups/` | Shutdown-coordinator management and Vault bootstrap KMS configuration. |
+| `/support/yubikey/` | Offline token setup scope; pins, ignored tooling, and Make entry points for installation step 00. |
 | `/runbooks/` | Ongoing operation, maintenance, and recovery procedures. |
 
 ## Common cluster layout
@@ -77,7 +78,7 @@ Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered co
 | `/make/helm.mk` | Render/deploy selected releases. |
 | `/make/tofu.mk` | Operate the selected root/state. |
 | `/make/storage.mk` | Validate disks, coordinate assigned Piraeus preparation, inspect manual pools. |
-| `/scripts/homelab/` | Python tool installation, validation, secret transport, orchestration; planned workstation unseal helper, [Talos KMS adapter](security/security.md#talos-kms-adapter), and [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms). |
+| `/scripts/homelab/` | Shared Python logic; initial token setup and wrapping helpers exist. Workstation unseal, [Talos KMS adapter](security/security.md#talos-kms-adapter), and [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms) remain planned. |
 | `/scripts/bash/` | Small shell helpers. |
 | `/charts/<chart>/` | Chart definition, values, templates, dependency locks. |
 | `/tofu/modules/<module>/` | Shared definitions without credentials or ownership of other scopes' state. |
@@ -91,6 +92,8 @@ Reference upstream charts by version rather than copying them. Package repositor
 Each scope owns `toolchain.yaml` and `bin/`. Cluster pins cover `kubectl`, `talosctl`, `helm`, `tofu`, and required clients/runtimes such as `bao` or Python. Select tools for the operator's OS/architecture, independently of node architecture.
 
 Make verifies pins, uses absolute executable paths, and prepends the scope's `bin/` to subprocess `PATH`. Missing/mismatched tools fail or trigger pinned installation; never fall back to global tools. Document/check bootstrap Make and helper-runtime prerequisites.
+
+The first implemented scope is `support/yubikey/`: `toolchain.yaml` selects direct package versions; its public offline bundle records the exact bootstrap Python/runtime and locks all resolved dependencies by version and wheel hash. The launcher verifies these before hardware access. Keep the bundle with recovery tooling; it is ignored build output, not a committed credential record. See [step 00](installation/00-yubikey-setup.md) for the preparation/install commands.
 
 Illustrative targets, not yet implemented:
 

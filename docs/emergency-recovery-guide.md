@@ -107,7 +107,7 @@ These references do not replace embedded emergency instructions.
 
 - Policies: `docs/security/security.md` and `docs/backup-and-restore.md`.
 - Credential catalogue and v1 challenge format: `docs/security/yubikey.md`; wrapping specification: `docs/security/security.md`. Keep the embedded protocol synchronized and add exact recovery-critical identifiers before distributing the guide.
-- Installation plan and placeholders: `docs/installation/README.md`, `docs/installation/00-yubikey-setup.md`, `docs/installation/01-main-coordinator.md`, `docs/installation/02-vault.md`.
+- Installation plan and runbooks: `docs/installation/README.md`, `docs/installation/00-yubikey-setup.md`, `docs/installation/01-main-coordinator.md`, `docs/installation/02-vault.md`. Step 00 has an initial helper implementation; physical verification remains pending.
 - Planned operating runbooks: `runbooks/restore-openbao.md`, `runbooks/unseal-openbao.md`, `runbooks/operate-talos-kms.md`, `runbooks/operate-vault-bootstrap-kms.md`.
 - [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/).
 - [Yubico personalization manual](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html).

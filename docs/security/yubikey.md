@@ -1,6 +1,6 @@
 # YubiKey Credential Catalogue
 
-**Planned design:** The v1 challenge/wrapping format is selected; concrete lookup identifiers remain proposed. Programming, helpers, and credential records are not implemented.
+**Initial setup/wrapping helpers implemented; physical programming and verification pending.** Production lookup identifiers remain proposed and production credential records are not implemented.
 
 This document owns the lookup catalogue. Hardware inventory belongs in [inventory.md](../inventory.md#security-keys); golden-key custody, secret handling, and encryption policy belong in [security.md](security.md); recovery requirements belong in [backup-and-restore.md](../backup-and-restore.md).
 
@@ -42,7 +42,9 @@ challenge = ASCII(lowercase_hex(SHA256(ASCII(identifier))))
 
 This produces exactly 64 challenge bytes. Configure matching fixed-length processing on all four tokens and verify it against the software fallback. [Yubico documents](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html) the HMAC and touch flags for firmware 2.2 and later; actual device verification remains required.
 
-The raw response feeds HKDF-SHA-256 and AES-256-GCM using the [v1 encrypted-record format](security.md#challenges-derivation-and-wrapped-credentials). That section owns derivation, authenticated metadata, revision/rotation rules, and validation; implementation remains pending.
+The raw response feeds HKDF-SHA-256 and AES-256-GCM using the [v1 encrypted-record format](security.md#challenges-derivation-and-wrapped-credentials). That section owns derivation, authenticated metadata, revision/rotation rules, and validation. The initial shared implementation is exercised by [step 00](../installation/00-yubikey-setup.md); production consumers remain pending.
+
+The implemented setup helper reserves `homelab/v1/setup/verification/cross-token/r1` for an in-memory dummy credential under `golden-1`. It is not a production credential or persisted record.
 
 The examples below omit the common `homelab/v1/` prefix.
 
@@ -123,7 +125,7 @@ Vault bootstrap material must remain accessible without its own OpenBao instance
 
 ## Record and maintenance requirements
 
-**Catalogue rules approved; concrete entries and implementation pending.**
+**Catalogue rules approved; production entries and consumer integrations pending.**
 
 - Keep one wrapped record per independently managed credential, including one per ZFS encryption root.
 - Map exact identifiers to encrypted-record filenames through the public manifest under `secrets/wrapped/`, following the [storage policy](encrypted-record-storage.md). Manifest schema and tooling belong to [helper implementation](helper-implementation.md).

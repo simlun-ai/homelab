@@ -1,6 +1,8 @@
 # Helper implementation
 
-**Decision approved; implementation and verification pending.**
+**Initial token setup and wrapping helpers implemented; hardware verification and service helpers pending.**
+
+[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Source lives under `scripts/homelab/`, with pinned offline tooling in `support/yubikey/`. No production wrapped-record store, coordinator service, or OpenBao integration is implemented yet.
 
 ## Workstation helper
 
@@ -100,7 +102,7 @@ a new random key cannot decrypt existing payloads.
 ## Remaining implementation work
 
 - Specify the KMS envelope and SSH delivery protocol.
-- Pin dependencies, hardware tools, and recovery packaging.
+- Extend dependency pins and offline recovery packaging for the service helpers.
 - Implement memory handling, consumer delivery, and failure cleanup.
 - Test malformed/tampered records, identifier and node substitution,
   touch enforcement, session expiry, and independent recovery.

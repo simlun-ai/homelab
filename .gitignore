@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+/support/yubikey/bin/
+/support/yubikey/.venv/
+/support/yubikey/.build/
+/support/yubikey/wheelhouse/
+/support/yubikey/bundle.json
+/support/yubikey/requirements.lock
