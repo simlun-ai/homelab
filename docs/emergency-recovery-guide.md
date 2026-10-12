@@ -11,7 +11,7 @@ All entries must be non-secret.
 | Field | Value |
 | --- | --- |
 | Guide revision / repository commit; last verified restore | TBD. |
-| Core-secret protocol version and YubiKey HMAC slot | `homelab-wrap-v1`; slot TBD, touch required. Implementation/verification pending. |
+| Core-secret protocol version and YubiKey HMAC slot | `homelab-wrap-v1`; OTP slot 1 selected, fixed 64-byte challenges, touch required. Programming/verification pending. |
 | Effective challenge bytes, encoding, purpose identifiers, length/padding | V1 construction below; exact recovery identifiers and device verification TBD. |
 | Derivation/wrapping algorithms, output encoding, public parameters | HKDF-SHA-256 + AES-256-GCM; JSON/JCS and padded Base64 as specified below. |
 | Snapshot OpenBao version, ARM64 Pi and workstation recovery images/tools; independent acquisition locations | TBD. |

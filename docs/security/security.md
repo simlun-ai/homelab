@@ -22,7 +22,7 @@ We treat the YubiKeys as **mini hardware security modules (HSMs)** for the homel
 - Require physical touch for every hardware challenge-response operation.
 - Keep the tokens at four separate locations, each paired with a USB stick containing a [full repository clone](encrypted-record-storage.md#recovery-usb-clones), including wrapped records and the non-secret [Emergency Recovery Guide](../emergency-recovery-guide.md).
 - Keep the golden key separately offline for replacement-token programming and software recovery.
-- Inspect existing OTP slots before selecting a slot; do not overwrite an occupied slot without explicit approval.
+- Use OTP slot 1 under the [approved setup](yubikey-setup.md). Neither slot is currently used on any token; inspect before programming and do not overwrite unexpected occupied slots without explicit approval.
 
 These are interchangeable copies of one HMAC secret, providing location redundancy rather than a multi-token threshold. OpenBao's Shamir share count and threshold are separate decisions.
 
@@ -38,7 +38,7 @@ Offline format, location, access, and refresh/verification procedures remain TBD
 
 ## Challenges, derivation, and wrapped credentials
 
-**Decision:** Use HKDF-SHA-256 and AES-256-GCM for direct YubiKey wrapping, with the `homelab-wrap-v1` JSON record below. Implementation and verification are pending. The [YubiKey catalogue](yubikey.md) owns identifiers, challenge construction, consumers, and unresolved bootstrap coverage; the HMAC slot remains TBD.
+**Decision:** Use HKDF-SHA-256 and AES-256-GCM for direct YubiKey wrapping, with the `homelab-wrap-v1` JSON record below. Implementation and verification are pending. The [YubiKey catalogue](yubikey.md) owns identifiers, challenge construction, consumers, and unresolved bootstrap coverage; OTP slot 1 is selected under the [approved setup](yubikey-setup.md).
 
 ### Derivation and encryption
 
@@ -150,7 +150,7 @@ Write `/runbooks/configure-yubikey-challenge-response.md` covering:
 Topic placeholders for the remaining decisions and implementation work:
 
 - [Encrypted-record storage](encrypted-record-storage.md) — decision approved; implementation pending.
-- [YubiKey setup](yubikey-setup.md) — TBD.
+- [YubiKey setup](yubikey-setup.md) — decision approved; programming and verification pending.
 - [Golden-key custody](golden-key-custody.md) — TBD.
 - [OpenBao unseal](openbao-unseal.md) — TBD.
 - [Credential catalogue](credential-catalogue.md) — TBD.
