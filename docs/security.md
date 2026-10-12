@@ -14,6 +14,8 @@ Encrypted persistence in cluster services, remote state, and backups is allowed,
 
 **Decision:** The **20-byte golden key** held in the four [inventory YubiKeys](inventory.md#security-keys) is the root of trust for **all homelab secrets**, through **OTP HMAC-SHA1 challenge-response**. Secrets are derived from its responses, wrapped under response-derived keys, or protected by OpenBao, whose unseal material is wrapped under this foundation. Generated or externally issued secrets are not necessarily deterministic derivatives of the golden key.
 
+We treat the YubiKeys as **mini hardware security modules (HSMs)** for the homelab: they hold the golden key and perform HMAC-SHA1 challenge-response on-device, with physical touch required.
+
 - Program all four with the same **golden key** and challenge-processing settings: identical effective challenge bytes must produce identical responses.
 - Require physical touch for every hardware challenge-response operation.
 - Keep the tokens at four separate locations, each with a USB stick carrying the non-secret [Emergency Recovery Guide](emergency-recovery-guide.md).
