@@ -1,0 +1,16 @@
+- name: Verify coordinator hardening
+  hosts: ups_coordinators
+  gather_facts: false
+  become: false
+  pre_tasks:
+    - ansible.builtin.import_tasks: ../tasks/single-host.yaml
+  tasks:
+    - ansible.builtin.import_tasks: ../tasks/verify.yaml
+    - name: Check installed hardening and active memory protections
+      become: true
+      ansible.builtin.script: >-
+        ../roles/coordinator_hardening/files/verify-hardening.py
+        {{ coordinator_management_networks | map('quote') | join(' ') }}
+      args:
+        executable: /usr/bin/python3
+      changed_when: false

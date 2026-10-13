@@ -129,17 +129,17 @@ Manual-pool declarations may drive non-destructive checks/integration. Import, u
 
 ## UPS shutdown coordinators
 
-Use one `/support/ups/` scope for Ansible provisioning and ongoing management of all UPS coordinators. Base bootstrap and verification are implemented; KMS, NUT, and exporters remain pending. `ups-aux` serves both Vault and Backup. Hardware, power supplies, and UPS mappings belong in the inventory.
+Use one `/support/ups/` scope for Ansible provisioning and ongoing management of all UPS coordinators. Base bootstrap, hardening, and verification are implemented; KMS, NUT, and exporters remain pending. `ups-aux` serves both Vault and Backup. Hardware, power supplies, and UPS mappings belong in the inventory.
 
 | Path under `/support/ups/` | Contents |
 | --- | --- |
 | `README.md` | Operational entry points and links to mappings/recovery. |
-| `Makefile` | Implemented local tools/inventory/syntax targets and single-host bootstrap/verification. |
+| `Makefile` | Implemented local tools/inventory/syntax targets and single-host bootstrap/hardening/verification. |
 | `requirements.txt` and `.venv/` | Implemented Ansible dependency pins and ignored tools, invoked explicitly as in the YubiKey scope. |
 | `install-system-dependencies.sh`, `check-tools.py` | Ubuntu 26.04 workstation prerequisites and runtime/dependency verification. |
 | `inventory.yaml`, `ansible.cfg` | Three approved hostnames, `administrator` SSH account, and strict SSH settings; IP addresses TBD. |
 | `ansible/playbooks/`, `ansible/tasks/`, `ansible/files/` | Implemented single-host bootstrap, sudo policy, and verification. |
-| `ansible/roles/` | Proposed shutdown-manager/service setup. |
+| `ansible/roles/` | Implemented `coordinator_hardening`; shutdown-manager/service roles remain planned. |
 | `ansible/templates/` | Non-secret service templates. |
 | `ansible/requirements.yml` | Pinned external roles/collections if selected. |
 

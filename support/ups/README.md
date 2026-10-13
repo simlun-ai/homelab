@@ -16,7 +16,11 @@ SSH host identity, installation order, and recovery.
 - `ansible/playbooks/verify.yaml`: read-only SSH/Python, architecture, and
   passwordless sudo checks. It does not install or repair anything.
 
-Run `make -C support/ups help`. Bootstrap and verification require exactly one
+- `ansible/roles/coordinator_hardening/`: shared SSH, nftables, automatic security
+  updates without reboots, and memory/service restrictions; see the
+  [policy](../../docs/security/coordinator-hardening.md).
+
+Run `make -C support/ups help`. Bootstrap, hardening, and verification require exactly one
 `HOST`; the playbooks also reject multi-host execution before connecting.
 The base flow does not reboot hosts. KMS, NUT, and exporters remain unimplemented.
 

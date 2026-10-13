@@ -1,6 +1,6 @@
 # UPS coordinator base setup
 
-**Base automation implemented; not yet tried on the Pis.** Repeat for each coordinator. This installs Raspberry Pi OS Lite on microSD and bootstraps Ansible management. NUT and a Prometheus exporter will be added later; only `ups-aux` continues to [step 01's additional Talos KMS setup](../docs/installation/01-main-coordinator.md).
+**Base automation and hardening implemented; not yet tried on the Pis.** Repeat for each coordinator. This installs Raspberry Pi OS Lite on microSD and bootstraps Ansible management. NUT and a Prometheus exporter will be added later; only `ups-aux` continues to [step 01's additional Talos KMS setup](../docs/installation/01-main-coordinator.md).
 
 Hardware/power assignments belong in the [inventory](../docs/inventory.md). Executable configuration and dependency pins live in [`support/ups/`](../support/ups/README.md).
 
@@ -84,7 +84,26 @@ Use its existing initial sudo password; it is not saved in the repository or a f
 
 Repeat with `HOST=ups-pi` and `HOST=ups-metal`. A missing, unknown, or multi-host selection is rejected. A second bootstrap on an unchanged host should report no changes.
 
-## 5. Record completion and recover from problems
+## 5. Apply shared hardening
+
+Run from a workstation address in `192.168.254.0/24`, after bootstrap:
+
+```sh
+make -C support/ups harden HOST=ups-aux
+```
+
+The [shared role](../support/ups/ansible/roles/coordinator_hardening/README.md) applies the [security policy](../docs/security/coordinator-hardening.md). It validates and reloads SSH/firewall configuration, enables automatic Debian security updates without automatic reboots, and configures memory and service restrictions. It owns the complete SSH and firewall configurations; KMS/NUT/exporter ports remain closed until explicitly added. There is no timed rollback.
+
+After the first run or swap/radio changes, **reboot manually**, reconnect, and verify before supplying KMS secrets:
+
+```sh
+ssh administrator@ups-aux sudo systemctl reboot
+make -C support/ups verify-hardening HOST=ups-aux
+```
+
+Wait for the host to return before running verification. Repeat one host at a time with `ups-pi` and `ups-metal`. Raspberry Pi vendor kernel/firmware updates remain separate manual maintenance. If access is lost, repair locally or reimage the card.
+
+## 6. Record completion and recover from problems
 
 Record the repository revision, Imager/image versions, workstation/Pi Python versions, Ansible version, host identity/address, and verification results. All three hosts remain **unverified** until tested.
 

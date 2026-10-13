@@ -1,0 +1,11 @@
+// Debian security updates only. Raspberry Pi vendor updates are separate maintenance.
+#clear Unattended-Upgrade::Allowed-Origins;
+#clear Unattended-Upgrade::Origins-Pattern;
+Unattended-Upgrade::Origins-Pattern {
+    "origin=Debian,label=Debian-Security,codename={{ ansible_facts.distribution_release }}-security";
+};
+Unattended-Upgrade::Automatic-Reboot "false";
+Unattended-Upgrade::Automatic-Reboot-WithUsers "false";
+APT::Periodic::Enable "1";
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";

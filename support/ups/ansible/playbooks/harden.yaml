@@ -1,0 +1,27 @@
+- name: Harden one UPS coordinator
+  hosts: ups_coordinators
+  gather_facts: false
+  become: true
+  pre_tasks:
+    - ansible.builtin.import_tasks: ../tasks/single-host.yaml
+    - name: Gather OS and service information
+      ansible.builtin.setup:
+        gather_subset: [min]
+    - name: Require a supported 64-bit Debian-based coordinator
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.os_family == 'Debian'
+          - ansible_facts.architecture == 'aarch64'
+    - ansible.builtin.service_facts:
+  roles:
+    - ../roles/coordinator_hardening
+  post_tasks:
+    - ansible.builtin.meta: flush_handlers
+    - name: Check a new SSH connection
+      ansible.builtin.meta: reset_connection
+    - name: Verify base access after hardening
+      ansible.builtin.import_tasks: ../tasks/verify.yaml
+      become: false
+    - name: Report manual reboot requirement
+      ansible.builtin.debug:
+        msg: "After first application or boot/swap changes, reboot manually and run verify-hardening before loading KMS secrets. This role never reboots."

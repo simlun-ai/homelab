@@ -171,3 +171,8 @@ Existing decisions remain in this document and the [YubiKey catalogue](yubikey.m
 - [Talos v1.14.2 KMS client and TLS behavior](https://github.com/siderolabs/talos/blob/v1.14.2/internal/pkg/encryption/keys/kms.go).
 - [Talos preboot networking/DNS/NTP kernel parameters](https://github.com/siderolabs/talos/blob/v1.14.2/website/content/v1.14/reference/kernel.md).
 - [OpenBao transit API](https://openbao.org/docs/api/secret/transit/).
+
+
+## Coordinator host hardening
+
+All three UPS coordinators use the [shared hardening policy](coordinator-hardening.md): restricted SSH/nftables access, automatic security updates without automatic reboots, and memory/service protections. The role is implemented; deployment and hardware verification remain pending. KMS-specific service and network restrictions remain part of its setup.

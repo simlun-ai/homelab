@@ -1,0 +1,32 @@
+#!/usr/sbin/nft -f
+# This dedicated host's firewall is owned by Ansible.
+flush ruleset
+table inet coordinator {
+    chain input {
+        type filter hook input priority 0; policy drop;
+        iifname "lo" accept
+        ct state invalid drop
+        ct state established,related accept
+        meta l4proto { icmp, ipv6-icmp } accept
+        udp sport 67 udp dport 68 accept
+        udp sport 547 udp dport 546 accept
+{% for network in coordinator_management_networks %}
+        {{ 'ip6' if ':' in network else 'ip' }} saddr {{ network }} tcp dport 22 accept
+{% endfor %}
+{% if not coordinator_disable_mdns %}
+        ip daddr 224.0.0.251 udp dport 5353 accept
+        ip6 daddr ff02::fb udp dport 5353 accept
+{% endif %}
+{% for service in coordinator_firewall_services %}
+{% for source in service.sources %}
+        {{ 'ip6' if ':' in source else 'ip' }} saddr {{ source }} {{ service.protocol }} dport {{ service.port }} accept
+{% endfor %}
+{% endfor %}
+    }
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+    }
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}

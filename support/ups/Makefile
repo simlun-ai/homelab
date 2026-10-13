@@ -7,7 +7,7 @@ export ANSIBLE_LOCAL_TEMP := $(SCOPE)/.ansible/tmp
 export HOST
 export ASK_BECOME_PASS
 
-.PHONY: help system-dependencies tools check-tools inventory syntax bootstrap verify
+.PHONY: help system-dependencies tools check-tools inventory syntax bootstrap verify harden verify-hardening
 help:
 	@printf '%s\n' \
 	  'Setup: runbooks/ups-coordinator-base-setup.md' \
@@ -17,6 +17,8 @@ help:
 	  'make -C support/ups syntax' \
 	  'make -C support/ups bootstrap HOST=ups-aux' \
 	  'make -C support/ups verify HOST=ups-aux' \
+	  'make -C support/ups harden HOST=ups-aux' \
+	  'make -C support/ups verify-hardening HOST=ups-aux' \
 	  'HOST must be exactly ups-aux, ups-pi, or ups-metal.' \
 	  'For initial sudo setup only: bootstrap HOST=... ASK_BECOME_PASS=1'
 
@@ -40,8 +42,10 @@ inventory: check-tools
 syntax: check-tools
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/bootstrap.yaml"
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/verify.yaml"
+	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/harden.yaml"
+	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/verify-hardening.yaml"
 
-bootstrap verify: check-tools
+bootstrap verify harden verify-hardening: check-tools
 	@case "$$HOST" in ups-aux|ups-pi|ups-metal) ;; \
 	  *) printf '%s\n' 'Set HOST to exactly ups-aux, ups-pi, or ups-metal.' >&2; exit 2;; esac; \
 	case "$$ASK_BECOME_PASS" in ''|0) set -- ;; \

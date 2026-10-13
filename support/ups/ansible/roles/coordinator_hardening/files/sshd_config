@@ -1,0 +1,18 @@
+# Managed by coordinator_hardening; keep crypto defaults from OpenSSH.
+Port 22
+PermitRootLogin no
+AllowUsers administrator
+AuthenticationMethods publickey
+PubkeyAuthentication yes
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+HostbasedAuthentication no
+GSSAPIAuthentication no
+UsePAM yes
+StrictModes yes
+DisableForwarding yes
+PermitTunnel no
+X11Forwarding no
+PrintMotd no
+Subsystem sftp internal-sftp
