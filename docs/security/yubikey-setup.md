@@ -45,8 +45,9 @@ only after these checks pass.
 ## Remaining implementation work
 
 The first helper and pinned-tooling implementation is available in
-[00 - YubiKey setup](../installation/00-yubikey-setup.md). It refuses to
-overwrite occupied slot 1 and uses a hidden local prompt for the Level 1 key.
+[00 - YubiKey setup](../installation/00-yubikey-setup.md). It preserves
+occupied slot 1 by default; explicit replacement requires confirming its
+erasure and the physical label. The Level 1 key uses a hidden local prompt.
 
 - Test tooling preparation/installation and offline execution on the actual laptop.
 - Program and verify all four devices, including the older Standard models.

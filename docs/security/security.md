@@ -24,7 +24,7 @@ We treat the YubiKeys as **mini hardware security modules (HSMs)** for the homel
 - Require physical touch for every hardware challenge-response operation.
 - Keep the tokens at four separate locations, each paired with a USB stick containing a [full repository clone](encrypted-record-storage.md#recovery-usb-clones), including wrapped records and the non-secret [Emergency Recovery Guide](../emergency-recovery-guide.md).
 - Keep the golden key separately offline for replacement-token programming and software recovery.
-- Use OTP slot 1 under the [approved setup](yubikey-setup.md). Neither slot is currently used on any token; inspect before programming and do not overwrite unexpected occupied slots without explicit approval.
+- Use OTP slot 1 under the [approved setup](yubikey-setup.md). Inspect before programming; overwriting occupied slot 1 requires the explicit replacement confirmation in [step 00](../installation/00-yubikey-setup.md). Preserve slot 2.
 
 These are interchangeable copies of one HMAC secret, providing location redundancy rather than a multi-token threshold. OpenBao uses the [approved one-share, threshold-one Shamir design](openbao-unseal.md).
 

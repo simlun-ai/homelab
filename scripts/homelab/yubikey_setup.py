@@ -77,6 +77,9 @@ def describe(session):
 
 def confirm(label, action):
     expected = f"{action} {label} slot1"
+    if action == "replace":
+        print("This overwrites the existing slot 1 credential. Slot 2 is preserved.", flush=True)
+        expected += " and erase existing credential"
     if input(f"Check the physical label, then type '{expected}': ") != expected:
         raise RuntimeError("Device confirmation did not match")
 
@@ -133,13 +136,14 @@ def verify_token(session, golden):
     print("PASS: touch gates and three fixed-length challenges match the Level 1 key.")
 
 
-def program(session, label, golden):
+def program(session, label, golden, *, replace=False):
     if not isinstance(golden, bytes) or len(golden) != 20:
         raise ValueError("Programming requires exactly 20 golden-key bytes")
-    if session.get_config_state().is_configured(SLOT.ONE):
-        print("Stop: slot 1 is occupied. Use verify; this helper cannot overwrite it.", file=sys.stderr)
+    occupied = session.get_config_state().is_configured(SLOT.ONE)
+    if occupied and not replace:
+        print("Stop: slot 1 is occupied. Use verify or explicitly request replacement.", file=sys.stderr)
         raise RuntimeError("Refusing an occupied slot")
-    confirm(label, "program")
+    confirm(label, "replace" if occupied else "program")
     configuration = HmacSha1SlotConfiguration(golden).lt64(False).require_touch(True).allow_update(False)
     session.put_configuration(SLOT.ONE, configuration)
     print("Slot 1 programmed; slot 2 was not written. Verification follows.")
@@ -179,9 +183,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("inspect", "program", "verify", "verify-set"))
     parser.add_argument("--label", choices=LABELS)
+    parser.add_argument("--replace", action="store_true",
+                        help="Allow program to overwrite occupied slot 1 after an erase confirmation")
     args = parser.parse_args()
     if args.command in ("program", "verify") and args.label is None:
         parser.error("--label is required")
+    if args.replace and args.command != "program":
+        parser.error("--replace is only valid with program")
     harden()
     if args.command == "inspect":
         with token() as session:
@@ -192,12 +200,12 @@ def main():
         return
     with token() as session:
         describe(session)
-        if args.command == "program" and session.get_config_state().is_configured(SLOT.ONE):
-            print("Stop: slot 1 is occupied. Use verify; do not reprogram it.", file=sys.stderr)
+        if args.command == "program" and not args.replace and session.get_config_state().is_configured(SLOT.ONE):
+            print("Stop: slot 1 is occupied. Use verify or explicitly request replacement.", file=sys.stderr)
             raise RuntimeError("Refusing an occupied slot")
         golden = read_golden_key()
         if args.command == "program":
-            program(session, args.label, golden)
+            program(session, args.label, golden, replace=args.replace)
         else:
             confirm(args.label, "verify")
             verify_token(session, golden)

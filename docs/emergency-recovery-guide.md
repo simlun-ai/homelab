@@ -49,7 +49,7 @@ Refresh all four full clones after recovery-critical changes, record each clone'
 3. Query the token and touch it; keep responses and subsequent secret values in memory.
 4. Derive or unwrap R2 access, backup-decryption, OpenBao unseal/recovery, and node bootstrap/unlock material using the independent payloads. HMAC alone cannot recreate externally issued credentials or OpenBao-generated material.
 
-If a token fails, obtain another token/guide pair. Never guess encoding or overwrite an occupied slot.
+If a token fails, obtain another token/guide pair. Never guess encoding; overwriting occupied slot 1 requires a separate explicit replacement confirmation.
 
 ## V1 wrapping protocol
 
@@ -81,7 +81,7 @@ The helper uses Python `cryptography` HKDF/AESGCM and an RFC 8785-compatible ser
 
 Retrieve the required golden-key generation from the air-gapped, replicated Level 1 Password Management system. Each entry holds the key as exactly 40 hexadecimal characters, preserving leading zeros, and its generation label matching the record's `root_key`. Level 1's internal procedures and locations are outside this guide. Load the key into the verified memory-only session without logging. The helper must compute HMAC-SHA1 over identical effective challenge bytes, then apply the same derivation/unwrap steps.
 
-Replacement programming must use the same key/settings with **touch required**, preserve occupied slots unless explicitly approved, verify behavior, record the non-secret device identity, and return a current token/guide pair to its location. Exact helper acquisition, programming commands, and verification steps remain TBD.
+Replacement programming must use the same key/settings with **touch required**, preserve occupied slots unless explicitly approved, verify behavior, record the non-secret device identity, and return a current token/guide pair to its location. Initial programming, verification, and slot-replacement commands are documented in [step 00](installation/00-yubikey-setup.md); recovery-tool acquisition and physical verification remain pending.
 
 ## Restore Vault and OpenBao
 

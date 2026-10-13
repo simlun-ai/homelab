@@ -50,15 +50,25 @@ make -C support/yubikey inspect
 make -C support/yubikey program LABEL=key0
 ```
 
-Inspect prints firmware, serial where available, and slot occupancy. Compare the device with the [inventory](../inventory.md#security-keys). Stop on an unexpected device or occupied slot 1. The program command asks for the Level 1 key twice, then asks you to type `program key0 slot1` after checking the physical label. It refuses to overwrite slot 1 and never writes slot 2.
+Inspect prints firmware, serial where available, and slot occupancy. Compare the device with the [inventory](../inventory.md#security-keys). Stop on an unexpected device. The program command asks for the Level 1 key twice, then asks you to type `program key0 slot1` after checking the physical label. By default it refuses occupied slot 1; slot 2 is never written.
 
 Expected: slot 1 is programmed, then verification alternates **do not touch** probes with explicit touch prompts. It compares three public 64-byte challenges with software HMAC in memory and prints a non-secret PASS. Responses and derived keys are never displayed. Source support covers firmware 2.2 onward; actual compatibility with both older Standard tokens must be proved here.
 
-Remove the token and repeat those two commands for `key1`, `key2`, and `key3`, changing `LABEL`. If a token is already programmed or a run was interrupted after the write, use verification instead of programming again:
+If slot 1 already contains the golden key, or a run was interrupted after the write, use verification instead of programming again:
 
 ```sh
 make -C support/yubikey verify LABEL=key0
 ```
+
+To deliberately replace a different slot 1 configuration after checking its current use:
+
+```sh
+make -C support/yubikey replace LABEL=key0
+```
+
+This invokes `program --replace`. After the hidden key prompts, confirm the physical label and type `replace key0 slot1 and erase existing credential`. It overwrites the existing slot 1 credential, preserves slot 2, and immediately runs the same verification. A slot protected by an existing programming access code requires separate handling.
+
+Remove the token and repeat inspection and the appropriate command for `key1`, `key2`, and `key3`, changing `LABEL` and the confirmation label.
 
 ## 5. Verify the complete set and offline record
 
@@ -109,7 +119,7 @@ Shut down the air-gapped laptop before reconnecting anything networked. Later re
 | --- | --- |
 | Dependency installation or `pip check` failure | Resolve it during online preparation, before retrieving secrets; rerun system dependencies and `tools`. |
 | No token or multiple tokens | Connect one device, check its enabled OTP interface and local-seat USB permissions, then retry inspection. |
-| Occupied slot 1 | Use `verify` with the existing Level 1 record. Resolve unexpected contents before any separate replacement procedure; there is no force-overwrite option. |
+| Occupied slot 1 | Use `verify` when it already holds the golden key. Use `replace` only after reviewing the existing credential and explicitly confirming its erasure. |
 | Interrupted write, touch failure, or HMAC/unwrap mismatch | Remove/reinsert the token and run `verify`. Keep it marked unverified; report only the phase and public device metadata. Do not delete the Level 1 record, generate a new golden key, or continue to coordinator setup. |
 
 ## Upstream references
