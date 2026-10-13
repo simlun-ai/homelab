@@ -7,16 +7,19 @@ Configure and verify all four YubiKeys from a trusted Debian/Ubuntu laptop. Inst
 ## Prerequisites
 
 - The four labelled tokens, `key0` through `key3`, and access to Level 1.
-- A trusted Debian/Ubuntu laptop with CPython 3.11–3.14 and a full repository clone. It can be online for preparation. Use a local terminal without recording during secret handling.
+- A trusted Debian/Ubuntu laptop with CPython 3.11–3.14. It can be online for preparation. Use a local terminal without recording during secret handling.
 - Four recovery USBs with empty destination directories. Use the [existing recovery-clone policy](../security/encrypted-record-storage.md#recovery-usb-clones).
 
-Commands below run from the repository root. Helpers use `support/yubikey/.venv/bin/python`; host Python is used only to create the virtualenv.
+After cloning, commands run from the repository root. Helpers use `support/yubikey/.venv/bin/python`; host Python is used only to create the virtualenv.
 
 ## 1. Install and verify dependencies — laptop online
 
 Complete this before accessing Level 1 or handling the golden key:
 
 ```sh
+sudo apt install git
+git clone git@github.com:simlun-ai/homelab.git
+cd homelab
 bash support/yubikey/install-system-dependencies.sh
 make -C support/yubikey tools
 make -C support/yubikey test
