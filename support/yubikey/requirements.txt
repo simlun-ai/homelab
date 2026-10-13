@@ -1,0 +1,2 @@
+yubikey-manager==5.9.2
+cryptography==50.0.1

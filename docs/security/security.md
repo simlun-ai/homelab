@@ -4,7 +4,9 @@
 
 ## Secret-handling boundary
 
-Never commit plaintext secrets, golden-key material, HMAC responses, or derived keys, or write them to workstation disk, including ignored files, temporary files, caches, shell history, logs, saved plans, local state, and crash dumps. Use process memory, streams, or a verified memory-only workspace; account for swap, hibernation, subprocesses, and failure paths.
+Helpers must never commit plaintext secrets, golden-key material, HMAC responses, or derived keys, or explicitly write them to workstation disk, including ignored files, temporary files, caches, shell history, logs, saved plans, local state, and crash dumps. Use process memory or streams; account for subprocesses and failure paths.
+
+The trusted air-gapped laptop used in [step 00](../installation/00-yubikey-setup.md) retains its existing OS swap/suspend configuration; setup does not disable or reject it. Other recovery environments, including the temporary OpenBao container, still require their documented memory-storage checks.
 
 Authenticated `homelab-wrap-v1` credential records may be committed and persisted on workstation disk, recovery USBs, and consuming hosts under the [encrypted-record storage policy](encrypted-record-storage.md). Decryption remains memory-only.
 
@@ -85,7 +87,7 @@ The caller supplies the expected `key_id` and allowed root generation independen
 - Preserve the root generation, exact identifier, encrypted record, and any trusted freshness metadata needed for each retained disk or backup. HMAC cannot reconstruct externally issued credentials or OpenBao-generated material. Independent-access requirements belong in [backup-and-restore.md](../backup-and-restore.md#independent-recovery-material).
 - Keep responses and derived keys within their authorized memory-only lifetime. KMS expiry must discard both, including copies that could recreate wrapping authority.
 
-The initial helper uses Python `cryptography`'s HKDF and AESGCM APIs. Its validated header contains only restricted ASCII strings and integers within the exact JSON range, so sorted compact JSON provides RFC 8785 canonicalization for this schema. Package pins and offline preparation belong to [step 00](../installation/00-yubikey-setup.md). Before production use, verify disposable test vectors, matching behavior across all four tokens and the software fallback, malformed/tampered records, identifier substitution, rotation, and memory handling. Never use or publish real golden-key responses as test vectors.
+The initial helper uses Python `cryptography`'s HKDF and AESGCM APIs. Its validated header contains only restricted ASCII strings and integers within the exact JSON range, so sorted compact JSON provides RFC 8785 canonicalization for this schema. Package pins and dependency installation belong to [step 00](../installation/00-yubikey-setup.md). Before production use, verify disposable test vectors, matching behavior across all four tokens and the software fallback, malformed/tampered records, identifier substitution, rotation, and memory handling. Never use or publish real golden-key responses as test vectors.
 
 Challenge-response needs helper logic; it is not native ZFS unlock integration or an OpenBao seal mechanism. OpenPGP and PKCS#11 are outside the chosen foundation.
 

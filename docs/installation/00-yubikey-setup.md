@@ -2,58 +2,35 @@
 
 **First implementation; physical programming and verification pending.**
 
-Development checks cover the automated helper tests and a wheel-build/offline-install smoke test. The actual laptop, USB permissions, and all four tokens still need the trials below.
-
 Configure and verify all four YubiKeys from a trusted Debian/Ubuntu laptop. Install and verify dependencies while the laptop is online, then make it air-gapped before handling the golden key. The [approved setup](../security/yubikey-setup.md) owns slot/settings; [Level 1](../security/golden-key-custody.md) owns golden-key custody. No production credential records are created in this step.
 
 ## Prerequisites
 
 - The four labelled tokens, `key0` through `key3`, and access to Level 1.
-- A trusted Debian/Ubuntu laptop with CPython 3.11–3.14 and a full repository clone. It can be online for the preparation below. Use a local console on bare metal; no terminal recording or clipboard manager during secret handling.
+- A trusted Debian/Ubuntu laptop with CPython 3.11–3.14 and a full repository clone. It can be online for preparation. Use a local terminal without recording during secret handling.
 - Four recovery USBs with empty destination directories. Use the [existing recovery-clone policy](../security/encrypted-record-storage.md#recovery-usb-clones).
 
-Commands below run from the repository root unless stated otherwise. The helper uses the scope's `bin/python` and checks installed versions against the offline bundle; it never falls back to global tools. The host Python used to create that environment is an explicit bootstrap prerequisite.
+Commands below run from the repository root. Helpers use `support/yubikey/.venv/bin/python`; host Python is used only to create the virtualenv.
 
 ## 1. Install and verify dependencies — laptop online
 
-Complete this on the setup laptop before accessing Level 1 or handling the golden key. Use a fresh checkout for the first tooling installation:
+Complete this before accessing Level 1 or handling the golden key:
 
 ```sh
-sudo apt-get update
-sudo apt-get install python3 python3-venv python3-pip python3-dev build-essential swig pkg-config libpcsclite-dev make git
-python3 -I -B scripts/yubikey_tools.py prepare
-python3 -I -B scripts/yubikey_tools.py install
+bash support/yubikey/install-system-dependencies.sh
+make -C support/yubikey tools
 make -C support/yubikey test
 ```
 
-Expected: preparation creates `wheelhouse/`, `requirements.lock`, and `bundle.json` under `support/yubikey/`. Installation checks their hashes and dependency consistency, then creates `bin/python`; the tests use disposable public keys and no hardware. The scope's [toolchain pins](../../support/yubikey/toolchain.yaml) select direct dependencies, and the generated bundle locks every resolved dependency plus the exact host runtime. Building `pyscard` needs the native prerequisites above even though this step uses USB OTP.
+Expected: the idempotent script installs missing system packages and configures local-user USB access, requesting `sudo` when needed. `tools` uses standard `python3 -m venv`, `pip install -r` with [requirements.txt](../../support/yubikey/requirements.txt), and `pip check`. Both setup commands can be rerun. The tests use disposable public keys and no hardware.
 
-Record the printed bundle SHA-256 and retain the complete public tooling bundle for the recovery USBs. Any additional package installation or troubleshooting belongs in this online phase.
+USB permissions apply when a token is next connected. Run the helpers as the local user, not through `sudo`. Finish any dependency troubleshooting while online.
 
-Grant the active local login access to the inventory's USB OTP devices:
+## 2. Make the laptop air-gapped
 
-```sh
-sudo install -m 0644 support/yubikey/69-homelab-yubikey.rules /etc/udev/rules.d/69-homelab-yubikey.rules
-sudo udevadm control --reload-rules
-```
+Disconnect network cables and disable Wi-Fi/Bluetooth before opening Level 1 or entering the golden key. Keep the laptop disconnected throughout programming and verification.
 
-The rule applies when a token is next connected. Run the helpers as the local user, not through `sudo`.
-
-## 2. Make the laptop air-gapped and prepare the session
-
-Disconnect network cables and disable Wi-Fi/Bluetooth before opening Level 1 or entering the golden key. Keep the laptop disconnected throughout programming and verification, then:
-
-```sh
-sudo swapoff -a
-sudo systemctl mask --runtime sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
-ulimit -c 0
-cat /proc/swaps
-cat /sys/kernel/kexec_crash_loaded
-```
-
-Expected: `/proc/swaps` contains only its header; the crash-kernel value is `0`. If a crash kernel is loaded, disable crash dumping through the OS configuration and reboot before continuing. Keep the laptop awake, plugged into power, and offline until shutdown. Reapply these session settings after a reboot.
-
-The helper also refuses active swap and redirected terminals, disables process core dumps/ordinary process-memory inspection, and disables SDK logging. Python cannot guarantee zeroization of every secret copy; process exit and final shutdown end the session. These checks do not attest the laptop's trustworthiness or air gap. Apply the full [memory-only policy](../security/security.md#secret-handling-boundary).
+The trusted laptop keeps its existing OS swap/suspend settings. The helper avoids secret files and output, disables its core dumps and SDK logging, and uses hidden prompts under the [secret-handling policy](../security/security.md#secret-handling-boundary).
 
 ## 3. Establish the Level 1 record
 
@@ -94,7 +71,7 @@ Expected: each token passes touch and HMAC checks. A fresh dummy credential wrap
 
 ## 6. Record results and prepare recovery kits
 
-Record the tested Git commit, OS/Python version, bundle hash, date, and operator here. Add observed model/firmware/serial-to-label mappings to [inventory.md](../inventory.md#security-keys). Do not save terminal transcripts or secret test values.
+Record the tested Git commit, OS/Python and installed package versions, date, and operator here. Add observed model/firmware/serial-to-label mappings to [inventory.md](../inventory.md#security-keys). Do not save terminal transcripts or secret test values.
 
 | Token | Programmed | Individual checks | Cross-token checks |
 | --- | --- | --- | --- |
@@ -103,27 +80,22 @@ Record the tested Git commit, OS/Python version, bundle hash, date, and operator
 | key2 | Pending | Pending | Pending |
 | key3 | Pending | Pending | Pending |
 
-For each paired recovery USB, use an empty destination. Replace `/media/RECOVERY` with that USB's mount point. Confirm the local clone is full, export its committed history, and copy the public tooling:
+For each paired recovery USB, use an empty destination. Replace `/media/RECOVERY` with that USB's mount point. Confirm the local clone is full and make an independent copy:
 
 ```sh
 git rev-parse --is-shallow-repository
-git bundle create /media/RECOVERY/homelab.bundle --all
-git bundle verify /media/RECOVERY/homelab.bundle
-git clone /media/RECOVERY/homelab.bundle /media/RECOVERY/homelab
-mkdir /media/RECOVERY/yubikey-tools
-cp -a support/yubikey/wheelhouse support/yubikey/requirements.lock support/yubikey/bundle.json /media/RECOVERY/yubikey-tools/
+git clone --no-hardlinks . /media/RECOVERY/homelab
 git -C /media/RECOVERY/homelab fsck --full
 git -C /media/RECOVERY/homelab rev-parse HEAD
 git -C /media/RECOVERY/homelab rev-parse --is-shallow-repository
-sha256sum /media/RECOVERY/yubikey-tools/bundle.json
 ```
 
-Both shallow-status checks must print `false`. Expected: a valid full clone at the intended commit and the recorded tooling-bundle hash. Inspect the clone's remote URL for embedded credentials. These clones initially contain no production wrapped records. Refresh them after test results or recovery-critical changes are committed.
+Both shallow-status checks must print `false`. Expected: a valid full clone at the intended commit. Inspect the clone's remote URL for embedded credentials. These clones initially contain no production wrapped records. Refresh them after test results or recovery-critical changes are committed.
 
-For a later offline tooling reinstall, use `python3 -I -B scripts/yubikey_tools.py install --bundle /media/RECOVERY/yubikey-tools` from a fresh clone. That bundle requires its recorded distro release, architecture, ABI, and exact Python version; prepare a new bundle while online when changing runtimes.
+Prepare replacement/recovery laptops using section 1 while online, then disconnect before handling the golden key. The USB clone includes dependency requirements; it does not include a portable virtualenv. Independent recovery-tool acquisition remains [pending](../security/recovery-procedures.md).
 
 - [ ] Record the real installation results and resolve failures.
-- [ ] Prepare each token's full recovery USB clone and public tooling bundle; verify the recorded commit and bundle hashes offline.
+- [ ] Prepare each token's full recovery USB clone and verify the recorded commit offline.
 - [ ] Verify Level 1 backup/retrieval and distribute the four token/USB pairs under the custody policy.
 
 Shut down the air-gapped laptop before reconnecting anything networked. Later record/helper changes require kit refreshes. The [Emergency Recovery Guide](../emergency-recovery-guide.md) still has pending service-recovery work; these kits do not yet constitute a verified Vault recovery path.
@@ -132,7 +104,7 @@ Shut down the air-gapped laptop before reconnecting anything networked. Later re
 
 | Failure | Action |
 | --- | --- |
-| Tool installation or pin/hash mismatch | Resolve it during online preparation, before retrieving secrets. A changed runtime needs a newly prepared public bundle. |
+| Dependency installation or `pip check` failure | Resolve it during online preparation, before retrieving secrets; rerun system dependencies and `tools`. |
 | No token or multiple tokens | Connect one device, check its enabled OTP interface and local-seat USB permissions, then retry inspection. |
 | Occupied slot 1 | Use `verify` with the existing Level 1 record. Resolve unexpected contents before any separate replacement procedure; there is no force-overwrite option. |
 | Interrupted write, touch failure, or HMAC/unwrap mismatch | Remove/reinsert the token and run `verify`. Keep it marked unverified; report only the phase and public device metadata. Do not delete the Level 1 record, generate a new golden key, or continue to coordinator setup. |

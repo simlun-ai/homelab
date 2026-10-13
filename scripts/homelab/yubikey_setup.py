@@ -6,7 +6,6 @@ import ctypes
 import getpass
 import hmac
 import logging
-from pathlib import Path
 import re
 import resource
 import secrets
@@ -31,13 +30,6 @@ def harden():
     logging.disable(sys.maxsize)
     if sys.platform != "linux" or not all(stream.isatty() for stream in (sys.stdin, sys.stdout, sys.stderr)):
         raise RuntimeError("Use a local Linux terminal without redirection")
-    if len(Path("/proc/swaps").read_text().splitlines()) != 1:
-        print("Stop: disable all swap before handling secrets.", file=sys.stderr)
-        raise RuntimeError("Swap is active")
-    crash_kernel = Path("/sys/kernel/kexec_crash_loaded")
-    if crash_kernel.exists() and crash_kernel.read_text().strip() != "0":
-        print("Stop: disable the crash kernel and reboot before handling secrets.", file=sys.stderr)
-        raise RuntimeError("Crash kernel is loaded")
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     libc = ctypes.CDLL(None, use_errno=True)
     # PR_SET_DUMPABLE=0 also prevents ordinary same-user ptrace/proc memory access.

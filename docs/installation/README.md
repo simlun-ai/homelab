@@ -6,7 +6,7 @@ Main TODO list for installing the homelab and implementing its helpers and repos
 
 | Step | Runbook | Implementation | Real-install verification |
 | --- | --- | --- | --- |
-| [00 - YubiKey setup](00-yubikey-setup.md) | First runbook | Setup/wrapping helpers and offline tooling added | Not tried on hardware |
+| [00 - YubiKey setup](00-yubikey-setup.md) | First runbook | Setup/wrapping helpers, system installer, and virtualenv | Not tried on hardware |
 | [01 - Main coordinator](01-main-coordinator.md) | Placeholder | TODO | Not tried |
 | [02 - Vault](02-vault.md) | Placeholder | TODO | Not tried |
 
@@ -34,7 +34,7 @@ Create each part when a runbook first needs it, following [layout.md](../layout.
 | Path | First use |
 | --- | --- |
 | `scripts/homelab/`, `pyproject.toml` | Python helpers, including any token programming/verification support needed in step 00. |
-| `support/yubikey/` | Step 00 pins, offline tooling bundle, and explicit Make entry points. |
+| `support/yubikey/` | Step 00 system dependencies, Python requirements, and explicit Make entry points. |
 | `support/ups/` | Coordinator configuration, Ansible, services, and scoped tooling. |
 | `secrets/wrapped/` | Authenticated encrypted records and their public manifest. |
 | `clusters/vault/`, `make/` | Vault configuration, version pins, and shared Make implementation. |

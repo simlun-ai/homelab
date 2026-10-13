@@ -10,8 +10,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 if __name__ == "__main__":
     try:
-        from yubikey_tools import check_environment
-        check_environment()
         from homelab.yubikey_setup import main
         main()
     except KeyboardInterrupt:

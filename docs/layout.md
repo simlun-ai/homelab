@@ -37,7 +37,7 @@ Keep details in their owning document and link from other documents. The USB gui
 | `/charts/` | Repository-owned Helm source where useful. |
 | `/tofu/modules/` | Reusable modules; live roots/state stay with their scopes. |
 | `/support/ups/` | Shutdown-coordinator management and Vault bootstrap KMS configuration. |
-| `/support/yubikey/` | Offline token setup scope; pins, ignored tooling, and Make entry points for installation step 00. |
+| `/support/yubikey/` | Token setup scope; system installer, Python requirements, virtualenv, and Make entry points for step 00. |
 | `/runbooks/` | Ongoing operation, maintenance, and recovery procedures. |
 
 ## Common cluster layout
@@ -89,11 +89,11 @@ Reference upstream charts by version rather than copying them. Package repositor
 
 ## Tool versions and command scopes
 
-Each scope owns `toolchain.yaml` and `bin/`. Cluster pins cover `kubectl`, `talosctl`, `helm`, `tofu`, and required clients/runtimes such as `bao` or Python. Select tools for the operator's OS/architecture, independently of node architecture.
+Each cluster scope owns `toolchain.yaml` and `bin/`. Cluster pins cover `kubectl`, `talosctl`, `helm`, `tofu`, and required clients/runtimes such as `bao` or Python. Select tools for the operator's OS/architecture, independently of node architecture.
 
 Make verifies pins, uses absolute executable paths, and prepends the scope's `bin/` to subprocess `PATH`. Missing/mismatched tools fail or trigger pinned installation; never fall back to global tools. Document/check bootstrap Make and helper-runtime prerequisites.
 
-The first implemented scope is `support/yubikey/`: `toolchain.yaml` selects direct package versions; its public offline bundle records the exact bootstrap Python/runtime and locks all resolved dependencies by version and wheel hash. The launcher verifies these before hardware access. Keep the bundle with recovery tooling; it is ignored build output, not a committed credential record. See [step 00](installation/00-yubikey-setup.md) for the preparation/install commands.
+The first implemented scope is `support/yubikey/`: an idempotent script installs system dependencies, and standard `venv`/`pip` installs pinned `requirements.txt` into its ignored `.venv/`. Make invokes that virtualenv's Python directly. See [step 00](installation/00-yubikey-setup.md) for preparation/install commands.
 
 Illustrative targets, not yet implemented:
 

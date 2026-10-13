@@ -41,8 +41,8 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | Tool / OS | Version |
 | --- | --- |
 | Make, Python, Bash | TBD. |
-| Python cryptography (HKDF/AESGCM), constrained RFC 8785 serialization | Initial [v1 wrapping helper](security/security.md#challenges-derivation-and-wrapped-credentials); step 00 pins live in [toolchain.yaml](../support/yubikey/toolchain.yaml). |
-| YubiKey Manager Python SDK | Selected for [step 00](installation/00-yubikey-setup.md); version pinned in [toolchain.yaml](../support/yubikey/toolchain.yaml), physical-device verification pending. |
+| Python cryptography (HKDF/AESGCM), constrained RFC 8785 serialization | Initial [v1 wrapping helper](security/security.md#challenges-derivation-and-wrapped-credentials); step 00 pins live in [requirements.txt](../support/yubikey/requirements.txt). |
+| YubiKey Manager Python SDK | Selected for [step 00](installation/00-yubikey-setup.md); version pinned in [requirements.txt](../support/yubikey/requirements.txt), physical-device verification pending. |
 | kubectl, talosctl, Helm, OpenBao CLI (`bao`) | TBD per scope; talosctl must be compatible with Talos. |
 | OpenTofu CLI (`tofu`) | Independently pinned per scope; catalog version above. |
 | Raspberry Pi OS Lite | TBD; tentative [UPS-host OS](layout.md#ups-shutdown-coordinators). |

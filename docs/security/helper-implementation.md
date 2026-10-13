@@ -2,7 +2,7 @@
 
 **Initial token setup and wrapping helpers implemented; hardware verification and service helpers pending.**
 
-[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Source lives under `scripts/homelab/`, with pinned offline tooling in `support/yubikey/`. No production wrapped-record store, coordinator service, or OpenBao integration is implemented yet.
+[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Source lives under `scripts/homelab/`, with pinned Python requirements and a standard virtualenv in `support/yubikey/`. No production wrapped-record store, coordinator service, or OpenBao integration is implemented yet.
 
 ## Workstation helper
 
