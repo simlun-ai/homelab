@@ -19,6 +19,7 @@ help:
 	  'make -C support/ups verify HOST=ups-aux' \
 	  'make -C support/ups harden HOST=ups-aux' \
 	  'make -C support/ups verify-hardening HOST=ups-aux' \
+	  'Password workflow: runbooks/coordinator-passwords.md (password-create/reveal/apply)' \
 	  'HOST must be exactly ups-aux, ups-pi, or ups-metal.' \
 	  'For initial sudo setup only: bootstrap HOST=... ASK_BECOME_PASS=1'
 
@@ -53,3 +54,11 @@ bootstrap verify harden verify-hardening: check-tools
 	  *) printf '%s\n' 'ASK_BECOME_PASS must be 0 or 1.' >&2; exit 2;; esac; \
 	exec "$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" \
 	  --limit "$$HOST" "$$@" "$(SCOPE)/ansible/playbooks/$@.yaml"
+
+# Reuse the pinned token SDK environment; no secret values enter Make or Ansible.
+.PHONY: password-create password-reveal password-apply
+password-create password-reveal password-apply:
+	@case "$$HOST" in ups-aux|ups-pi|ups-metal) ;; \
+	  *) printf '%s\n' 'Set HOST to exactly ups-aux, ups-pi, or ups-metal.' >&2; exit 2;; esac; \
+	exec "$(SCOPE)/../yubikey/.venv/bin/python" -I -B \
+	  "$(SCOPE)/../../scripts/coordinator_password_cli.py" $(patsubst password-%,%,$@) --host "$$HOST"

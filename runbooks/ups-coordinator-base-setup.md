@@ -20,6 +20,9 @@ The installer uses sudo for workstation packages. Ansible runs locally in the sc
 
 Download Raspberry Pi Imager for the workstation's architecture from [Raspberry Pi](https://www.raspberrypi.com/software/), make the AppImage executable, and launch it using the upstream Linux instructions.
 
+Before image preparation, create and preserve a separate wrapped administrator
+password per Pi using the [password runbook](coordinator-passwords.md).
+
 ## 2. Write each microSD card
 
 Identify the card by comparing this output before and after insertion:
@@ -38,7 +41,7 @@ In Imager:
 4. Enable SSH with **public-key authentication only**, using the operator's existing `.pub` key. Leave Wi-Fi and Raspberry Pi Connect unconfigured.
 5. Review, write, verify, and eject.
 
-Never copy private keys onto the card or put credentials in the inventory or saved Imager presets. If the selected image requires an initial local-account password, follow the [secret-handling policy](../docs/security/security.md#secret-handling-boundary); SSH remains key-only. Validate the selected Imager/image's account setup on the first Pi.
+Never copy private keys onto the card or put credentials in the inventory or saved Imager presets. If the selected image requires an initial local-account password, use the [password runbook](coordinator-passwords.md#use-during-installation-or-recovery); SSH remains key-only. Validate the selected Imager/image's account setup on the first Pi.
 
 ## 3. First boot and trusted SSH access
 
@@ -102,6 +105,8 @@ make -C support/ups verify-hardening HOST=ups-aux
 ```
 
 Wait for the host to return before running verification. Repeat one host at a time with `ups-pi` and `ups-metal`. Raspberry Pi vendor kernel/firmware updates remain separate manual maintenance. If access is lost, repair locally or reimage the card.
+
+After hardening verification, [apply the preserved wrapped password](coordinator-passwords.md#apply-to-an-existing-coordinator) to each Pi and verify local console login.
 
 ## 6. Record completion and recover from problems
 

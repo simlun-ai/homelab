@@ -2,7 +2,7 @@
 
 **Initial token setup and wrapping helpers implemented; hardware verification and service helpers pending.**
 
-[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Source lives under `scripts/homelab/`, with pinned Python requirements and a standard virtualenv in `support/yubikey/`. No production wrapped-record store, coordinator service, or OpenBao integration is implemented yet.
+[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Source lives under `scripts/homelab/`, with pinned Python requirements and a standard virtualenv in `support/yubikey/`. The coordinator password workflow uses `secrets/wrapped/`; real records require local token-backed generation. Coordinator KMS services and OpenBao integration remain pending.
 
 ## Workstation helper
 
@@ -24,6 +24,19 @@ Keep secrets out of arguments, environment variables, temporary files,
 and logs. Follow the
 [memory-only policy](security.md#secret-handling-boundary).
 Package recovery dependencies for use without downloads.
+
+## Coordinator password helper
+
+`scripts/homelab/coordinator_password.py` reuses the wrapping library and token
+SDK through `scripts/coordinator_password_cli.py`. Commands and failure recovery
+are in the [runbook](../../runbooks/coordinator-passwords.md).
+
+`secrets/wrapped/manifest.json` is public metadata: `format` is
+`homelab-wrapped-manifest-v1`; `records` is a list of objects with exact `key_id`,
+`root_key`, and `file` (basename relative to that directory). The helper fixes
+expected contexts independently in code. Manifest/code agreement is tested;
+entries do not attest to existence, deployment, or freshness. Initial records
+use revision 1. Overwriting and rotation are not implemented.
 
 ## Vault KMS: two layers
 
@@ -115,3 +128,4 @@ verify process isolation and cleanup against the memory-only policy.
 - [Talos KMS protocol](https://github.com/siderolabs/kms-client/blob/main/api/kms/kms.proto).
 - [Wrapped-record storage](encrypted-record-storage.md).
 - [YubiKey setup](yubikey-setup.md).
+

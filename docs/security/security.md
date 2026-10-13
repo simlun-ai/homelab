@@ -176,3 +176,13 @@ Existing decisions remain in this document and the [YubiKey catalogue](yubikey.m
 ## Coordinator host hardening
 
 All three UPS coordinators use the [shared hardening policy](coordinator-hardening.md): restricted SSH/nftables access, automatic security updates without automatic reboots, and memory/service protections. The role is implemented; deployment and hardware verification remain pending. KMS-specific service and network restrictions remain part of its setup.
+
+## Coordinator local account passwords
+
+Each coordinator has an independently random `administrator` password, wrapped
+with the existing YubiKey foundation and owned by this repository. The
+[catalogue](yubikey.md#implemented-coordinator-passwords) owns identifiers; the
+[runbook](../../runbooks/coordinator-passwords.md) owns creation and delivery.
+SSH remains key-only with the existing operator key and passwordless sudo.
+Only explicit recovery reveal displays plaintext; normal creation and delivery
+do not. Real credential generation and Pi verification remain pending.

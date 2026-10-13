@@ -1,6 +1,6 @@
 # Encrypted-record storage
 
-**Decision approved; implementation pending.**
+**Coordinator password record workflow implemented; actual records and service deployment pending.**
 
 ## Authoritative records
 
@@ -9,6 +9,8 @@ Keep `homelab-wrap-v1` encrypted JSON records in the private homelab repository 
 Valid wrapped ciphertext may be committed and stored on workstation disk, recovery USBs, and consuming hosts. Golden-key material, HMAC responses, derived keys, and decrypted credentials remain subject to the [memory-only handling policy](security.md#secret-handling-boundary). This exception covers wrapped credential records, not workstation-disk staging of OpenBao snapshots.
 
 Wrap credentials entirely in memory. Verify that each new record decrypts to the original bytes before replacing the current record; write only the authenticated encrypted record. Use the [v1 record and revision rules](security.md#updates-rotation-and-recovery).
+
+The first implemented records are the three [coordinator passwords](../../runbooks/coordinator-passwords.md). Their manifest entries reserve filenames; record files appear only after local generation with a verified token. These records stay in Git/recovery clones; the Pi receives its password over SSH and stores its normal account hash, not a local wrapped-record copy.
 
 ## Recovery USB clones
 

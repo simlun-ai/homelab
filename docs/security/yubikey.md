@@ -1,6 +1,6 @@
 # YubiKey Credential Catalogue
 
-**Initial setup/wrapping helpers implemented; physical programming and verification pending.** Production lookup identifiers remain proposed and production credential records are not implemented.
+**Initial setup/wrapping helpers implemented; physical programming and verification pending.** Coordinator administrator password lookups are implemented; actual records require local generation with a verified token. Other production lookups remain proposed.
 
 This document owns the lookup catalogue. Hardware inventory belongs in [inventory.md](../inventory.md#security-keys); golden-key custody, secret handling, and encryption policy belong in [security.md](security.md); recovery requirements belong in [backup-and-restore.md](../backup-and-restore.md).
 
@@ -42,11 +42,25 @@ challenge = ASCII(lowercase_hex(SHA256(ASCII(identifier))))
 
 This produces exactly 64 challenge bytes. Configure matching fixed-length processing on all four tokens and verify it against the software fallback. [Yubico documents](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html) the HMAC and touch flags for firmware 2.2 and later; actual device verification remains required.
 
-The raw response feeds HKDF-SHA-256 and AES-256-GCM using the [v1 encrypted-record format](security.md#challenges-derivation-and-wrapped-credentials). That section owns derivation, authenticated metadata, revision/rotation rules, and validation. The initial shared implementation is exercised by [step 00](../installation/00-yubikey-setup.md); production consumers remain pending.
+The raw response feeds HKDF-SHA-256 and AES-256-GCM using the [v1 encrypted-record format](security.md#challenges-derivation-and-wrapped-credentials). That section owns derivation, authenticated metadata, revision/rotation rules, and validation. The initial shared implementation is exercised by [step 00](../installation/00-yubikey-setup.md); the coordinator password consumer is implemented; other production consumers remain pending.
 
 The implemented setup helper reserves `homelab/v1/setup/verification/cross-token/r1` for an in-memory dummy credential under `golden-1`. It is not a production credential or persisted record.
 
 The examples below omit the common `homelab/v1/` prefix.
+
+## Implemented coordinator passwords
+
+Each identifier protects an independently random local `administrator` password:
+
+- `homelab/v1/ups-aux/local-password/administrator/r1`
+- `homelab/v1/ups-pi/local-password/administrator/r1`
+- `homelab/v1/ups-metal/local-password/administrator/r1`
+
+All use `golden-1`; the [public manifest](../../secrets/wrapped/manifest.json)
+maps them to files. Generation, explicit reveal and SSH delivery are implemented
+in the [password runbook](../../runbooks/coordinator-passwords.md). Real records
+and hardware verification remain pending. SSH still uses the existing operator
+key; SSH private-key custody and future UPS service credentials are separate.
 
 ## Direct YubiKey lookup catalogue
 
@@ -118,7 +132,7 @@ Specify storage, delivery, and any direct lookup identifiers for:
 - KMS adapter authentication and TLS bootstrap material.
 - OpenBao recovery administration access.
 - OpenTofu state-encryption and backend credentials.
-- UPS coordinator management/shutdown credentials.
+- UPS service/shutdown credentials (local administrator passwords are covered above).
 - YubiKey programming access codes are deferred to [future improvements](../future.md).
 
 Vault bootstrap material must remain accessible without its own OpenBao instance.
@@ -139,3 +153,4 @@ Each registered credential needs its exact identifier, consumer, encrypted-paylo
 Record identifiers and metadata only. Never record golden-key bytes, HMAC responses, derived keys, or plaintext credentials.
 
 Retain required older generations and payloads until migration and restore tests pass. Public protocol metadata must also appear in every standalone [Emergency Recovery Guide](../emergency-recovery-guide.md); the paired USB holds the full repository clone, including wrapped records, under the [storage policy](encrypted-record-storage.md).
+

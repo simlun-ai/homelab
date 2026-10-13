@@ -27,3 +27,9 @@ The base flow does not reboot hosts. KMS, NUT, and exporters remain unimplemente
 Dependency selection: [ansible-core release](https://pypi.org/project/ansible-core/2.21.5/),
 [Python compatibility](https://docs.ansible.com/projects/ansible/latest/reference_appendices/release_and_maintenance.html).
 Ubuntu 26.04 is the workstation target; hardware installation remains unverified.
+
+## Administrator passwords
+
+See the [password runbook](../../runbooks/coordinator-passwords.md) for
+`password-create`, `password-reveal`, and `password-apply`, each with `HOST=...`.
+These reuse `support/yubikey/.venv` and keep secrets out of Ansible.
