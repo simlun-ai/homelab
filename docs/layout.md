@@ -129,7 +129,7 @@ Manual-pool declarations may drive non-destructive checks/integration. Import, u
 
 ## UPS shutdown coordinators
 
-Use one `/support/ups/` scope because a coordinator serves both Vault and Backup. Hardware/UPS mappings belong in the inventory.
+Use one `/support/ups/` scope for Ansible provisioning and ongoing management of all UPS coordinators; implementation is pending. One coordinator serves both Vault and Backup. Hardware, power supplies, and UPS mappings belong in the inventory.
 
 | Path under `/support/ups/` | Contents |
 | --- | --- |

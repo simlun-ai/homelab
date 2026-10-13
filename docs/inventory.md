@@ -5,7 +5,7 @@
 - **Total disk capacity before mirroring:** 115,244 GB.
 - **Total nominal usable capacity after mirroring:** 62,264 GB, excluding spare drives and cold-spare disks.
 - **Total spare disk capacity:** 15,768 GB across 8 spare disks.
-- **Total RAM:** 248 GB documented, plus unspecified RAM in one Raspberry Pi 2 and two Raspberry Pi 3 shutdown coordinators and the old NAS computer.
+- **Total RAM:** 251 GB documented, including the three 1 GB shutdown coordinators, plus unspecified RAM in the old NAS computer.
 - **Total computers:** 20, including two cold spares, three shutdown coordinators and the old NAS computer.
 - **Total disks:** 77, including eight spare drives.
 
@@ -13,7 +13,11 @@ Raw disk capacity, RAM and equipment counts include cold spares and all drives l
 
 Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capacity of its smallest member. Figures include OS disks and exclude filesystem overhead and any additional Piraeus replication. Unlisted boot media are not counted.
 
-Architecture is in [clusters.md](clusters.md), encryption in [security.md](security/security.md#disk-encryption-and-opentofu), and provisioning/power-return policy in [layout.md](layout.md). Per-device power-return support, settings, and verification remain TBD, including Pis, coordinators, and UPS outlets.
+Architecture is in [clusters.md](clusters.md), encryption in [security.md](security/security.md#disk-encryption-and-opentofu), and provisioning/power-return policy in [layout.md](layout.md).
+
+All UPS shutdown coordinators will use Raspberry Pi 3 Model B computers with 1 GB RAM. Each will use a suitably rated 230 V AC to 5 V DC power adapter connected to a battery-backed outlet of the UPS it monitors.
+
+Per-device power-return support, settings, and verification remain TBD, including Pis, coordinators, and UPS outlets.
 
 ## Vault
 
@@ -38,12 +42,12 @@ Architecture is in [clusters.md](clusters.md), encryption in [security.md](secur
 Shared exclusively by the **Vault and Backup clusters**:
 
 - **UPS:** 1 × Eaton 3S700 supplying power to both clusters.
-- **Shutdown coordinator:** 1 × Raspberry Pi 2, connected to this UPS via USB for monitoring and safe shutdown of both Vault and Backup. Powered from the Eaton 3S700's 2 A USB power outlet. This supporting host is separate from their Talos nodes and is the planned host for [Vault's bootstrap KMS](security/security.md#vault-bootstrap-kms).
+- **Shutdown coordinator:** 1 × Raspberry Pi 3 Model B with 1 GB RAM, connected to this UPS via USB for monitoring and safe shutdown of both Vault and Backup. This supporting host is separate from their Talos nodes and is the planned host for [Vault's bootstrap KMS](security/security.md#vault-bootstrap-kms).
 
 ## Pi
 
 - **Compute:** 5 active Raspberry Pi 4 nodes and 1 cold spare, each with 8 GB RAM.
-- **Shutdown coordinator:** 1 × Raspberry Pi 3, connected to the Eaton UPS via USB to coordinate safe shutdown of the cluster.
+- **Shutdown coordinator:** 1 × Raspberry Pi 3 Model B with 1 GB RAM, connected to the Eaton UPS via USB to coordinate safe shutdown of the cluster.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub per Pi.
 - **Disks:** SATA SSDs through SATA-to-USB 3 adapters; [models and allocation](#ssd-inventory-and-layout) below.
 - **Power:** Official USB-C power adapters for both the Pis and hubs, supplied from 230 V mains.
@@ -173,11 +177,11 @@ Three Eaton UPS units protect Metal:
 
 | UPS | Model | Protected equipment |
 | --- | --- | --- |
-| 1 | Eaton 3S850 | Three control-plane nodes, the Pi3 coordinator and all network switches |
+| 1 | Eaton 3S850 | Three control-plane nodes, the shutdown coordinator and all network switches |
 | 2 | Eaton 3S850 | worker1 and worker2 |
 | 3 | Eaton 3S700 | worker3 and worker4 |
 
-**Shutdown coordinator:** 1 × Raspberry Pi 3 for the whole cluster.
+**Shutdown coordinator:** 1 × Raspberry Pi 3 Model B with 1 GB RAM for the whole cluster, powered from UPS 1. Monitoring connections to the three UPS units remain TBD.
 
 ## Security keys
 

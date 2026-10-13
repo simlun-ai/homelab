@@ -46,5 +46,5 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | kubectl, talosctl, Helm, OpenBao CLI (`bao`) | TBD per scope; talosctl must be compatible with Talos. |
 | OpenTofu CLI (`tofu`) | Independently pinned per scope; catalog version above. |
 | Raspberry Pi OS Lite | TBD; tentative [UPS-host OS](layout.md#ups-shutdown-coordinators). |
-| Ansible | TBD; selected for [coordinator provisioning](installation/01-main-coordinator.md), implementation pending. |
+| Ansible | TBD; selected for provisioning and ongoing management of [all UPS coordinators](layout.md#ups-shutdown-coordinators), implementation pending. |
 | [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms) (repository-owned Python gRPC service), ACME client | TBD; planned on the Vault/Backup coordinator, independently of cluster services. |

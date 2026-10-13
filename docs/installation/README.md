@@ -17,7 +17,7 @@ Later milestones; split and number their runbooks when the next step is concrete
 - [ ] Prepare Vault's OpenBao-backed KMS service for dependent clusters.
 - [ ] Install Backup and its services.
 - [ ] Install Pi, its coordinator, and home automation workloads.
-- [ ] Install Metal, its coordinators, and heavier workloads.
+- [ ] Install Metal, its coordinator, and heavier workloads.
 
 ## Working method
 
