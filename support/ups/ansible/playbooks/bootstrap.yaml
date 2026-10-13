@@ -1,0 +1,45 @@
+- name: Bootstrap one UPS coordinator
+  hosts: ups_coordinators
+  gather_facts: false
+  become: false
+  any_errors_fatal: true
+  pre_tasks:
+    - name: Check target selection before connecting
+      ansible.builtin.import_tasks: ../tasks/single-host.yaml
+
+  tasks:
+    - name: Install Python prerequisites only when missing
+      become: true
+      ansible.builtin.raw: |
+        set -eu
+        missing=0
+        for package in python3 python3-apt; do
+          if [ "$(dpkg-query -W -f='${db:Status-Status}' "$package" 2>/dev/null || true)" != installed ]; then
+            missing=1
+          fi
+        done
+        if [ "$missing" -eq 1 ]; then
+          apt-get update
+          apt-get install --yes --no-install-recommends python3 python3-apt
+          printf '%s\n' HOMELAB_PYTHON_INSTALLED
+        fi
+      register: python_bootstrap
+      changed_when: "'HOMELAB_PYTHON_INSTALLED' in python_bootstrap.stdout"
+
+    - name: Maintain passwordless administrative sudo
+      become: true
+      ansible.builtin.copy:
+        src: ../files/010-homelab-administrator
+        dest: /etc/sudoers.d/010-homelab-administrator
+        owner: root
+        group: root
+        mode: '0440'
+        validate: /usr/sbin/visudo -cf %s
+
+    - name: Validate the complete sudo configuration
+      become: true
+      ansible.builtin.command: /usr/sbin/visudo -c
+      changed_when: false
+
+    - name: Verify the base setup
+      ansible.builtin.import_tasks: ../tasks/verify.yaml

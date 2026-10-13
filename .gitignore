@@ -4,3 +4,5 @@ __pycache__/
 build/
 dist/
 /support/yubikey/.venv/
+/support/ups/.venv/
+/support/ups/.ansible/

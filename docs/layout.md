@@ -83,7 +83,7 @@ Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered co
 | `/charts/<chart>/` | Chart definition, values, templates, dependency locks. |
 | `/tofu/modules/<module>/` | Shared definitions without credentials or ownership of other scopes' state. |
 
-Make supplies scope and resolved tools; helpers must not infer cluster, endpoint, version, or executable from ambient defaults. Use Python for substantial logic and Bash for small tasks. Helpers run on a workstation or suitable runner; Ansible is selected for UPS-host configuration, with implementation pending.
+Make supplies scope and resolved tools; helpers must not infer cluster, endpoint, version, or executable from ambient defaults. Use Python for substantial logic and Bash for small tasks. Helpers run on a workstation or suitable runner; Ansible base bootstrap is implemented for UPS hosts; service configuration and hardware verification remain pending.
 
 Reference upstream charts by version rather than copying them. Package repository-owned charts as immutable versioned artifacts so clusters can adopt changes separately; artifact source and release orchestration remain TBD.
 
@@ -129,20 +129,21 @@ Manual-pool declarations may drive non-destructive checks/integration. Import, u
 
 ## UPS shutdown coordinators
 
-Use one `/support/ups/` scope for Ansible provisioning and ongoing management of all UPS coordinators; implementation is pending. One coordinator serves both Vault and Backup. Hardware, power supplies, and UPS mappings belong in the inventory.
+Use one `/support/ups/` scope for Ansible provisioning and ongoing management of all UPS coordinators. Base bootstrap and verification are implemented; KMS, NUT, and exporters remain pending. `ups-aux` serves both Vault and Backup. Hardware, power supplies, and UPS mappings belong in the inventory.
 
 | Path under `/support/ups/` | Contents |
 | --- | --- |
 | `README.md` | Operational entry points and links to mappings/recovery. |
-| `Makefile` | Explicit management targets. |
-| `toolchain.yaml` and `bin/` | Scope-owned pins and ignored tools. |
-| `inventory.yaml` | Coordinator/equipment references; identifiers/addresses TBD. |
-| `ansible/playbooks/` | Proposed configuration/update entry points. |
+| `Makefile` | Implemented local tools/inventory/syntax targets and single-host bootstrap/verification. |
+| `requirements.txt` and `.venv/` | Implemented Ansible dependency pins and ignored tools, invoked explicitly as in the YubiKey scope. |
+| `install-system-dependencies.sh`, `check-tools.py` | Ubuntu 26.04 workstation prerequisites and runtime/dependency verification. |
+| `inventory.yaml`, `ansible.cfg` | Three approved hostnames, `administrator` SSH account, and strict SSH settings; IP addresses TBD. |
+| `ansible/playbooks/`, `ansible/tasks/`, `ansible/files/` | Implemented single-host bootstrap, sudo policy, and verification. |
 | `ansible/roles/` | Proposed shutdown-manager/service setup. |
 | `ansible/templates/` | Non-secret service templates. |
 | `ansible/requirements.yml` | Pinned external roles/collections if selected. |
 
-Raspberry Pi OS Lite on microSD is selected. The shared [base setup runbook](../runbooks/ups-coordinator-base-setup.md) covers image preparation from a Linux workstation and Ansible bootstrap for all three coordinators. [01 - Main coordinator](installation/01-main-coordinator.md) adds Vault's bootstrap KMS services. The Vault/Backup coordinator also hosts the planned [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. Deploy its [wrapped credentials](security/encrypted-record-storage.md#coordinator-deployment) to local persistent storage; Ansible copies ciphertext without decrypting it. OpenTofu has no assigned coordinator role. NUT and Prometheus exporter setup will be added to the shared runbook later; shutdown credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security/security.md#secret-handling-boundary).
+Raspberry Pi OS Lite (64-bit) on microSD is selected. The shared [base setup runbook](../runbooks/ups-coordinator-base-setup.md) covers image preparation from a Linux workstation and Ansible bootstrap for all three coordinators. [01 - Main coordinator](installation/01-main-coordinator.md) adds Vault's bootstrap KMS services. The Vault/Backup coordinator also hosts the planned [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. Deploy its [wrapped credentials](security/encrypted-record-storage.md#coordinator-deployment) to local persistent storage; Ansible copies ciphertext without decrypting it. OpenTofu has no assigned coordinator role. NUT and Prometheus exporter setup will be added to the shared runbook later; shutdown credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security/security.md#secret-handling-boundary).
 
 ### Power-loss shutdown and manual startup
 
@@ -165,7 +166,7 @@ Numbered installation procedures and their implementation progress belong in [do
 | Proposed path under `/runbooks/` | Procedure |
 | --- | --- |
 | `README.md` | Index/conventions. |
-| [`ups-coordinator-base-setup.md`](../runbooks/ups-coordinator-base-setup.md) | Draft shared Raspberry Pi OS Lite installation and Ansible bootstrap; hardware verification pending. |
+| [`ups-coordinator-base-setup.md`](../runbooks/ups-coordinator-base-setup.md) | Shared OS installation and implemented Ansible base bootstrap; hardware verification pending. |
 | `bootstrap-node.md` | Add/rebuild without touching protected data. |
 | `upgrade-cluster.md` | Upgrade tools/components, verify health, record recovery options. |
 | `prepare-manual-zfs-pool.md` | Identify/prepare encrypted manual storage. |
@@ -185,3 +186,4 @@ Numbered installation procedures and their implementation progress belong in [do
 - Node/disk schema and inventory synchronization.
 - Helm orchestration, immutable-chart storage, and scripts/OpenTofu division.
 - Scope-specific architecture questions remain in [clusters.md](clusters.md); security and backup implementation questions remain in their owning documents.
+

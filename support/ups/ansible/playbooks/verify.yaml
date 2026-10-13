@@ -1,0 +1,11 @@
+- name: Verify one UPS coordinator
+  hosts: ups_coordinators
+  gather_facts: false
+  become: false
+  any_errors_fatal: true
+  pre_tasks:
+    - name: Check target selection before connecting
+      ansible.builtin.import_tasks: ../tasks/single-host.yaml
+  tasks:
+    - name: Verify the base setup
+      ansible.builtin.import_tasks: ../tasks/verify.yaml

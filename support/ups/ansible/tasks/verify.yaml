@@ -1,0 +1,25 @@
+- name: Verify SSH and target Python
+  ansible.builtin.ping:
+
+- name: Read the connected account
+  ansible.builtin.command: id -un
+  register: connected_account
+  changed_when: false
+
+- name: Read machine architecture
+  ansible.builtin.command: uname -m
+  register: machine_architecture
+  changed_when: false
+
+- name: Check passwordless sudo independently of Ansible's become password
+  ansible.builtin.command: sudo -n id -u
+  register: sudo_identity
+  changed_when: false
+
+- name: Check base setup results
+  ansible.builtin.assert:
+    that:
+      - connected_account.stdout == 'administrator'
+      - machine_architecture.stdout == 'aarch64'
+      - sudo_identity.stdout == '0'
+    success_msg: SSH, Python, 64-bit OS and passwordless sudo are ready.

@@ -1,0 +1,12 @@
+# Names must resolve through workstation DNS or existing SSH configuration.
+# If needed, set ansible_host to each verified management address.
+all:
+  children:
+    ups_coordinators:
+      vars:
+        ansible_user: administrator
+        ansible_python_interpreter: /usr/bin/python3
+      hosts:
+        ups-aux:
+        ups-pi:
+        ups-metal:

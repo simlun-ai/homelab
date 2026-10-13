@@ -1,0 +1,2 @@
+# Key-authenticated homelab administrative account.
+administrator ALL=(ALL:ALL) NOPASSWD: ALL

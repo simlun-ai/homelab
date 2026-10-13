@@ -1,0 +1,6 @@
+- name: Require exactly one explicitly selected coordinator
+  ansible.builtin.assert:
+    that:
+      - ansible_play_hosts_all | length == 1
+      - ansible_user == 'administrator'
+    fail_msg: Use make -C support/ups bootstrap or verify with HOST set to one coordinator.
