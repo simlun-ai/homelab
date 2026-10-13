@@ -36,7 +36,8 @@ Create each part when a runbook first needs it, following [layout.md](../layout.
 | `scripts/homelab/`, `pyproject.toml` | Python helpers, including any token programming/verification support needed in step 00. |
 | `support/yubikey/` | Step 00 system dependencies, Python requirements, and explicit Make entry points. |
 | `support/ups/` | Coordinator configuration, Ansible, services, and scoped tooling. |
-| `secrets/wrapped/` | Authenticated encrypted records and their public manifest. |
+| `secrets/manifest.json` | Public credential catalogue. |
+| `secrets/wrapped/` | Private `homelab-wrapped-secrets` submodule containing authenticated encrypted records. |
 | `clusters/vault/`, `make/` | Vault configuration, version pins, and shared Make implementation. |
 
 Installation runbooks own executable procedures, with shared coordinator OS/Ansible setup in [the reusable base runbook](../../runbooks/ups-coordinator-base-setup.md). Keep architecture, security policy, and backup design in their [existing owning documents](../layout.md#document-ownership), linking to them here. Keep related documentation synchronized as decisions and verified behavior change.

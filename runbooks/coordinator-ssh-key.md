@@ -8,6 +8,7 @@ on the Pis. This identity is separate from the key used to access GitHub.
 
 ## Generate once
 
+Initialize the [private secrets submodule](../docs/security/encrypted-record-storage.md#checkout-and-updates) first.
 Use the workstation/token prerequisites and memory handling from the
 [password runbook](coordinator-passwords.md#prepare). Then, from the repo root:
 
@@ -21,8 +22,10 @@ private key, then writes only:
 - `secrets/wrapped/coordinators-ssh-ed25519.json`: authenticated ciphertext.
 - `support/ups/coordinator_ed25519.pub`: the public key, safe to commit.
 
-Commit both and refresh the four recovery USB clones. The public
-[manifest](../secrets/wrapped/manifest.json) reserves the wrapped record;
+Commit and push ciphertext in the private submodule first; then commit its
+updated pointer and the public key in `homelab`, using the [storage workflow](../docs/security/encrypted-record-storage.md#checkout-and-updates).
+Refresh the four recovery USB clones. The public
+[manifest](../secrets/manifest.json) reserves the wrapped record;
 filenames are absent until you generate them with your token. Creation refuses
 to overwrite either file. Reuse this identity when reinstalling a coordinator.
 

@@ -194,7 +194,7 @@ Four YubiKeys available; use cases and proposed lookups belong in [yubikey.md](s
 | YubiKey Standard | 2.4.1 | OTP | 1 |
 | **Sum** | | | **4** |
 
-The four recovery USB sticks will each hold a [full homelab repository clone](security/encrypted-record-storage.md#recovery-usb-clones), including wrapped records and the recovery guide. Their models, capacities, and acquisition are TBD, so they are not added to the physical disk totals.
+The four recovery USB sticks will each hold [full homelab and private-submodule clones](security/encrypted-record-storage.md#recovery-usb-clones), including wrapped records and the recovery guide. Their models, capacities, and acquisition are TBD, so they are not added to the physical disk totals.
 
 ## Spare drives
 

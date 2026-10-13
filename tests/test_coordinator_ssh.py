@@ -10,6 +10,7 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import load_ssh_private_key
 from homelab import coordinator_ssh as ssh
+from submodule_fixture import prepare_store
 
 
 def respond(challenge):
@@ -21,6 +22,7 @@ class CoordinatorSSHTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.repo = Path(self.temp.name)
+        prepare_store(self.repo)
 
     def test_create_wraps_unencrypted_ed25519_and_refuses_overwrite(self):
         ssh.create(respond, self.repo)
@@ -28,7 +30,7 @@ class CoordinatorSSHTests(unittest.TestCase):
         self.assertIsInstance(load_ssh_private_key(private, None), Ed25519PrivateKey)
         self.assertEqual(public, ssh.read_public(self.repo))
         self.assertNotIn(private, (self.repo / ssh.RECORD).read_bytes())
-        self.assertEqual(set(p.relative_to(self.repo) for p in self.repo.rglob('*') if p.is_file()),
+        self.assertEqual(set(p.relative_to(self.repo) for p in self.repo.rglob('*') if p.is_file() and '.git' not in p.parts),
                          {ssh.RECORD, ssh.PUBLIC})
         original = (self.repo / ssh.RECORD).read_bytes()
         with self.assertRaises(FileExistsError):
@@ -39,7 +41,8 @@ class CoordinatorSSHTests(unittest.TestCase):
         with patch.object(ssh.wrapping, 'unwrap', return_value=b'wrong'):
             with self.assertRaises(ValueError):
                 ssh.create(respond, self.repo)
-        self.assertEqual(list(self.repo.iterdir()), [])
+        self.assertFalse((self.repo / ssh.RECORD).exists())
+        self.assertFalse((self.repo / ssh.PUBLIC).exists())
 
     def test_restore_missing_public_without_changing_identity(self):
         ssh.create(respond, self.repo)
@@ -100,5 +103,5 @@ class CoordinatorSSHTests(unittest.TestCase):
             self.assertEqual(kwargs['stderr'], ssh.subprocess.DEVNULL)
 
     def test_manifest_context(self):
-        manifest = json.loads((ssh.REPO / 'secrets/wrapped/manifest.json').read_text())
-        self.assertIn(dict(key_id=ssh.KEY_ID, root_key=ssh.ROOT_KEY, file=ssh.RECORD.name), manifest['records'])
+        manifest = json.loads((ssh.REPO / 'secrets/manifest.json').read_text())
+        self.assertIn(dict(key_id=ssh.KEY_ID, root_key=ssh.ROOT_KEY, file='wrapped/' + ssh.RECORD.name), manifest['records'])

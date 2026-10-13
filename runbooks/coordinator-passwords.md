@@ -9,6 +9,8 @@ SSH key generation and agent loading belong to that separate runbook.
 
 ## Prepare
 
+Initialize the [private secrets submodule](../docs/security/encrypted-record-storage.md#checkout-and-updates) before generating or recovering records.
+
 Complete [YubiKey setup and verification](../docs/installation/00-yubikey-setup.md)
 first. Use a trusted Linux workstation, an unrecorded local terminal and one
 verified token. Install the pinned token tooling:
@@ -39,13 +41,14 @@ make -C support/ups password-create HOST=ups-metal
 
 Touch when prompted. Each operation wraps a fresh random password using OTP
 slot 1 and verifies it by decrypting it before writing ciphertext. Existing
-records are never overwritten. The public [manifest](../secrets/wrapped/manifest.json)
+records are never overwritten. The public [manifest](../secrets/manifest.json)
 lists the password identifiers, root generation and filenames; an entry does
 not mean its record has been created or applied. The helper independently fixes
 those expected contexts rather than trusting metadata in a supplied record.
 
-Commit the three generated JSON records and refresh all four recovery USB
-clones before relying on the passwords. No plaintext passwords or password
+Commit and push the three generated JSON records in the private submodule,
+then commit its updated pointer in `homelab`, following the [storage workflow](../docs/security/encrypted-record-storage.md#checkout-and-updates).
+Refresh all four recovery USB clones before relying on the passwords. No plaintext passwords or password
 hashes belong in Git. Preserve the records when reinstalling a Pi.
 
 ## Use during installation or recovery

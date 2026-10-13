@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 from homelab import coordinator_password as passwords
+from submodule_fixture import prepare_store
 
 
 def respond(challenge):
@@ -16,6 +17,7 @@ class PasswordTests(unittest.TestCase):
     def test_create_recover_distinct_and_no_overwrite(self):
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
+            prepare_store(repo)
             values = []
             for host in passwords.HOSTS:
                 passwords.create(host, respond, repo)
@@ -31,6 +33,7 @@ class PasswordTests(unittest.TestCase):
     def test_wrong_host_rejected_before_token(self):
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
+            prepare_store(repo)
             passwords.create('ups-aux', respond, repo)
             passwords.record_path('ups-pi', repo).write_bytes(passwords.record_path('ups-aux', repo).read_bytes())
             token = Mock(side_effect=AssertionError('Must not query token'))
@@ -41,6 +44,7 @@ class PasswordTests(unittest.TestCase):
     def test_failed_verification_writes_nothing(self):
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
+            prepare_store(repo)
             with patch.object(passwords.wrapping, 'unwrap', return_value=b'wrong'):
                 with self.assertRaises(ValueError):
                     passwords.create('ups-aux', respond, repo)
@@ -60,6 +64,6 @@ class PasswordTests(unittest.TestCase):
             self.assertEqual(run.call_count, 1)
 
     def test_manifest_agrees_with_fixed_contexts(self):
-        manifest = json.loads((passwords.REPO / 'secrets/wrapped/manifest.json').read_text())
+        manifest = json.loads((passwords.REPO / 'secrets/manifest.json').read_text())
         self.assertEqual([record for record in manifest['records'] if '/local-password/' in record['key_id']], [dict(key_id=passwords.context(host), root_key=passwords.ROOT_KEY,
-            file=passwords.record_path(host).name) for host in passwords.HOSTS])
+            file='wrapped/' + passwords.record_path(host).name) for host in passwords.HOSTS])

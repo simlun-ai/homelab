@@ -14,7 +14,7 @@ The logical key-value store consists of:
 - A YubiKey response used to derive its wrapping key.
 - An authenticated encrypted record containing the credential.
 
-The token stores the golden key. Credential records live in the repository and its recovery USB clones under the [storage policy](encrypted-record-storage.md). Retrieving a wrapped credential requires both a working token and its encrypted record.
+The token stores the golden key. Credential records live in the private `homelab-wrapped-secrets` submodule and recovery USB clones under the [storage policy](encrypted-record-storage.md). Retrieving a wrapped credential requires both a working token and its encrypted record.
 
 [HMAC-SHA1 challenge-response](https://developers.yubico.com/Developer_Program/Guides/Touch_triggered_OTP.html) accepts challenges up to 64 bytes and returns a deterministic response for the same challenge and secret. It does not itself encrypt or store arbitrary credential values.
 
@@ -56,7 +56,7 @@ Each identifier protects an independently random local `administrator` password:
 - `homelab/v1/ups-pi/local-password/administrator/r1`
 - `homelab/v1/ups-metal/local-password/administrator/r1`
 
-All use `golden-1`; the [public manifest](../../secrets/wrapped/manifest.json)
+All use `golden-1`; the [public manifest](../../secrets/manifest.json)
 maps them to files. Generation, explicit reveal and SSH delivery are implemented
 in the [password runbook](../../runbooks/coordinator-passwords.md). Real records
 and hardware verification remain pending. SSH uses the separate repository-owned identity below; future UPS service credentials remain separate.
@@ -65,7 +65,7 @@ and hardware verification remain pending. SSH uses the separate repository-owned
 
 `homelab/v1/ups-coordinators/ssh-private-key/administrator/r1` under `golden-1`
 wraps the single passphrase-less Ed25519 private key shared by all three
-coordinators. The [manifest](../../secrets/wrapped/manifest.json) maps it to
+coordinators. The [manifest](../../secrets/manifest.json) maps it to
 `coordinators-ssh-ed25519.json`; the public half is
 `support/ups/coordinator_ed25519.pub`. The workstation loads the private key
 directly into its local agent under the [SSH key runbook](../../runbooks/coordinator-ssh-key.md).
@@ -151,7 +151,7 @@ Vault bootstrap material must remain accessible without its own OpenBao instance
 **Catalogue rules approved; production entries and consumer integrations pending.**
 
 - Keep one wrapped record per independently managed credential, including one per ZFS encryption root.
-- Map exact identifiers to encrypted-record filenames through the public manifest under `secrets/wrapped/`, following the [storage policy](encrypted-record-storage.md). Manifest schema and tooling belong to [helper implementation](helper-implementation.md).
+- Map exact identifiers to encrypted-record filenames through the public manifest at `secrets/manifest.json`, following the [storage policy](encrypted-record-storage.md). Manifest schema and tooling belong to [helper implementation](helper-implementation.md).
 - Finalize identifiers when resource boundaries are known. Keep missing node/pool names, ZFS encryption roots, Talos volume mappings, and bootstrap bundle contents explicitly TBD.
 - Keep every bootstrap/recovery credential accessible without the service it helps recover.
 
@@ -161,5 +161,5 @@ Each registered credential needs its exact identifier, consumer, encrypted-paylo
 
 Record identifiers and metadata only. Never record golden-key bytes, HMAC responses, derived keys, or plaintext credentials.
 
-Retain required older generations and payloads until migration and restore tests pass. Public protocol metadata must also appear in every standalone [Emergency Recovery Guide](../emergency-recovery-guide.md); the paired USB holds the full repository clone, including wrapped records, under the [storage policy](encrypted-record-storage.md).
+Retain required older generations and payloads until migration and restore tests pass. Public protocol metadata must also appear in every standalone [Emergency Recovery Guide](../emergency-recovery-guide.md); the paired USB holds the full parent and private-submodule clones, including wrapped records, under the [storage policy](encrypted-record-storage.md).
 

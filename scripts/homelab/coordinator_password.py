@@ -8,6 +8,7 @@ import secrets
 import subprocess
 
 from . import wrapping, coordinator_ssh
+from .record_store import require_store
 
 HOSTS = ('ups-aux', 'ups-pi', 'ups-metal')
 ROOT_KEY = 'golden-1'
@@ -26,6 +27,7 @@ def record_path(host, repo=REPO):
 
 
 def create(host, respond, repo=REPO):
+    require_store(repo)
     path = record_path(host, repo)
     if path.exists():
         raise FileExistsError('Record already exists; reuse it')
@@ -34,7 +36,6 @@ def create(host, respond, repo=REPO):
     recovered = wrapping.unwrap(encoded, context(host), ROOT_KEY, respond)
     if not hmac.compare_digest(password, recovered):
         raise ValueError('Verification failed')
-    path.parent.mkdir(parents=True, exist_ok=True)
     # Exclusive creation also prevents a concurrent run from overwriting a record.
     with path.open('xb') as target:
         target.write(encoded + b'\n')
@@ -43,6 +44,7 @@ def create(host, respond, repo=REPO):
 
 
 def recover(host, respond, repo=REPO):
+    require_store(repo)
     with record_path(host, repo).open('rb') as source:
         encoded = source.read(wrapping.MAX_RECORD + 1)
     password = wrapping.unwrap(encoded, context(host), ROOT_KEY, respond)
@@ -68,11 +70,12 @@ def apply(host, password):
 
 
 def main():
-    from .yubikey_setup import harden, token, respond, require_no_response_without_touch
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('create', 'reveal', 'apply'))
     parser.add_argument('--host', required=True, choices=HOSTS)
     args = parser.parse_args()
+    require_store(REPO)
+    from .yubikey_setup import harden, token, respond, require_no_response_without_touch
     harden()
     if args.action == 'create' and record_path(args.host).exists():
         print('Record already exists; use reveal or apply. Creation never overwrites it.')

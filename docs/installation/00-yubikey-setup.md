@@ -103,17 +103,7 @@ Record the tested Git commit, OS/Python and installed package versions, date, an
 | key2 | Pending | Pending | Pending |
 | key3 | Pending | Pending | Pending |
 
-For each paired recovery USB, use an empty destination. Replace `/media/RECOVERY` with that USB's mount point. Confirm the local clone is full and make an independent copy:
-
-```sh
-git rev-parse --is-shallow-repository
-git clone --no-hardlinks . /media/RECOVERY/homelab
-git -C /media/RECOVERY/homelab fsck --full
-git -C /media/RECOVERY/homelab rev-parse HEAD
-git -C /media/RECOVERY/homelab rev-parse --is-shallow-repository
-```
-
-Both shallow-status checks must print `false`. Expected: a valid full clone at the intended commit. Inspect the clone's remote URL for embedded credentials. These clones initially contain no production wrapped records. Refresh them after test results or recovery-critical changes are committed.
+For each paired recovery USB, follow the [offline clone and verification procedure](../security/encrypted-record-storage.md#recovery-usb-clones). It copies both the full parent repository and the private `secrets/wrapped` submodule; a parent-only clone is not a recovery kit. Initialize the private checkout while GitHub access is available, before going offline. Production records remain absent until generated. Refresh the kits after test results or recovery-critical changes are committed.
 
 Prepare replacement/recovery laptops using section 1 while online, then disconnect before handling the golden key. The USB clone includes dependency requirements; it does not include a portable virtualenv. Independent recovery-tool acquisition remains [pending](../security/recovery-procedures.md).
 
@@ -137,3 +127,4 @@ Shut down the air-gapped laptop before reconnecting anything networked. Later re
 - [Pinned Yubico OTP implementation](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/yubiotp.py): firmware support, fixed-length configuration, and HMAC operations.
 - [Pinned Yubico USB OTP protocol](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/core/otp.py): touch requests and cancellation.
 - [Yubico Linux device permissions](https://github.com/Yubico/yubikey-manager/blob/5.9.2/doc/Device_Permissions.adoc).
+

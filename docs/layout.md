@@ -30,7 +30,8 @@ Keep details in their owning document and link from other documents. The USB gui
 | `/pyproject.toml` | Shared Python helper package/development configuration; locking format TBD. |
 | `/docs/` | Documents listed above. |
 | `/docs/installation/` | Installation plan and `NN-<headline>.md` runbooks; grow implementation as each step is tried. |
-| `/secrets/wrapped/` | Authenticated encrypted credential records and public identifier-to-file manifest; [storage policy](security/encrypted-record-storage.md). |
+| `/secrets/manifest.json` | Public credential catalogue; no secrets or checksums. |
+| `/secrets/wrapped/` | Private `homelab-wrapped-secrets` Git submodule containing authenticated encrypted records; [storage policy](security/encrypted-record-storage.md). |
 | `/clusters/{vault,backup,pi,metal}/` | Independent cluster configuration and operational pins. |
 | `/make/` | Shared Make implementation, without global cluster-version defaults. |
 | `/scripts/` | Python helpers and small Bash scripts. |

@@ -19,7 +19,7 @@ All entries must be non-secret.
 | Tool and backup integrity/checksum verification | TBD. |
 | R2 account, endpoint, bucket, object convention; snapshot selection | TBD. |
 | Additional backup-encryption details | TBD. |
-| Independent encrypted-payload references | Wrapped records and public manifest under `secrets/wrapped/` in the USB's full repository clone. OpenBao Shamir seal: one share, threshold one; identifier `homelab/v1/vault/openbao-unseal/share-1/r1`. Exact filenames and recovery administration credential TBD. Accessible without Vault, GitHub, or existing R2 credentials. |
+| Independent encrypted-payload references | Wrapped records in the USB's private `secrets/wrapped/` submodule, with public manifest `secrets/manifest.json` in the parent clone. OpenBao Shamir seal: one share, threshold one; identifier `homelab/v1/vault/openbao-unseal/share-1/r1`. Exact filenames and recovery administration credential TBD. Accessible without Vault, GitHub, or existing R2 credentials. |
 | Golden-key retrieval procedure reference | Level 1 Password Management system; exact retrieval steps outside this repository. Never record the key here. |
 | Vault coordinator KMS endpoint, public TLS/DNS-01, preboot DNS/NTP, session controls | TBD; include service acquisition, independent wrapped-payload references, and coordinator rebuild instructions. |
 | KMS adapter endpoint, TLS trust, early-boot networking, transit key mapping/versions | TBD; include adapter acquisition and independent bootstrap-payload references. |
@@ -27,9 +27,9 @@ All entries must be non-secret.
 
 ## Required access and operating rules
 
-Use one working YubiKey and its paired recovery USB containing a full, non-shallow homelab repository clone, including this guide and the wrapped recovery records, plus a recovery workstation with the specified tools. All homelab secrets are rooted in the 20-byte golden key through derivation, wrapping, or OpenBao protected by wrapped unseal material. All four tokens share the golden key and HMAC-SHA1 settings and are kept at separate locations; identical effective challenges produce identical responses. One token suffices; if none works, obtain the separately held offline golden key.
+Use one working YubiKey and its paired recovery USB containing full, non-shallow clones of homelab and its private secrets submodule, including this guide and the wrapped recovery records, plus a recovery workstation with the specified tools. All homelab secrets are rooted in the 20-byte golden key through derivation, wrapping, or OpenBao protected by wrapped unseal material. All four tokens share the golden key and HMAC-SHA1 settings and are kept at separate locations; identical effective challenges produce identical responses. One token suffices; if none works, obtain the separately held offline golden key.
 
-- The USB contains the full repository clone and authenticated wrapped records. Never include golden-key material, HMAC responses, derived keys, plaintext credentials/unseal shares/private keys, decrypted secret-bearing configuration, or embedded Git access tokens.
+- The USB contains full clones of both repositories, the pinned private submodule checkout, and authenticated wrapped records. Never include golden-key material, HMAC responses, derived keys, plaintext credentials/unseal shares/private keys, decrypted secret-bearing configuration, or embedded Git access tokens.
 - Wrapped `homelab-wrap-v1` records may be stored in Git, on workstation disk, on recovery USBs, and on consuming hosts. Never write decrypted secrets, golden-key material, HMAC responses, derived keys, or OpenBao snapshots to workstation disk, including temporary files, caches, shell history, logs, state, or saved plans. Verify memory-only handling, including swap, hibernation, subprocesses, and failure paths.
 - Hardware challenge-response requires touch; the golden-key software fallback cannot enforce it.
 - Preserve manual non-Piraeus ZFS pools during node installation or repair; do not wipe or initialize them.
@@ -38,9 +38,9 @@ Use one working YubiKey and its paired recovery USB containing a full, non-shall
 
 ## Recovery repository and local records
 
-Use the USB's checked-out repository and local Git history to find `secrets/wrapped/`, its public identifier-to-file manifest, this guide, and helper source without GitHub or OpenBao. Snapshot backups remain in R2; required binaries/dependencies still need the specified acquisition procedure.
+Use the USB's checked-out repository and local Git history to find `secrets/wrapped/` and the public identifier-to-file manifest at `secrets/manifest.json`, this guide, and helper source without GitHub or OpenBao. Snapshot backups remain in R2; required binaries/dependencies still need the specified acquisition procedure.
 
-Refresh all four full clones after recovery-critical changes, record each clone's commit, and verify integrity and required records. Exact refresh and verification commands remain TBD. The coordinator uses its own locally deployed wrapped records at startup; planned Ansible provisioning copies ciphertext without decrypting it. Implementation remains pending.
+Refresh all four recovery kits after recovery-critical changes, record both repository commits, and verify both clones and required records. Copy both complete repositories, not just the parent or an archive; never leave the private submodule uninitialized. See `docs/security/encrypted-record-storage.md` for copy/verification commands. The coordinator uses its own locally deployed wrapped records at startup; planned Ansible provisioning copies ciphertext without decrypting it. Implementation remains pending.
 
 ## Recover core-secret access
 

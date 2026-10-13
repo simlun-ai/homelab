@@ -31,12 +31,15 @@ Package recovery dependencies for use without downloads.
 SDK through `scripts/coordinator_password_cli.py`. Commands and failure recovery
 are in the [runbook](../../runbooks/coordinator-passwords.md).
 
-`secrets/wrapped/manifest.json` is public metadata: `format` is
+`secrets/manifest.json` is public metadata: `format` is
 `homelab-wrapped-manifest-v1`; `records` is a list of objects with exact `key_id`,
-`root_key`, and `file` (basename relative to that directory). The helper fixes
+`root_key`, and `file` (path relative to `secrets/`, starting with `wrapped/`). The helper fixes
 expected contexts independently in code. Manifest/code agreement is tested;
 entries do not attest to existence, deployment, or freshness. Initial records
-use revision 1. Overwriting and rotation are not implemented.
+use revision 1. No checksums are maintained. Overwriting and rotation are not implemented.
+Both credential helpers require an initialized Git submodule at `secrets/wrapped`
+before reading or generating records; missing checkout errors precede token access.
+Public documentation, manifest tests and agent-only checks do not require private access.
 
 ## Coordinator SSH helper
 

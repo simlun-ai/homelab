@@ -1,35 +1,127 @@
 # Encrypted-record storage
 
-**Coordinator password and SSH key record workflows implemented; actual records and service deployment pending.**
+**Private submodule and coordinator credential workflows implemented; production records and service deployment pending.**
 
 ## Authoritative records
 
-Keep `homelab-wrap-v1` encrypted JSON records in the private homelab repository under `secrets/wrapped/`: one file per credential record, with a public manifest mapping exact identifiers to filenames. Manifest schema and helper commands belong to [helper implementation](helper-implementation.md).
+Keep authenticated `homelab-wrap-v1` JSON records in the **private**
+`simlun-ai/homelab-wrapped-secrets` repository, mounted as the Git submodule
+`secrets/wrapped`. Keep it private even if `homelab` becomes public. The parent
+tracks only the submodule URL and commit, not ciphertext files.
 
-Valid wrapped ciphertext may be committed and stored on workstation disk, recovery USBs, and consuming hosts. Golden-key material, HMAC responses, derived keys, and decrypted credentials remain subject to the [memory-only handling policy](security.md#secret-handling-boundary). This exception covers wrapped credential records, not workstation-disk staging of OpenBao snapshots.
+The public `secrets/manifest.json` lists identifiers, root generations and
+paths relative to `secrets/`. Entries reserve filenames and do not imply records
+exist or are deployed. There are no manifest checksums. Schema belongs to
+[helper implementation](helper-implementation.md); cryptographic validation and
+memory-only handling remain governed by [security.md](security.md).
 
-Wrap credentials entirely in memory. Verify that each new record decrypts to the original bytes before replacing the current record; write only the authenticated encrypted record. Use the [v1 record and revision rules](security.md#updates-rotation-and-recovery).
+Wrap and verify in memory before writing ciphertext. Never persist plaintext,
+password hashes, private keys, HMAC responses, derived keys, or golden-key
+material in either repository. Public SSH keys remain in the parent repository.
+The first consumers are [coordinator passwords](../../runbooks/coordinator-passwords.md)
+and the [shared SSH identity](../../runbooks/coordinator-ssh-key.md).
 
-The first implemented records are the three [coordinator passwords](../../runbooks/coordinator-passwords.md). Their manifest entries reserve filenames; record files appear only after local generation with a verified token. These records stay in Git/recovery clones; the Pi receives its password over SSH and stores its normal account hash, not a local wrapped-record copy.
+Moving files into a submodule does not erase parent Git history. No production
+credential records were present at the split; before publishing the parent,
+review its complete history and any locally created commits for sensitive data.
+Do not share a recursive working-directory copy: it includes the private files.
 
-The shared [coordinator SSH private key](../../runbooks/coordinator-ssh-key.md) is also
-wrapped here. Its public half lives in `support/ups/coordinator_ed25519.pub`;
-only that public half is deployed to the Pis. The private key is unwrapped
-directly into the local workstation agent, never a plaintext file.
+## Checkout and updates
+
+From an existing parent checkout, with GitHub access to the private repository:
+
+```sh
+git submodule update --init --recursive -- secrets/wrapped
+git submodule status -- secrets/wrapped
+```
+
+For a new checkout, `git clone --recurse-submodules git@github.com:simlun-ai/homelab.git`
+fetches both. Public readers can clone the parent without recursion; docs,
+manifest tests and non-secret checks do not require private access. GitHub
+access uses your separately configured Git credentials, not the wrapped
+coordinator SSH identity. Helpers fail clearly if the submodule is absent.
+
+The checkout is normally detached at the parent-pinned commit. Before generating
+or updating credentials, create a uniquely named branch in the submodule:
+
+```sh
+git -C secrets/wrapped switch -c credential-update
+```
+
+Run the relevant credential helper. Review changes, then commit and push the
+private repository **first** (example for one generated password):
+
+```sh
+git -C secrets/wrapped add ups-aux-administrator.json
+git -C secrets/wrapped commit -m "Add ups-aux administrator password"
+git -C secrets/wrapped push -u origin HEAD
+git add secrets/wrapped secrets/manifest.json
+git commit -m "Update wrapped credential reference"
+git push
+```
+
+For SSH-key creation also stage `support/ups/coordinator_ed25519.pub` in the
+parent. Never put ciphertext in the parent to work around missing private access.
+Retain pushed private branches/commits referenced by the parent. After pulling
+parent changes, repeat `git submodule update --init --recursive` to select its
+pinned version; do not use `--remote` for normal recovery. Preserve uncommitted
+changes before switching versions. Refresh all four recovery USBs after updates.
 
 ## Recovery USB clones
 
-Each YubiKey's paired recovery USB contains a full, non-shallow clone of the homelab Git repository, including checked-out files, local Git history, documentation, helper source, and committed wrapped records. No Git access token or other plaintext credential may be embedded in the clone.
+Each YubiKey's paired USB needs **complete, non-shallow clones of both repositories**,
+the public manifest, this documentation, and the pinned secrets checkout. A plain
+parent clone or source archive is insufficient. Never embed Git access tokens.
 
-The clone provides wrapped bootstrap/recovery records without GitHub or OpenBao. OpenBao snapshots remain separately backed up to R2. Required tool binaries and dependencies still need the independently obtainable recovery tooling described in [recovery procedures](recovery-procedures.md); source availability alone does not establish offline executability.
+For a new USB copy, start in a clean, committed parent checkout with the private
+submodule initialized at the pinned version. Confirm both shallow checks print
+`false`, and that submodule status has no leading `-`, `+`, or `U`:
 
-Refresh all four clones after recovery-critical record, protocol, helper, or guide changes. Record each clone's commit and verify its integrity and required records. Exact refresh commands and checks remain implementation work.
+```sh
+git rev-parse --is-shallow-repository
+git -C secrets/wrapped rev-parse --is-shallow-repository
+git submodule status -- secrets/wrapped
+```
+
+Replace `/media/RECOVERY` with the mounted USB. Both destination directories must
+be new. These copies use only local Git objects, so no network is needed:
+
+```sh
+git clone --no-hardlinks . /media/RECOVERY/homelab
+git clone --no-hardlinks secrets/wrapped /media/RECOVERY/homelab/secrets/wrapped
+git -C /media/RECOVERY/homelab/secrets/wrapped checkout --detach "$(git rev-parse HEAD:secrets/wrapped)"
+git -C /media/RECOVERY/homelab submodule absorbgitdirs secrets/wrapped
+git -C /media/RECOVERY/homelab remote set-url origin git@github.com:simlun-ai/homelab.git
+git -C /media/RECOVERY/homelab/secrets/wrapped remote set-url origin git@github.com:simlun-ai/homelab-wrapped-secrets.git
+```
+
+Verify offline:
+
+```sh
+git -C /media/RECOVERY/homelab fsck --full
+git -C /media/RECOVERY/homelab/secrets/wrapped fsck --full
+git -C /media/RECOVERY/homelab rev-parse --is-shallow-repository
+git -C /media/RECOVERY/homelab/secrets/wrapped rev-parse --is-shallow-repository
+git -C /media/RECOVERY/homelab rev-parse HEAD
+git -C /media/RECOVERY/homelab submodule status -- secrets/wrapped
+```
+
+Record both commit IDs; confirm the pinned checkout and required credential files
+are present. A successful clone or fsck does not prove production credentials have
+been generated. For a refresh, prepare a new destination and retain the previous
+verified kit until replacement checks pass. Recovery tool binaries/dependencies
+still need the independent packaging in [recovery procedures](recovery-procedures.md);
+a clone alone does not establish offline executability.
 
 ## Coordinator deployment
 
-Deploy the coordinator's required wrapped KMS, DNS, TLS, and ACME records to its local persistent storage. Startup reads these local records without fetching GitHub or OpenBao.
+Deploy required wrapped KMS, DNS, TLS and ACME records to coordinator-local
+persistent storage. Startup must not fetch GitHub or OpenBao. Base Ansible is
+implemented; record deployment remains pending under
+[01 - Main coordinator](../installation/01-main-coordinator.md).
+The password helper instead streams a password to the Pi, which stores its
+normal account hash; SSH deployment installs only the public key.
 
-Base Ansible bootstrap is implemented in the [shared runbook](../../runbooks/ups-coordinator-base-setup.md). Wrapped-record deployment remains pending under [01 - Main coordinator](../installation/01-main-coordinator.md); it will copy the wrapped records from the repository to local storage without decrypting them. Local paths, permissions, and update mechanics remain implementation details. The workstation unwraps runtime credentials and supplies authorization over SSH under the [coordinator session policy](coordinator-sessions.md).
-
-Git history retains old ciphertext. Credential rotation, retention, and trusted rollback detection belong to [rotation and rollback](rotation-and-rollback.md).
+Git history retains old ciphertext in the private repository.
+Retention, rotation and rollback policy belongs to [rotation and rollback](rotation-and-rollback.md).
 

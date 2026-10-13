@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives.serialization import (
     load_ssh_private_key, load_ssh_public_key,
 )
 from . import wrapping
+from .record_store import require_store
 
 REPO = Path(__file__).resolve().parents[2]
 KEY_ID = 'homelab/v1/ups-coordinators/ssh-private-key/administrator/r1'
@@ -42,6 +43,7 @@ def write_new(path, data):
 
 
 def recover(respond, repo=REPO):
+    require_store(repo)
     with (repo / RECORD).open('rb') as source:
         encoded = source.read(wrapping.MAX_RECORD + 1)
     private = wrapping.unwrap(encoded, KEY_ID, ROOT_KEY, respond)
@@ -52,6 +54,7 @@ def recover(respond, repo=REPO):
 
 
 def create(respond, repo=REPO):
+    require_store(repo)
     if (repo / RECORD).exists() or (repo / PUBLIC).exists():
         raise FileExistsError('Reuse existing key; creation never overwrites')
     key = Ed25519PrivateKey.generate()
@@ -104,6 +107,7 @@ def main():
         agent('-d', str(REPO / PUBLIC))
         print('Coordinator key removed from this agent.')
     else:
+        require_store(REPO)
         from .yubikey_setup import harden, token, respond, require_no_response_without_touch
         harden()
         with token() as session:
