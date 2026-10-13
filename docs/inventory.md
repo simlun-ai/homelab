@@ -15,7 +15,7 @@ Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capac
 
 Architecture is in [clusters.md](clusters.md), encryption in [security.md](security/security.md#disk-encryption-and-opentofu), and provisioning/power-return policy in [layout.md](layout.md).
 
-All UPS shutdown coordinators will use Raspberry Pi 3 Model B computers with 1 GB RAM. Each will use a suitably rated 230 V AC to 5 V DC power adapter connected to a battery-backed outlet of the UPS it monitors.
+All UPS shutdown coordinators will use Raspberry Pi 3 Model B computers with 1 GB RAM. Each will boot Raspberry Pi OS Lite from a microSD card; card models/capacities are TBD and remain excluded from disk totals as unlisted boot media. Each will use a suitably rated 230 V AC to 5 V DC power adapter connected to a battery-backed outlet of the UPS it monitors.
 
 Per-device power-return support, settings, and verification remain TBD, including Pis, coordinators, and UPS outlets.
 

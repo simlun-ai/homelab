@@ -45,6 +45,6 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | YubiKey Manager Python SDK | Selected for [step 00](installation/00-yubikey-setup.md); version pinned in [requirements.txt](../support/yubikey/requirements.txt), physical-device verification pending. |
 | kubectl, talosctl, Helm, OpenBao CLI (`bao`) | TBD per scope; talosctl must be compatible with Talos. |
 | OpenTofu CLI (`tofu`) | Independently pinned per scope; catalog version above. |
-| Raspberry Pi OS Lite | TBD; tentative [UPS-host OS](layout.md#ups-shutdown-coordinators). |
+| Raspberry Pi OS Lite | Release TBD; selected for all UPS coordinators on microSD; [base setup draft](../runbooks/ups-coordinator-base-setup.md). |
 | Ansible | TBD; selected for provisioning and ongoing management of [all UPS coordinators](layout.md#ups-shutdown-coordinators), implementation pending. |
 | [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms) (repository-owned Python gRPC service), ACME client | TBD; planned on the Vault/Backup coordinator, independently of cluster services. |

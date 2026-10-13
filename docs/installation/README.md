@@ -7,7 +7,7 @@ Main TODO list for installing the homelab and implementing its helpers and repos
 | Step | Runbook | Implementation | Real-install verification |
 | --- | --- | --- | --- |
 | [00 - YubiKey setup](00-yubikey-setup.md) | First runbook | Setup/wrapping helpers, system installer, and virtualenv | Not tried on hardware |
-| [01 - Main coordinator](01-main-coordinator.md) | Placeholder | TODO | Not tried |
+| [01 - Main coordinator](01-main-coordinator.md) | Shared base setup draft linked; additional KMS TODO | TODO | Not tried |
 | [02 - Vault](02-vault.md) | Placeholder | TODO | Not tried |
 
 Keep detailed TODOs and verification results in the owning runbook. Update this table as work progresses; written instructions or configuration alone do not establish a verified installation.
@@ -39,4 +39,4 @@ Create each part when a runbook first needs it, following [layout.md](../layout.
 | `secrets/wrapped/` | Authenticated encrypted records and their public manifest. |
 | `clusters/vault/`, `make/` | Vault configuration, version pins, and shared Make implementation. |
 
-Installation runbooks own executable procedures. Keep architecture, security policy, and backup design in their [existing owning documents](../layout.md#document-ownership), linking to them here. Keep related documentation synchronized as decisions and verified behavior change.
+Installation runbooks own executable procedures, with shared coordinator OS/Ansible setup in [the reusable base runbook](../../runbooks/ups-coordinator-base-setup.md). Keep architecture, security policy, and backup design in their [existing owning documents](../layout.md#document-ownership), linking to them here. Keep related documentation synchronized as decisions and verified behavior change.

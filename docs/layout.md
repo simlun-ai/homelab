@@ -38,7 +38,7 @@ Keep details in their owning document and link from other documents. The USB gui
 | `/tofu/modules/` | Reusable modules; live roots/state stay with their scopes. |
 | `/support/ups/` | Shutdown-coordinator management and Vault bootstrap KMS configuration. |
 | `/support/yubikey/` | Token setup scope; system installer, Python requirements, virtualenv, and Make entry points for step 00. |
-| `/runbooks/` | Ongoing operation, maintenance, and recovery procedures. |
+| `/runbooks/` | Reusable supporting-host setup, ongoing operation, maintenance, and recovery procedures. |
 
 ## Common cluster layout
 
@@ -142,7 +142,7 @@ Use one `/support/ups/` scope for Ansible provisioning and ongoing management of
 | `ansible/templates/` | Non-secret service templates. |
 | `ansible/requirements.yml` | Pinned external roles/collections if selected. |
 
-Raspberry Pi OS Lite remains tentative. Implement Ansible provisioning through [01 - Main coordinator](installation/01-main-coordinator.md). The Vault/Backup coordinator also hosts the planned [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. Deploy its [wrapped credentials](security/encrypted-record-storage.md#coordinator-deployment) to local persistent storage; Ansible copies ciphertext without decrypting it. OpenTofu has no assigned coordinator role. Shutdown software, credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security/security.md#secret-handling-boundary).
+Raspberry Pi OS Lite on microSD is selected. The shared [base setup runbook](../runbooks/ups-coordinator-base-setup.md) covers image preparation from a Linux workstation and Ansible bootstrap for all three coordinators. [01 - Main coordinator](installation/01-main-coordinator.md) adds Vault's bootstrap KMS services. The Vault/Backup coordinator also hosts the planned [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. Deploy its [wrapped credentials](security/encrypted-record-storage.md#coordinator-deployment) to local persistent storage; Ansible copies ciphertext without decrypting it. OpenTofu has no assigned coordinator role. NUT and Prometheus exporter setup will be added to the shared runbook later; shutdown credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security/security.md#secret-handling-boundary).
 
 ### Power-loss shutdown and manual startup
 
@@ -160,11 +160,12 @@ These are intended settings, not verified hardware behavior.
 
 Each runbook states scope, prerequisites, secret-source references, expected state, ordered steps, verification, and recovery actions. Link scope-specific inputs rather than copying procedures.
 
-Numbered installation procedures and their implementation progress belong in [docs/installation/](installation/README.md), beginning with YubiKeys, the main coordinator, and Vault. Add dependent-cluster installation steps there as work progresses. The operating runbooks below should reuse those procedures where applicable.
+Numbered installation procedures and their implementation progress belong in [docs/installation/](installation/README.md), beginning with YubiKeys, the main coordinator, and Vault. Add dependent-cluster installation steps there as work progresses. Shared supporting-host setup lives in `/runbooks/` and is linked from numbered installation steps. The operating runbooks below should reuse those procedures where applicable.
 
 | Proposed path under `/runbooks/` | Procedure |
 | --- | --- |
 | `README.md` | Index/conventions. |
+| [`ups-coordinator-base-setup.md`](../runbooks/ups-coordinator-base-setup.md) | Draft shared Raspberry Pi OS Lite installation and Ansible bootstrap; hardware verification pending. |
 | `bootstrap-node.md` | Add/rebuild without touching protected data. |
 | `upgrade-cluster.md` | Upgrade tools/components, verify health, record recovery options. |
 | `prepare-manual-zfs-pool.md` | Identify/prepare encrypted manual storage. |
