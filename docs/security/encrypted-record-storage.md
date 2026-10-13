@@ -1,6 +1,6 @@
 # Encrypted-record storage
 
-**Coordinator password record workflow implemented; actual records and service deployment pending.**
+**Coordinator password and SSH key record workflows implemented; actual records and service deployment pending.**
 
 ## Authoritative records
 
@@ -11,6 +11,11 @@ Valid wrapped ciphertext may be committed and stored on workstation disk, recove
 Wrap credentials entirely in memory. Verify that each new record decrypts to the original bytes before replacing the current record; write only the authenticated encrypted record. Use the [v1 record and revision rules](security.md#updates-rotation-and-recovery).
 
 The first implemented records are the three [coordinator passwords](../../runbooks/coordinator-passwords.md). Their manifest entries reserve filenames; record files appear only after local generation with a verified token. These records stay in Git/recovery clones; the Pi receives its password over SSH and stores its normal account hash, not a local wrapped-record copy.
+
+The shared [coordinator SSH private key](../../runbooks/coordinator-ssh-key.md) is also
+wrapped here. Its public half lives in `support/ups/coordinator_ed25519.pub`;
+only that public half is deployed to the Pis. The private key is unwrapped
+directly into the local workstation agent, never a plaintext file.
 
 ## Recovery USB clones
 

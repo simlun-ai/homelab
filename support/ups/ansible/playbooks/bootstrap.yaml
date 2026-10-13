@@ -41,5 +41,31 @@
       ansible.builtin.command: /usr/sbin/visudo -c
       changed_when: false
 
+    - name: Look up the administrator home
+      ansible.builtin.getent:
+        database: passwd
+        key: administrator
+
+    - name: Create administrator SSH directory
+      become: true
+      ansible.builtin.file:
+        path: "{{ ansible_facts.getent_passwd.administrator[4] }}/.ssh"
+        state: directory
+        owner: administrator
+        group: administrator
+        mode: '0700'
+
+    - name: Authorize only the repository coordinator key
+      become: true
+      ansible.builtin.copy:
+        src: "{{ inventory_dir }}/coordinator_ed25519.pub"
+        dest: "{{ ansible_facts.getent_passwd.administrator[4] }}/.ssh/authorized_keys"
+        owner: administrator
+        group: administrator
+        mode: '0600'
+
+    - name: Reconnect with the managed SSH identity
+      ansible.builtin.meta: reset_connection
+
     - name: Verify the base setup
       ansible.builtin.import_tasks: ../tasks/verify.yaml

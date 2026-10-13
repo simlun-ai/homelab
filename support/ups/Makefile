@@ -15,6 +15,9 @@ help:
 	  'make -C support/ups tools' \
 	  'make -C support/ups inventory' \
 	  'make -C support/ups syntax' \
+	  'make -C support/ups ssh-key-create (once, with YubiKey)' \
+	  'make -C support/ups ssh-key-load (before remote operations)' \
+	  'make -C support/ups ssh-key-unload' \
 	  'make -C support/ups bootstrap HOST=ups-aux' \
 	  'make -C support/ups verify HOST=ups-aux' \
 	  'make -C support/ups harden HOST=ups-aux' \
@@ -46,7 +49,7 @@ syntax: check-tools
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/harden.yaml"
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/verify-hardening.yaml"
 
-bootstrap verify harden verify-hardening: check-tools
+bootstrap verify harden verify-hardening: check-tools ssh-key-check
 	@case "$$HOST" in ups-aux|ups-pi|ups-metal) ;; \
 	  *) printf '%s\n' 'Set HOST to exactly ups-aux, ups-pi, or ups-metal.' >&2; exit 2;; esac; \
 	case "$$ASK_BECOME_PASS" in ''|0) set -- ;; \
@@ -62,3 +65,13 @@ password-create password-reveal password-apply:
 	  *) printf '%s\n' 'Set HOST to exactly ups-aux, ups-pi, or ups-metal.' >&2; exit 2;; esac; \
 	exec "$(SCOPE)/../yubikey/.venv/bin/python" -I -B \
 	  "$(SCOPE)/../../scripts/coordinator_password_cli.py" $(patsubst password-%,%,$@) --host "$$HOST"
+
+.PHONY: ssh-key-create ssh-key-load ssh-key-public ssh-key-unload ssh-key-check
+ssh-key-create ssh-key-load ssh-key-public:
+	@"$(SCOPE)/../yubikey/.venv/bin/python" -I -B \
+	  "$(SCOPE)/../../scripts/coordinator_ssh_cli.py" $(patsubst ssh-key-%,%,$@)
+
+ssh-key-check ssh-key-unload: check-tools
+	@"$(PYTHON)" -I -B "$(SCOPE)/../../scripts/coordinator_ssh_cli.py" $(patsubst ssh-key-%,%,$@)
+
+password-apply: ssh-key-check

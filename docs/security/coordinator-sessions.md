@@ -4,9 +4,8 @@
 
 ## Workstation authorization
 
-Keep the YubiKey in the workstation laptop. Use the operator's existing
-SSH key and normal coordinator account; no dedicated SSH account is
-required. SSH access and host-key verification must work independently
+Keep the YubiKey in the workstation laptop. Load the [repository-owned shared SSH key](../../runbooks/coordinator-ssh-key.md)
+into the local agent and use the `administrator` account. SSH access and host-key verification must work independently
 of Vault and OpenBao.
 
 The coordinator starts with KMS locked; UPS management remains available.
@@ -68,3 +67,4 @@ uses YubiKey-wrapped node KMS keys to support fresh Seal payloads and
 existing Unseal payloads. Exact envelope and delivery specifications
 remain pending; do not give the coordinator raw HMAC responses or
 indefinite KMS authority.
+

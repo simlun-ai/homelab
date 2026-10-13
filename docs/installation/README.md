@@ -7,7 +7,7 @@ Main TODO list for installing the homelab and implementing its helpers and repos
 | Step | Runbook | Implementation | Real-install verification |
 | --- | --- | --- | --- |
 | [00 - YubiKey setup](00-yubikey-setup.md) | First runbook | Setup/wrapping helpers, system installer, and virtualenv | Not tried on hardware |
-| [01 - Main coordinator](01-main-coordinator.md) | Shared base setup linked; additional KMS TODO | Base inventory, scoped tools, bootstrap/hardening/verification, wrapped administrator password workflow; KMS TODO | Not tried |
+| [01 - Main coordinator](01-main-coordinator.md) | Shared base setup linked; additional KMS TODO | Base inventory, scoped tools, bootstrap/hardening/verification, wrapped administrator password and shared SSH key workflows; KMS TODO | Not tried |
 | [02 - Vault](02-vault.md) | Placeholder | TODO | Not tried |
 
 Keep detailed TODOs and verification results in the owning runbook. Update this table as work progresses; written instructions or configuration alone do not establish a verified installation.

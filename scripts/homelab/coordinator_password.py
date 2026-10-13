@@ -7,7 +7,7 @@ import re
 import secrets
 import subprocess
 
-from . import wrapping
+from . import wrapping, coordinator_ssh
 
 HOSTS = ('ups-aux', 'ups-pi', 'ups-metal')
 ROOT_KEY = 'golden-1'
@@ -55,9 +55,11 @@ def apply(host, password):
     context(host)
     if not re.fullmatch(rb'[A-Za-z0-9_-]{43}', password):
         raise ValueError('Invalid password payload')
+    coordinator_ssh.check()
     subprocess.run(
         ['ssh', '-T', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes',
          '-o', 'ForwardAgent=no', '-o', 'ClearAllForwardings=yes',
+         '-o', 'IdentitiesOnly=yes', '-i', str(coordinator_ssh.REPO / coordinator_ssh.PUBLIC),
          f'administrator@{host}', 'sudo -n /usr/sbin/chpasswd'],
         input=b'administrator:' + password + b'\n',
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True,

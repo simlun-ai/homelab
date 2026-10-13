@@ -1,6 +1,6 @@
 # YubiKey Credential Catalogue
 
-**Initial setup/wrapping helpers implemented; physical programming and verification pending.** Coordinator administrator password lookups are implemented; actual records require local generation with a verified token. Other production lookups remain proposed.
+**Initial setup/wrapping helpers implemented; physical programming and verification pending.** Coordinator administrator password and shared SSH key lookups are implemented; actual records require local generation with a verified token. Other production lookups remain proposed.
 
 This document owns the lookup catalogue. Hardware inventory belongs in [inventory.md](../inventory.md#security-keys); golden-key custody, secret handling, and encryption policy belong in [security.md](security.md); recovery requirements belong in [backup-and-restore.md](../backup-and-restore.md).
 
@@ -59,8 +59,17 @@ Each identifier protects an independently random local `administrator` password:
 All use `golden-1`; the [public manifest](../../secrets/wrapped/manifest.json)
 maps them to files. Generation, explicit reveal and SSH delivery are implemented
 in the [password runbook](../../runbooks/coordinator-passwords.md). Real records
-and hardware verification remain pending. SSH still uses the existing operator
-key; SSH private-key custody and future UPS service credentials are separate.
+and hardware verification remain pending. SSH uses the separate repository-owned identity below; future UPS service credentials remain separate.
+
+## Implemented coordinator SSH identity
+
+`homelab/v1/ups-coordinators/ssh-private-key/administrator/r1` under `golden-1`
+wraps the single passphrase-less Ed25519 private key shared by all three
+coordinators. The [manifest](../../secrets/wrapped/manifest.json) maps it to
+`coordinators-ssh-ed25519.json`; the public half is
+`support/ups/coordinator_ed25519.pub`. The workstation loads the private key
+directly into its local agent under the [SSH key runbook](../../runbooks/coordinator-ssh-key.md).
+The workflow is implemented; actual key files await local token-backed generation.
 
 ## Direct YubiKey lookup catalogue
 

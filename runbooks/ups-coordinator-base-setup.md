@@ -6,7 +6,7 @@ Hardware/power assignments belong in the [inventory](../docs/inventory.md). Exec
 
 ## 1. Prepare the Ubuntu 26.04 workstation
 
-Have the repository checked out, a microSD card and reader, and the operator's existing SSH key available. Use wired Ethernet, DHCP, and Internet access independent of the homelab clusters. Card models/capacities remain TBD.
+Have the repository checked out, a microSD card and reader, and a verified YubiKey available. Use wired Ethernet, DHCP, and Internet access independent of the homelab clusters. Card models/capacities remain TBD.
 
 From the repository root:
 
@@ -20,8 +20,9 @@ The installer uses sudo for workstation packages. Ansible runs locally in the sc
 
 Download Raspberry Pi Imager for the workstation's architecture from [Raspberry Pi](https://www.raspberrypi.com/software/), make the AppImage executable, and launch it using the upstream Linux instructions.
 
-Before image preparation, create and preserve a separate wrapped administrator
-password per Pi using the [password runbook](coordinator-passwords.md).
+Before image preparation, generate and preserve the [shared wrapped SSH key](coordinator-ssh-key.md),
+then create a separate wrapped administrator password per Pi using the
+[password runbook](coordinator-passwords.md).
 
 ## 2. Write each microSD card
 
@@ -38,7 +39,7 @@ In Imager:
 1. Select **Raspberry Pi 3** and **Raspberry Pi OS Lite (64-bit)**. Use the same image for all three and record its release/date.
 2. Select the microSD card.
 3. Set hostname to `ups-aux` (Vault/Backup), `ups-pi`, or `ups-metal`, and username to **`administrator`**. Set timezone and keyboard layout.
-4. Enable SSH with **public-key authentication only**, using the operator's existing `.pub` key. Leave Wi-Fi and Raspberry Pi Connect unconfigured.
+4. Enable SSH with **public-key authentication only**, using `support/ups/coordinator_ed25519.pub`. Leave Wi-Fi and Raspberry Pi Connect unconfigured.
 5. Review, write, verify, and eject.
 
 Never copy private keys onto the card or put credentials in the inventory or saved Imager presets. If the selected image requires an initial local-account password, use the [password runbook](coordinator-passwords.md#use-during-installation-or-recovery); SSH remains key-only. Validate the selected Imager/image's account setup on the first Pi.
@@ -57,10 +58,10 @@ ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 
 Alternatively, inspect that public-key file from its card after a clean shutdown. An unverified `ssh-keyscan` result alone does not establish identity.
 
-Connect from the workstation, compare the fingerprint, and accept it only if it matches:
+Load the shared key into your local agent as described in the [SSH key runbook](coordinator-ssh-key.md#load-before-management-operations). Connect from the workstation, compare the fingerprint, and accept it only if it matches:
 
 ```sh
-ssh administrator@ups-aux
+ssh -o IdentitiesOnly=yes -i support/ups/coordinator_ed25519.pub administrator@ups-aux
 ```
 
 Use the actual connection address if overriding `ansible_host`; repeat this trust step for each Pi. Confirm that the account can administer the Pi, then exit back to the workstation. Ansible will require an already trusted host key.
@@ -70,12 +71,13 @@ Use the actual connection address if overriding `ansible_host`; repeat this trus
 From the repository root:
 
 ```sh
+make -C support/ups ssh-key-load
 make -C support/ups inventory
 make -C support/ups bootstrap HOST=ups-aux
 make -C support/ups verify HOST=ups-aux
 ```
 
-Bootstrap installs missing Python prerequisites, maintains the validated `administrator` passwordless sudo rule, and verifies SSH/Python, `aarch64`, and non-interactive root access. This grants full administration to the key-authenticated account. It does not reboot the host.
+Bootstrap installs missing Python prerequisites, maintains the validated `administrator` passwordless sudo rule and the repository public key as its sole authorized key, and verifies SSH/Python, `aarch64`, and non-interactive root access. This grants full administration to the key-authenticated account. It does not reboot the host.
 
 If the initial account requires a sudo password, bootstrap with an interactive prompt instead:
 
@@ -100,7 +102,7 @@ The [shared role](../support/ups/ansible/roles/coordinator_hardening/README.md) 
 After the first run or swap/radio changes, **reboot manually**, reconnect, and verify before supplying KMS secrets:
 
 ```sh
-ssh administrator@ups-aux sudo systemctl reboot
+ssh -o IdentitiesOnly=yes -i support/ups/coordinator_ed25519.pub administrator@ups-aux sudo systemctl reboot
 make -C support/ups verify-hardening HOST=ups-aux
 ```
 

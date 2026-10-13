@@ -2,7 +2,7 @@
 
 **Initial token setup and wrapping helpers implemented; hardware verification and service helpers pending.**
 
-[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Source lives under `scripts/homelab/`, with pinned Python requirements and a standard virtualenv in `support/yubikey/`. The coordinator password workflow uses `secrets/wrapped/`; real records require local token-backed generation. Coordinator KMS services and OpenBao integration remain pending.
+[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Source lives under `scripts/homelab/`, with pinned Python requirements and a standard virtualenv in `support/yubikey/`. The coordinator password and SSH key workflows use `secrets/wrapped/`; real records require local token-backed generation. Coordinator KMS services and OpenBao integration remain pending.
 
 ## Workstation helper
 
@@ -37,6 +37,16 @@ are in the [runbook](../../runbooks/coordinator-passwords.md).
 expected contexts independently in code. Manifest/code agreement is tested;
 entries do not attest to existence, deployment, or freshness. Initial records
 use revision 1. Overwriting and rotation are not implemented.
+
+## Coordinator SSH helper
+
+`scripts/homelab/coordinator_ssh.py` generates one Ed25519 identity using the
+existing pinned cryptography library. It serializes a passphrase-less OpenSSH
+private key in memory, wraps and verifies it, then persists ciphertext and the
+public half. The manifest uses the same schema as passwords. Loading authenticates
+the record and checks the public/private match before streaming to `ssh-add`;
+`ssh-add -T` checks agent signing. No private-key export command is provided.
+The [runbook](../../runbooks/coordinator-ssh-key.md) owns operations and recovery.
 
 ## Vault KMS: two layers
 

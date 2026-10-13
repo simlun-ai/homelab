@@ -3,9 +3,9 @@
 **Workflow implemented; real records and Pi verification pending.** Each Pi has
 its own randomly generated 43-character password (32 random bytes encoded as
 URL-safe Base64). The repository owns the YubiKey-wrapped records. SSH continues
-to use the operator's existing key, public-key authentication only, and
-passwordless sudo. These passwords are for local console access and recovery;
-this workflow does not create or wrap SSH private keys.
+to use the [repository-owned shared SSH key](coordinator-ssh-key.md),
+public-key authentication only, and passwordless sudo. These passwords are for local console access and recovery;
+SSH key generation and agent loading belong to that separate runbook.
 
 ## Prepare
 
@@ -40,7 +40,7 @@ make -C support/ups password-create HOST=ups-metal
 Touch when prompted. Each operation wraps a fresh random password using OTP
 slot 1 and verifies it by decrypting it before writing ciphertext. Existing
 records are never overwritten. The public [manifest](../secrets/wrapped/manifest.json)
-lists the three exact identifiers, root generation and filenames; an entry does
+lists the password identifiers, root generation and filenames; an entry does
 not mean its record has been created or applied. The helper independently fixes
 those expected contexts rather than trusting metadata in a supplied record.
 
@@ -67,7 +67,8 @@ and replace it with the wrapped password after bootstrap and hardening.
 ## Apply to an existing coordinator
 
 After the [base setup](ups-coordinator-base-setup.md), manual reboot and successful
-`verify-hardening`, run from the management subnet:
+`verify-hardening`, load the [shared SSH key](coordinator-ssh-key.md#load-before-management-operations)
+into the local agent, then run from the management subnet:
 
 ```sh
 make -C support/ups password-apply HOST=ups-aux

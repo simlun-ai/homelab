@@ -10,7 +10,7 @@ SSH host identity, installation order, and recovery.
 - `requirements.txt`: exact workstation dependency pins. `make tools` installs
   them into the ignored `.venv/`; all Ansible targets verify those pins.
 - `ansible.cfg`: strict host-key checking, non-interactive SSH, memory-only facts.
-- `ansible/playbooks/bootstrap.yaml`: Python prerequisites, validated sudo rule,
+- `ansible/playbooks/bootstrap.yaml`: Python prerequisites, validated sudo rule, sole repository authorized key,
   and base verification. `ASK_BECOME_PASS=1` prompts for an existing initial sudo
   password if necessary.
 - `ansible/playbooks/verify.yaml`: read-only SSH/Python, architecture, and
@@ -33,3 +33,11 @@ Ubuntu 26.04 is the workstation target; hardware installation remains unverified
 See the [password runbook](../../runbooks/coordinator-passwords.md) for
 `password-create`, `password-reveal`, and `password-apply`, each with `HOST=...`.
 These reuse `support/yubikey/.venv` and keep secrets out of Ansible.
+
+## Shared SSH identity
+
+The [SSH key runbook](../../runbooks/coordinator-ssh-key.md) covers one-time
+`ssh-key-create`, per-session `ssh-key-load`, and `ssh-key-unload`. Ansible
+selects `coordinator_ed25519.pub` and requires its private half in the local
+agent. Bootstrap replaces the administrator authorized keys with this one key;
+follow the migration procedure before bootstrapping existing hosts.

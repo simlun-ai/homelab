@@ -112,7 +112,7 @@ Touch is required when querying a token, not for each scheduled backup. Runtime 
 **Decision:** Run a dedicated Python gRPC Talos KMS service on the [Vault/Backup UPS coordinator](../inventory.md#shared-infrastructure), serving Vault only. It must work without OpenBao or a Kubernetes cluster and operate independently of the workstation after [SSH authorization](coordinator-sessions.md). UPS shutdown management remains operational while KMS is locked.
 
 - Wrap a random 32-byte KMS key per Vault node using the [v1 wrapping format](#challenges-derivation-and-wrapped-credentials). The [two-layer KMS design](helper-implementation.md#vault-kms-two-layers) uses that key to protect Talos unlock material in a separate `homelab-kms-v1` envelope retained in LUKS metadata. Exact envelope specification, node mappings, and gRPC integration remain pending.
-- Authorize a one-hour KMS boot window from the workstation over SSH using the operator's existing SSH key and account. The YubiKey stays in the laptop; delivery, expiry, and operator controls belong in [coordinator sessions](coordinator-sessions.md).
+- Authorize a one-hour KMS boot window from the workstation over SSH using the repository-owned shared SSH key loaded into the workstation agent and the `administrator` account. The YubiKey stays in the laptop; delivery, expiry, and operator controls belong in [coordinator sessions](coordinator-sessions.md).
 - Serve TLS with a publicly trusted certificate, renewed through DNS-01 on the coordinator independently of Vault's cert-manager/OpenBao. No private CA or custom Talos build is planned for KMS trust.
 - Persist DNS API, TLS private-key, and ACME account/bootstrap secrets only as authenticated encrypted payloads under separate YubiKey-derived contexts. The workstation unwraps them after touch and supplies plaintext over SSH for coordinator process-memory use under the [session policy](coordinator-sessions.md). ACME integration and renewal/storage behavior require validation.
 - Coordinator and Vault use the same public NTP service. Working Internet/time service is an accepted cold-start dependency; no RTC is required. Configure Vault's networking, DNS, and NTP before encrypted `STATE` loads, using boot-level settings. Establish usable time before TLS-dependent operations; endpoints and cold-boot synchronization/KMS retry tests are TBD.
@@ -183,6 +183,19 @@ Each coordinator has an independently random `administrator` password, wrapped
 with the existing YubiKey foundation and owned by this repository. The
 [catalogue](yubikey.md#implemented-coordinator-passwords) owns identifiers; the
 [runbook](../../runbooks/coordinator-passwords.md) owns creation and delivery.
-SSH remains key-only with the existing operator key and passwordless sudo.
+SSH remains key-only with the repository-owned shared key and passwordless sudo.
 Only explicit recovery reveal displays plaintext; normal creation and delivery
 do not. Real credential generation and Pi verification remain pending.
+
+## Coordinator SSH identity
+
+The three coordinators share one randomly generated, passphrase-less Ed25519
+private key, persisted only as a YubiKey-wrapped record in the repository and
+recovery clones. Its public key is committed normally. Unwrap directly into the
+local workstation OpenSSH agent for a one-hour lifetime before management
+operations; never write a plaintext private-key file or forward the agent.
+Agent memory remains within the workstation secret-handling boundary.
+The [catalogue](yubikey.md#implemented-coordinator-ssh-identity) owns the lookup;
+the [SSH key runbook](../../runbooks/coordinator-ssh-key.md) owns setup, migration,
+loading and removal. Implementation is present; production generation and
+hardware verification remain pending.

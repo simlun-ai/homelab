@@ -4,7 +4,7 @@
 
 The shared [role](../../support/ups/ansible/roles/coordinator_hardening/) applies to `ups-aux`, `ups-pi`, and `ups-metal`. The [base runbook](../../runbooks/ups-coordinator-base-setup.md) owns execution and verification.
 
-- **SSH:** only `administrator`, public-key authentication, no direct root login or SSH forwarding. Preserve authorized keys and the approved passwordless sudo access.
+- **SSH:** only `administrator`, public-key authentication, no direct root login or SSH forwarding. Preserve the repository-owned key installed by bootstrap and the approved passwordless sudo access.
 - **Firewall:** nftables owns the complete host ruleset. Allow SSH from the management networks in [inventory.yaml](../../support/ups/inventory.yaml), initially `192.168.254.0/24`. Deny other inbound connections and forwarding, retaining loopback, established traffic, ICMP/IPv6, DHCP, and optional mDNS. Outbound traffic is allowed. KMS, NUT, and exporter allowances remain empty until their source addresses and ports are configured.
 - **Updates:** daily automatic Debian security updates through unattended-upgrades, with automatic reboots explicitly disabled. Raspberry Pi's vendor archive is not separately security-classified; its kernel/firmware and other vendor updates remain manual maintenance. Package upgrades may restart services; if KMS loses its memory-held credentials, authorize it again from the workstation.
 - **Memory:** no disk-backed swap, zram writeback, hibernation, or core dumps. Current Raspberry Pi OS is configured for RAM-only zram. Legacy swap startup is disabled. Swap and radio changes take effect after a manual reboot; verify before loading KMS secrets. This does not change the step 00 workstation policy.

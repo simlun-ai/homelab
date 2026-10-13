@@ -48,7 +48,7 @@ class PasswordTests(unittest.TestCase):
 
     def test_delivery_only_in_stdin(self):
         dummy = b'A' * 43
-        with patch.object(passwords.subprocess, 'run') as run:
+        with patch.object(passwords.coordinator_ssh, 'check'), patch.object(passwords.subprocess, 'run') as run:
             passwords.apply('ups-pi', dummy)
             args, kwargs = run.call_args
             self.assertNotIn(dummy.decode(), ' '.join(args[0]))
@@ -61,5 +61,5 @@ class PasswordTests(unittest.TestCase):
 
     def test_manifest_agrees_with_fixed_contexts(self):
         manifest = json.loads((passwords.REPO / 'secrets/wrapped/manifest.json').read_text())
-        self.assertEqual(manifest['records'], [dict(key_id=passwords.context(host), root_key=passwords.ROOT_KEY,
+        self.assertEqual([record for record in manifest['records'] if '/local-password/' in record['key_id']], [dict(key_id=passwords.context(host), root_key=passwords.ROOT_KEY,
             file=passwords.record_path(host).name) for host in passwords.HOSTS])
