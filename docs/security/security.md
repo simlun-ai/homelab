@@ -144,7 +144,7 @@ Approved topic decisions and remaining implementation work:
 
 - [Encrypted-record storage](encrypted-record-storage.md) — decision approved; implementation pending.
 - [YubiKey setup](yubikey-setup.md) — decision approved; programming and verification pending.
-- [Yubico CLI fallback](yubico-fallback.md) — Ubuntu-package reference only; not selected or hardware-tested.
+- [Yubico CLI fallback](yubico-fallback.md) — manually verify, debug, and sanity-check our Python implementation with Ubuntu-packaged Yubico tools; reference only, not selected or hardware-tested.
 - [Golden-key custody](golden-key-custody.md) — decision approved; backup and recovery verification pending.
 - [OpenBao unseal](openbao-unseal.md) — unseal decision approved; implementation, recovery administration, and restore verification pending.
 - [Credential catalogue](yubikey.md#record-and-maintenance-requirements) — catalogue rules approved; production entries and consumer integrations pending.

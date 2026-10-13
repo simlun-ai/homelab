@@ -2,7 +2,7 @@
 
 **Reference only; not selected for installation or tested on our hardware.**
 
-This shows the operations behind [step 00](../installation/00-yubikey-setup.md) with Ubuntu-packaged Yubico tools. Examples deliberately use the **public test key** `000102030405060708090a0b0c0d0e0f10111213` and a dummy credential. Use a disposable test configuration; the real golden-key workflow stays in step 00.
+Use this guide to manually verify, debug, and sanity-check our Python implementation against Ubuntu-packaged Yubico tools. It shows the operations behind [step 00](../installation/00-yubikey-setup.md), including slot configuration, touch behavior, HMAC responses, and encryption round-trips. Examples deliberately use the **public test key** `000102030405060708090a0b0c0d0e0f10111213` and a dummy credential. Use a disposable test configuration; the real golden-key workflow stays in step 00.
 
 ## Install and inspect
 
