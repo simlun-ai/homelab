@@ -10,7 +10,7 @@ Configure and verify all four YubiKeys from a trusted Debian/Ubuntu laptop. Inst
 - A trusted Debian/Ubuntu laptop with CPython 3.11–3.14. It can be online for preparation. Use a local terminal without recording during secret handling.
 - Four recovery USBs with empty destination directories. Use the [existing recovery-clone policy](../security/encrypted-record-storage.md#recovery-usb-clones).
 
-After cloning, commands run from the repository root. Helpers use `support/yubikey/.venv/bin/python`; host Python is used only to create the virtualenv.
+After cloning, commands run from the repository root. Helpers use `support/yubikey/.venv/bin/python`; host Python creates the virtualenv and runs the standard-library key-generation example below.
 
 ## 1. Install and verify dependencies — laptop online
 
@@ -40,6 +40,16 @@ The trusted laptop keeps its existing OS swap/suspend settings. The helper avoid
 Using your existing Level 1 process, create `golden-1` from **20 cryptographically random bytes** if it does not exist, or retrieve the existing generation. Preserve exactly 40 hexadecimal characters, including leading zeros, and verify that the offline record is backed up under the [custody policy](../security/golden-key-custody.md).
 
 Generation and storage stay inside Level 1; the helper only consumes its record. Enter the key manually at the helper's hidden local prompts. Never put it in a shell command, environment variable, clipboard, checkout, transfer/recovery USB, or chat. Do not generate a replacement merely because programming or verification failed.
+
+### Generate a new golden key
+
+If `golden-1` does not yet exist, on the trusted laptop, **after disconnecting it from all networks**, generate 20 cryptographically random bytes as 40 hexadecimal characters:
+
+```sh
+python3 -c 'import secrets; print(secrets.token_hex(20))'
+```
+
+Run this once, preserve the output in your offline Level 1 Password Management system, and use that same value for all four YubiKeys. The key appears in the terminal, so avoid terminal recording or output redirection.
 
 ## 4. Inspect and program one token at a time
 
