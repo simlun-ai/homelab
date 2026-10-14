@@ -11,7 +11,7 @@ All entries must be non-secret.
 | Field | Value |
 | --- | --- |
 | Guide revision / repository commit; last verified restore | TBD. |
-| Core-secret protocol version and YubiKey HMAC slot | `homelab-wrap-v1`; OTP slot 1 selected, fixed 64-byte challenges, touch required. Programming/verification pending. |
+| Core-secret protocol version and YubiKey HMAC slot | `homelab-wrap-v1`; OTP slot 2 selected, fixed 64-byte challenges, touch required. Programming/verification pending. |
 | Effective challenge bytes, encoding, purpose identifiers, length/padding | V1 construction below; exact recovery identifiers and device verification TBD. |
 | Derivation/wrapping algorithms, output encoding, public parameters | HKDF-SHA-256 + AES-256-GCM; JSON/JCS and padded Base64 as specified below. |
 | Snapshot OpenBao version, ARM64 Pi and workstation recovery images/tools; independent acquisition locations | TBD. |
@@ -49,7 +49,7 @@ Refresh all four recovery kits after recovery-critical changes, record both repo
 3. Query the token and touch it; keep responses and subsequent secret values in memory.
 4. Derive or unwrap R2 access, backup-decryption, OpenBao unseal/recovery, and node bootstrap/unlock material using the independent payloads. HMAC alone cannot recreate externally issued credentials or OpenBao-generated material.
 
-If a token fails, obtain another token/guide pair. Never guess encoding; overwriting occupied slot 1 requires a separate explicit replacement confirmation.
+If a token fails, obtain another token/guide pair. Never guess encoding; overwriting occupied slot 2 requires a separate explicit replacement confirmation.
 
 ## V1 wrapping protocol
 

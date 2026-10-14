@@ -17,12 +17,12 @@ ykinfo -s
 
 `ykinfo` reports firmware, slot occupancy (`1` programmed, `0` empty), and serial where available. Connect one token at a time; the CLI normally chooses the first device. Package versions and hardware compatibility still need checking on the actual Ubuntu laptop.
 
-## Program or replace slot 1
+## Program or replace slot 2
 
-**This overwrites slot 1; slot 2 is left alone.** The native tool uses the same command for an empty or occupied slot and asks `Commit? (y/n)`.
+**This overwrites slot 2; slot 1 is left alone.** The native tool uses the same command for an empty or occupied slot and asks `Commit? (y/n)`.
 
 ```sh
-ykpersonalize -1 -ochal-resp -ochal-hmac -o-hmac-lt64 -ochal-btn-trig \
+ykpersonalize -2 -ochal-resp -ochal-hmac -o-hmac-lt64 -ochal-btn-trig \
   -a000102030405060708090a0b0c0d0e0f10111213
 ```
 
@@ -36,8 +36,8 @@ The catalogue challenge is the SHA-256 digest represented as **64 lowercase ASCI
 
 ```sh
 challenge=$(printf '%s' 'homelab/v1/test/wrapping/demo/r1' | sha256sum | cut -d ' ' -f 1)
-ykchalresp -1 -H "$challenge"
-ykchalresp -1 -H -N "$challenge"
+ykchalresp -2 -H "$challenge"
+ykchalresp -2 -H -N "$challenge"
 ```
 
 Touch for the first request; it prints the 20-byte HMAC response as 40 hex characters. For the `-N` request, do not touch: expect a touch-required/would-block error. A USB error alone does not establish touch enforcement. Add `-v` when debugging.
@@ -70,7 +70,7 @@ b64 = lambda value: base64.b64encode(value).decode("ascii")
 def wrapping_key():
     print("Touch the test token.")
     result = subprocess.check_output(
-        ["ykchalresp", "-1", "-H", challenge], text=True
+        ["ykchalresp", "-2", "-H", challenge], text=True
     ).strip()
     response = bytes.fromhex(result)
     assert response == hmac.digest(bytes(range(20)), challenge.encode("ascii"), "sha1")
@@ -101,3 +101,4 @@ The header is trusted demonstration data, not an untrusted-record parser. Produc
 - Yubico manuals: [ykinfo](https://developers.yubico.com/yubikey-personalization/Manuals/ykinfo.1.html), [ykpersonalize](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html), [ykchalresp](https://developers.yubico.com/yubikey-personalization/Manuals/ykchalresp.1.html).
 - Yubico source: [key input](https://github.com/Yubico/yubikey-personalization/blob/master/ykpers-args.c), [configuration preview](https://github.com/Yubico/yubikey-personalization/blob/master/ykpersonalize.c).
 - Python cryptography: [HKDF](https://cryptography.io/en/stable/hazmat/primitives/key-derivation-functions/#hkdf), [AESGCM](https://cryptography.io/en/stable/hazmat/primitives/aead/#cryptography.hazmat.primitives.ciphers.aead.AESGCM).
+

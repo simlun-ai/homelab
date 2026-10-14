@@ -40,7 +40,7 @@ make -C support/ups password-create HOST=ups-metal
 ```
 
 Touch when prompted. Each operation wraps a fresh random password using OTP
-slot 1 and verifies it by decrypting it before writing ciphertext. Existing
+slot 2 and verifies it by decrypting it before writing ciphertext. Existing
 records are never overwritten. The public [manifest](../secrets/manifest.json)
 lists the password identifiers, root generation and filenames; an entry does
 not mean its record has been created or applied. The helper independently fixes

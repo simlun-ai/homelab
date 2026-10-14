@@ -4,14 +4,14 @@
 
 ## Configuration
 
-Configure OTP slot 1 on all four YubiKeys with:
+Configure OTP slot 2 on all four YubiKeys with:
 
 - The same 20-byte golden key.
 - HMAC-SHA1 challenge-response.
 - Fixed 64-byte challenge processing.
 - Physical touch required for every response.
 
-Slot 2 remains available. Programming access codes are deferred to
+Slot 1 remains available. Programming access codes are deferred to
 [future improvements](../future.md).
 
 The challenge and wrapping formats are defined in
@@ -46,7 +46,7 @@ only after these checks pass.
 
 The first helper and pinned-tooling implementation is available in
 [00 - YubiKey setup](../installation/00-yubikey-setup.md). It preserves
-occupied slot 1 by default; explicit replacement requires confirming its
+occupied slot 2 by default; explicit replacement requires confirming its
 erasure and the physical label. The Level 1 key uses a hidden local prompt.
 
 - Test tooling preparation/installation and offline execution on the actual laptop.
@@ -56,3 +56,4 @@ erasure and the physical label. The Level 1 key uses a hidden local prompt.
 Golden-key custody and recovery procedures are covered separately in
 [golden-key-custody.md](golden-key-custody.md) and
 [recovery-procedures.md](recovery-procedures.md).
+

@@ -6,7 +6,7 @@ This document owns the lookup catalogue. Hardware inventory belongs in [inventor
 
 ## Model
 
-The four YubiKeys act as interchangeable mini HSMs, each holding the same 20-byte golden key and requiring touch for HMAC-SHA1 challenge-response. The [approved setup](yubikey-setup.md) selects OTP slot 1 and the existing labels `key0` through `key3`; programming and verification remain pending.
+The four YubiKeys act as interchangeable mini HSMs, each holding the same 20-byte golden key and requiring touch for HMAC-SHA1 challenge-response. The [approved setup](yubikey-setup.md) selects OTP slot 2 and the existing labels `key0` through `key3`; programming and verification remain pending.
 
 The logical key-value store consists of:
 

@@ -59,6 +59,8 @@ Use a consistent vocabulary and capitalization for cluster names and components.
 
 ## Wrapped-record repository boundary
 
+- The golden key uses OTP HMAC-SHA1 slot 2 on all four YubiKeys, with touch required. Preserve slot 1; keep helpers, confirmations, tests, and upstream CLI examples consistent.
+
 - `secrets/wrapped` is the private `simlun-ai/homelab-wrapped-secrets` Git submodule; never commit ciphertext directly to the parent repository.
 - Keep the public manifest at `secrets/manifest.json`, with paths relative to `secrets/`; do not add checksums. Public SSH keys remain in the parent repository.
 - Require an initialized private submodule before generating or recovering credentials. Recovery USBs need complete, non-shallow clones of both repositories and the pinned submodule checkout.

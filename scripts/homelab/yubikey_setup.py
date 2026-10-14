@@ -76,9 +76,9 @@ def describe(session):
 
 
 def confirm(label, action):
-    expected = f"{action} {label} slot1"
+    expected = f"{action} {label} slot2"
     if action == "replace":
-        print("This overwrites the existing slot 1 credential. Slot 2 is preserved.", flush=True)
+        print("This overwrites the existing slot 2 credential. Slot 1 is preserved.", flush=True)
         expected += " and erase existing credential"
     if input(f"Check the physical label, then type '{expected}': ") != expected:
         raise RuntimeError("Device confirmation did not match")
@@ -96,7 +96,7 @@ def require_no_response_without_touch(session):
     timer = Timer(5, cancel.set)
     timer.start()
     try:
-        session.calculate_hmac_sha1(SLOT.ONE, CHALLENGES[0], cancel, keepalive)
+        session.calculate_hmac_sha1(SLOT.TWO, CHALLENGES[0], cancel, keepalive)
     except TokenTimeout:
         if not requested_touch.is_set():
             raise RuntimeError("Timeout without proof that touch was required") from None
@@ -115,7 +115,7 @@ def respond(session, challenge):
     timer = Timer(20, cancel.set)
     timer.start()
     try:
-        response = session.calculate_hmac_sha1(SLOT.ONE, challenge, cancel)
+        response = session.calculate_hmac_sha1(SLOT.TWO, challenge, cancel)
     finally:
         timer.cancel()
         timer.join()
@@ -125,8 +125,8 @@ def respond(session, challenge):
 
 
 def verify_token(session, golden):
-    if not session.get_config_state().is_configured(SLOT.ONE):
-        raise RuntimeError("Slot 1 is empty")
+    if not session.get_config_state().is_configured(SLOT.TWO):
+        raise RuntimeError("Slot 2 is empty")
     for challenge in CHALLENGES:
         require_no_response_without_touch(session)
         response = respond(session, challenge)
@@ -139,14 +139,14 @@ def verify_token(session, golden):
 def program(session, label, golden, *, replace=False):
     if not isinstance(golden, bytes) or len(golden) != 20:
         raise ValueError("Programming requires exactly 20 golden-key bytes")
-    occupied = session.get_config_state().is_configured(SLOT.ONE)
+    occupied = session.get_config_state().is_configured(SLOT.TWO)
     if occupied and not replace:
-        print("Stop: slot 1 is occupied. Use verify or explicitly request replacement.", file=sys.stderr)
+        print("Stop: slot 2 is occupied. Use verify or explicitly request replacement.", file=sys.stderr)
         raise RuntimeError("Refusing an occupied slot")
     confirm(label, "replace" if occupied else "program")
     configuration = HmacSha1SlotConfiguration(golden).lt64(False).require_touch(True).allow_update(False)
-    session.put_configuration(SLOT.ONE, configuration)
-    print("Slot 1 programmed; slot 2 was not written. Verification follows.")
+    session.put_configuration(SLOT.TWO, configuration)
+    print("Slot 2 programmed; slot 1 was not written. Verification follows.")
     verify_token(session, golden)
 
 
@@ -184,7 +184,7 @@ def main():
     parser.add_argument("command", choices=("inspect", "program", "verify", "verify-set"))
     parser.add_argument("--label", choices=LABELS)
     parser.add_argument("--replace", action="store_true",
-                        help="Allow program to overwrite occupied slot 1 after an erase confirmation")
+                        help="Allow program to overwrite occupied slot 2 after an erase confirmation")
     args = parser.parse_args()
     if args.command in ("program", "verify") and args.label is None:
         parser.error("--label is required")
@@ -200,8 +200,8 @@ def main():
         return
     with token() as session:
         describe(session)
-        if args.command == "program" and not args.replace and session.get_config_state().is_configured(SLOT.ONE):
-            print("Stop: slot 1 is occupied. Use verify or explicitly request replacement.", file=sys.stderr)
+        if args.command == "program" and not args.replace and session.get_config_state().is_configured(SLOT.TWO):
+            print("Stop: slot 2 is occupied. Use verify or explicitly request replacement.", file=sys.stderr)
             raise RuntimeError("Refusing an occupied slot")
         golden = read_golden_key()
         if args.command == "program":
@@ -209,3 +209,4 @@ def main():
         else:
             confirm(args.label, "verify")
             verify_token(session, golden)
+

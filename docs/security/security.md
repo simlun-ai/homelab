@@ -24,7 +24,7 @@ We treat the YubiKeys as **mini hardware security modules (HSMs)** for the homel
 - Require physical touch for every hardware challenge-response operation.
 - Keep the tokens at four separate locations, each paired with a USB stick containing [full parent and private-submodule clones](encrypted-record-storage.md#recovery-usb-clones), including wrapped records and the non-secret [Emergency Recovery Guide](../emergency-recovery-guide.md).
 - Keep the golden key separately offline for replacement-token programming and software recovery.
-- Use OTP slot 1 under the [approved setup](yubikey-setup.md). Inspect before programming; overwriting occupied slot 1 requires the explicit replacement confirmation in [step 00](../installation/00-yubikey-setup.md). Preserve slot 2.
+- Use OTP slot 2 under the [approved setup](yubikey-setup.md). Inspect before programming; overwriting occupied slot 2 requires the explicit replacement confirmation in [step 00](../installation/00-yubikey-setup.md). Preserve slot 1.
 
 These are interchangeable copies of one HMAC secret, providing location redundancy rather than a multi-token threshold. OpenBao uses the [approved one-share, threshold-one Shamir design](openbao-unseal.md).
 
@@ -40,7 +40,7 @@ Store golden-key generations in the existing air-gapped, replicated Level 1 Pass
 
 ## Challenges, derivation, and wrapped credentials
 
-**Decision:** Use HKDF-SHA-256 and AES-256-GCM for direct YubiKey wrapping, with the `homelab-wrap-v1` JSON record below. The initial shared helper is implemented for [step 00](../installation/00-yubikey-setup.md); physical-token verification and production integrations remain pending. The [YubiKey catalogue](yubikey.md) owns identifiers, challenge construction, consumers, and unresolved bootstrap coverage; OTP slot 1 is selected under the [approved setup](yubikey-setup.md).
+**Decision:** Use HKDF-SHA-256 and AES-256-GCM for direct YubiKey wrapping, with the `homelab-wrap-v1` JSON record below. The initial shared helper is implemented for [step 00](../installation/00-yubikey-setup.md); physical-token verification and production integrations remain pending. The [YubiKey catalogue](yubikey.md) owns identifiers, challenge construction, consumers, and unresolved bootstrap coverage; OTP slot 2 is selected under the [approved setup](yubikey-setup.md).
 
 ### Derivation and encryption
 

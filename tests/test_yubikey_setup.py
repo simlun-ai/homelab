@@ -116,8 +116,8 @@ class SetupTests(unittest.TestCase):
 
     def test_replacement_requires_full_erase_confirmation(self):
         self.session.get_config_state.return_value.is_configured.return_value = True
-        for answer in ("program key0 slot1", "replace key0 slot1",
-                       "replace key1 slot1 and erase existing credential"):
+        for answer in ("program key0 slot2", "replace key0 slot2",
+                       "replace key1 slot2 and erase existing credential"):
             with self.subTest(answer=answer), patch("builtins.input", return_value=answer), \
                     patch.object(setup, "verify_token") as verify, redirect_stdout(self.output):
                 with self.assertRaises(RuntimeError):
@@ -125,20 +125,20 @@ class SetupTests(unittest.TestCase):
                 self.session.put_configuration.assert_not_called()
                 verify.assert_not_called()
 
-    def test_replacement_writes_only_slot_one_then_verifies(self):
+    def test_replacement_writes_only_slot_two_then_verifies(self):
         self.session.get_config_state.return_value.is_configured.return_value = True
         operations = []
         self.session.put_configuration.side_effect = lambda *args: operations.append("write")
-        with patch("builtins.input", return_value="replace key0 slot1 and erase existing credential") as prompt, \
+        with patch("builtins.input", return_value="replace key0 slot2 and erase existing credential") as prompt, \
                 patch.object(setup, "verify_token", side_effect=lambda *args: operations.append("verify")) as verify, \
                 redirect_stdout(self.output):
             setup.program(self.session, "key0", PUBLIC_TEST_KEY, replace=True)
-        self.assertIn("replace key0 slot1 and erase existing credential", prompt.call_args.args[0])
+        self.assertIn("replace key0 slot2 and erase existing credential", prompt.call_args.args[0])
         self.session.put_configuration.assert_called_once()
-        self.assertEqual(self.session.put_configuration.call_args.args[0], SLOT.ONE)
+        self.assertEqual(self.session.put_configuration.call_args.args[0], SLOT.TWO)
         self.assertEqual(operations, ["write", "verify"])
         verify.assert_called_once_with(self.session, PUBLIC_TEST_KEY)
-        self.assertIn("overwrites the existing slot 1 credential", self.output.getvalue())
+        self.assertIn("overwrites the existing slot 2 credential", self.output.getvalue())
         self.assertNotIn(PUBLIC_TEST_KEY.hex(), self.output.getvalue())
 
     def test_cli_passes_explicit_replacement_to_program(self):
@@ -169,7 +169,7 @@ class SetupTests(unittest.TestCase):
                 setup.program(self.session, "key0", golden)
         self.session.put_configuration.assert_not_called()
 
-    def test_program_targets_slot_one_with_fixed_input_and_touch(self):
+    def test_program_targets_slot_two_with_fixed_input_and_touch(self):
         for occupied in (False, True):
             with self.subTest(occupied=occupied):
                 self.session.reset_mock()
@@ -177,7 +177,7 @@ class SetupTests(unittest.TestCase):
                 with patch.object(setup, "confirm"), patch.object(setup, "verify_token") as verify, redirect_stdout(self.output):
                     setup.program(self.session, "key0", PUBLIC_TEST_KEY, replace=occupied)
                 args = self.session.put_configuration.call_args.args
-                self.assertEqual(args[0], SLOT.ONE)
+                self.assertEqual(args[0], SLOT.TWO)
                 encoded = args[1].get_config()
                 # OTP config: fixed-size[44], extended[45], ticket[46], config[47].
                 self.assertTrue(encoded[46] & 0x40)  # CHAL_RESP
@@ -201,6 +201,7 @@ class SetupTests(unittest.TestCase):
 
     def test_no_touch_probe_cancels_confirmed_touch_request(self):
         def pending(slot, challenge, event, keepalive):
+            self.assertEqual(slot, SLOT.TWO)
             keepalive(STATUS_UPNEEDED)
             self.assertTrue(event.is_set())
             raise setup.TokenTimeout("private failure detail")
@@ -216,6 +217,22 @@ class SetupTests(unittest.TestCase):
         with patch.object(setup.getpass, "getpass", side_effect=[value, "11" * 20]), self.assertRaises(ValueError):
             setup.read_golden_key()
 
+    def test_response_uses_slot_two(self):
+        self.session.calculate_hmac_sha1.return_value = b'r' * 20
+        with redirect_stdout(self.output):
+            self.assertEqual(setup.respond(self.session, b'A' * 64), b'r' * 20)
+        self.assertEqual(self.session.calculate_hmac_sha1.call_args.args[0], SLOT.TWO)
+
+    def test_occupied_slot_one_does_not_block_programming_slot_two(self):
+        self.session.get_config_state.return_value.is_configured.side_effect = lambda slot: slot == SLOT.ONE
+        with patch.object(setup, 'confirm'), patch.object(setup, 'verify_token'), redirect_stdout(self.output):
+            setup.program(self.session, 'key0', PUBLIC_TEST_KEY)
+        self.assertEqual(self.session.put_configuration.call_args.args[0], SLOT.TWO)
+
+    def test_old_slot_one_confirmation_is_rejected(self):
+        with patch('builtins.input', return_value='program key0 slot1'), self.assertRaises(RuntimeError):
+            setup.confirm('key0', 'program')
+
     def test_verify_rejects_wrong_golden_key(self):
         self.session.get_config_state.return_value.is_configured.return_value = True
         with patch.object(setup, "require_no_response_without_touch"), patch.object(setup, "respond", return_value=b"x" * 20), self.assertRaises(RuntimeError):
@@ -224,3 +241,4 @@ class SetupTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
