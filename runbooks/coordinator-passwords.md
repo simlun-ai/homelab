@@ -9,7 +9,7 @@ SSH key generation and agent loading belong to that separate runbook.
 
 ## Prepare
 
-Initialize the [private secrets submodule](../docs/security/encrypted-record-storage.md#checkout-and-updates) before generating or recovering records.
+Initialize the [private secrets submodule](../docs/security/encrypted-record-storage.md#checkout-and-updates) before generating or recovering records. Rerun `make -C support/yubikey tools` after submodule updates to install the matching private library and dependencies.
 
 Complete [YubiKey setup and verification](../docs/installation/00-yubikey-setup.md)
 first. Use a trusted Linux workstation, an unrecorded local terminal and one
@@ -99,3 +99,4 @@ before removing it and retrying creation. No host is modified during creation.
 Rotation is a separate maintenance operation under the
 [rotation policy](../docs/security/rotation-and-rollback.md); this initial helper
 intentionally has no overwrite/rotation command. Git history retains ciphertext.
+

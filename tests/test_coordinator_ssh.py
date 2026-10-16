@@ -10,6 +10,7 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import load_ssh_private_key
 from homelab import coordinator_ssh as ssh
+from homelab_secrets import wrapping
 from submodule_fixture import prepare_store
 
 
@@ -38,7 +39,7 @@ class CoordinatorSSHTests(unittest.TestCase):
         self.assertEqual(original, (self.repo / ssh.RECORD).read_bytes())
 
     def test_no_files_if_wrap_verification_fails(self):
-        with patch.object(ssh.wrapping, 'unwrap', return_value=b'wrong'):
+        with patch.object(wrapping, 'unwrap', return_value=b'wrong'):
             with self.assertRaises(ValueError):
                 ssh.create(respond, self.repo)
         self.assertFalse((self.repo / ssh.RECORD).exists())
@@ -105,3 +106,4 @@ class CoordinatorSSHTests(unittest.TestCase):
     def test_manifest_context(self):
         manifest = json.loads((ssh.REPO / 'secrets/manifest.json').read_text())
         self.assertIn(dict(key_id=ssh.KEY_ID, root_key=ssh.ROOT_KEY, file='wrapped/' + ssh.RECORD.name), manifest['records'])
+

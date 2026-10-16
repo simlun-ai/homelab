@@ -38,7 +38,7 @@ Use one working YubiKey and its paired recovery USB containing full, non-shallow
 
 ## Recovery repository and local records
 
-Use the USB's checked-out repository and local Git history to find `secrets/wrapped/` and the public identifier-to-file manifest at `secrets/manifest.json`, this guide, and helper source without GitHub or OpenBao. Snapshot backups remain in R2; required binaries/dependencies still need the specified acquisition procedure.
+Use the USB's checked-out repository and local Git history to find `secrets/wrapped/` and the public identifier-to-file manifest at `secrets/manifest.json`, this guide, and helper source without GitHub or OpenBao. Shared wrap/unwrap source and dependency pins live at `secrets/wrapped/homelab_secrets/`; token programming and application-specific delivery remain in the parent. Snapshot backups remain in R2; required binaries/dependencies still need the specified acquisition procedure.
 
 Refresh all four recovery kits after recovery-critical changes, record both repository commits, and verify both clones and required records. Copy both complete repositories, not just the parent or an archive; never leave the private submodule uninitialized. See `docs/security/encrypted-record-storage.md` for copy/verification commands. The coordinator uses its own locally deployed wrapped records at startup; planned Ansible provisioning copies ciphertext without decrypting it. Implementation remains pending.
 
@@ -75,7 +75,7 @@ Obtain the expected identifier and allowed root generation independently; compar
 
 Every encryption uses fresh cryptographic random salt and nonce; never reuse a key/nonce pair. Updates/rewrapping increment the record revision. An old authentic record can still decrypt. Track revisions and explicitly select records for recovery; strong rollback enforcement through independently trusted revision or digest state is deferred. Retain the generations and records needed by the selected disk or snapshot. Changing the identifier's wrapping generation cannot revoke a token sharing the golden key.
 
-The helper uses Python `cryptography` HKDF/AESGCM and an RFC 8785-compatible serializer; pinned versions and acquisition commands remain TBD. KMS session expiry discards the node KMS keys, derived payload keys, and secret copies, separately from the coordinator's longer-lived DNS/TLS/ACME material. Raw YubiKey responses and wrapping keys remain only briefly on the workstation.
+The helper uses Python `cryptography` HKDF/AESGCM and an RFC 8785-compatible serializer; pins live in the private `secrets/wrapped/homelab_secrets/pyproject.toml`. Prepare the scoped environment using `make -C support/yubikey tools` while online; a clone alone does not include offline-installable dependencies. Independent offline acquisition remains TBD. KMS session expiry discards the node KMS keys, derived payload keys, and secret copies, separately from the coordinator's longer-lived DNS/TLS/ACME material. Raw YubiKey responses and wrapping keys remain only briefly on the workstation.
 
 ## Golden-key fallback and replacement token
 
@@ -111,4 +111,5 @@ These references do not replace embedded emergency instructions.
 - Planned operating runbooks: `runbooks/restore-openbao.md`, `runbooks/unseal-openbao.md`, `runbooks/operate-talos-kms.md`, `runbooks/operate-vault-bootstrap-kms.md`.
 - [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/).
 - [YubiKey Manager OTP commands](https://docs.yubico.com/software/yubikey/tools/ykman/OTP_Commands.html) and [OTP implementation](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/yubiotp.py).
+
 

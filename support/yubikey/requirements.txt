@@ -1,2 +1,4 @@
-yubikey-manager==5.9.2
-cryptography==50.0.1
+# Shared cryptography and token dependencies are owned by the private project.
+# Setuptools supports its local editable install without build isolation.
+setuptools==80.9.0
+

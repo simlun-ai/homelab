@@ -31,7 +31,7 @@ Keep details in their owning document and link from other documents. The USB gui
 | `/docs/` | Documents listed above. |
 | `/docs/installation/` | Installation plan and `NN-<headline>.md` runbooks; grow implementation as each step is tried. |
 | `/secrets/manifest.json` | Public credential catalogue; no secrets or checksums. |
-| `/secrets/wrapped/` | Private `homelab-wrapped-secrets` Git submodule containing authenticated encrypted records; [storage policy](security/encrypted-record-storage.md). |
+| `/secrets/wrapped/` | Private `homelab-wrapped-secrets` Git submodule containing authenticated encrypted records and the `homelab_secrets/` Python project; [storage policy](security/encrypted-record-storage.md). |
 | `/clusters/{vault,backup,pi,metal}/` | Independent cluster configuration and operational pins. |
 | `/make/` | Shared Make implementation, without global cluster-version defaults. |
 | `/scripts/` | Python helpers and small Bash scripts. |
@@ -79,7 +79,7 @@ Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered co
 | `/make/helm.mk` | Render/deploy selected releases. |
 | `/make/tofu.mk` | Operate the selected root/state. |
 | `/make/storage.mk` | Validate disks, coordinate assigned Piraeus preparation, inspect manual pools. |
-| `/scripts/homelab/` | Shared Python logic; initial token setup and wrapping helpers exist. Workstation unseal, [Talos KMS adapter](security/security.md#talos-kms-adapter), and [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms) remain planned. |
+| `/scripts/homelab/` | Token programming/verification and application consumers; shared wrapping/token access is imported from the private `homelab_secrets` project. Workstation unseal, [Talos KMS adapter](security/security.md#talos-kms-adapter), and [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms) remain planned. |
 | `/scripts/bash/` | Small shell helpers. |
 | `/charts/<chart>/` | Chart definition, values, templates, dependency locks. |
 | `/tofu/modules/<module>/` | Shared definitions without credentials or ownership of other scopes' state. |
@@ -94,7 +94,7 @@ Each cluster scope owns `toolchain.yaml` and `bin/`. Cluster pins cover `kubectl
 
 Make verifies pins, uses absolute executable paths, and prepends the scope's `bin/` to subprocess `PATH`. Missing/mismatched tools fail or trigger pinned installation; never fall back to global tools. Document/check bootstrap Make and helper-runtime prerequisites.
 
-The first implemented scope is `support/yubikey/`: an idempotent script installs system dependencies, and standard `venv`/`pip` installs pinned `requirements.txt` into its ignored `.venv/`. Make invokes that virtualenv's Python directly. See [step 00](installation/00-yubikey-setup.md) for preparation/install commands.
+The first implemented scope is `support/yubikey/`: an idempotent script installs system dependencies, and standard `venv`/`pip` installs the pinned build tooling and the local private `secrets/wrapped/homelab_secrets` project into its ignored `.venv/`. The private project's `pyproject.toml` owns token/crypto pins and installs `homelab-wrap` and `homelab-unwrap`. Make invokes that virtualenv's Python directly. See [step 00](installation/00-yubikey-setup.md) for preparation/install commands.
 
 Illustrative targets, not yet implemented:
 
@@ -187,4 +187,5 @@ Numbered installation procedures and their implementation progress belong in [do
 - Node/disk schema and inventory synchronization.
 - Helm orchestration, immutable-chart storage, and scripts/OpenTofu division.
 - Scope-specific architecture questions remain in [clusters.md](clusters.md); security and backup implementation questions remain in their owning documents.
+
 

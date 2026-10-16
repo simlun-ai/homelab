@@ -2,11 +2,13 @@
 
 **Initial token setup and wrapping helpers implemented; hardware verification and service helpers pending.**
 
-[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Source lives under `scripts/homelab/`, with pinned Python requirements and a standard virtualenv in `support/yubikey/`. The coordinator password and SSH key workflows use `secrets/wrapped/`; real records require local token-backed generation. Coordinator KMS services and OpenBao integration remain pending.
+[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Token programming and application consumers live under `scripts/homelab/`. Shared wrapping, read-only token access, and the `homelab-wrap`/`homelab-unwrap` commands live in the private submodule's `homelab_secrets/` Python project. Its `pyproject.toml` owns crypto/token dependency pins; `support/yubikey/` installs it locally into the scoped virtualenv. The coordinator password and SSH key workflows use `secrets/wrapped/`; real records require local token-backed generation. Coordinator KMS services and OpenBao integration remain pending.
 
 ## Workstation helper
 
-Use one small Python package with shared wrapping logic and commands to:
+The private `homelab_secrets` library exposes bytes-based `wrap`/`unwrap` with an injectable HMAC response callback and no parent-repository or manifest dependency. The implemented CLI wraps and verifies before exclusive ciphertext creation; unwrap requires explicit expected context and either confirmed escaped terminal reveal or explicit stdout to a pipe/socket. Plaintext file redirection is rejected. See the [package README](../../secrets/wrapped/homelab_secrets/README.md) for installation and usage.
+
+Parent helpers reuse the library. Existing and planned consumers cover:
 
 - Wrap and verify credential records.
 - Unseal OpenBao over verified TLS.
@@ -27,8 +29,8 @@ Package recovery dependencies for use without downloads.
 
 ## Coordinator password helper
 
-`scripts/homelab/coordinator_password.py` reuses the wrapping library and token
-SDK through `scripts/coordinator_password_cli.py`. Commands and failure recovery
+`scripts/homelab/coordinator_password.py` reuses the private wrapping library and token
+adapter through `scripts/coordinator_password_cli.py`. Commands and failure recovery
 are in the [runbook](../../runbooks/coordinator-passwords.md).
 
 `secrets/manifest.json` is public metadata: `format` is
@@ -39,7 +41,7 @@ entries do not attest to existence, deployment, or freshness. Initial records
 use revision 1. No checksums are maintained. Overwriting and rotation are not implemented.
 Both credential helpers require an initialized Git submodule at `secrets/wrapped`
 before reading or generating records; missing checkout errors precede token access.
-Public documentation, manifest tests and agent-only checks do not require private access.
+Public documentation and agent-only checks do not require private access. The full helper test suite requires the installed private package.
 
 ## Coordinator SSH helper
 
@@ -141,4 +143,5 @@ verify process isolation and cleanup against the memory-only policy.
 - [Talos KMS protocol](https://github.com/siderolabs/kms-client/blob/main/api/kms/kms.proto).
 - [Wrapped-record storage](encrypted-record-storage.md).
 - [YubiKey setup](yubikey-setup.md).
+
 

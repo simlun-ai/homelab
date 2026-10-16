@@ -7,7 +7,9 @@ name = "homelab-helpers"
 version = "0.1.0"
 description = "Scoped homelab administration helpers"
 requires-python = ">=3.11,<3.15"
+dependencies = ["homelab-secrets==0.1.0"]
 
 [tool.setuptools.packages.find]
 where = ["scripts"]
 include = ["homelab*"]
+

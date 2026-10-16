@@ -6,8 +6,8 @@
 
 Keep authenticated `homelab-wrap-v1` JSON records in the **private**
 `simlun-ai/homelab-wrapped-secrets` repository, mounted as the Git submodule
-`secrets/wrapped`. Keep it private even if `homelab` becomes public. The parent
-tracks only the submodule URL and commit, not ciphertext files.
+`secrets/wrapped`. Keep it private even if `homelab` becomes public. The private repository also owns the `homelab_secrets/` Python project: record cryptography, read-only token access, and `homelab-wrap`/`homelab-unwrap`. Existing record paths are unchanged. The parent
+tracks only the submodule URL and commit, not private files.
 
 The public `secrets/manifest.json` lists identifiers, root generations and
 paths relative to `secrets/`. Entries reserve filenames and do not imply records
@@ -36,8 +36,7 @@ git submodule status -- secrets/wrapped
 ```
 
 For a new checkout, `git clone --recurse-submodules git@github.com:simlun-ai/homelab.git`
-fetches both. Public readers can clone the parent without recursion; docs,
-manifest tests and non-secret checks do not require private access. GitHub
+fetches both. Public readers can clone the parent without recursion; docs and agent-only checks do not require private access. Installing/testing the shared secret helpers requires the private Python project. GitHub
 access uses your separately configured Git credentials, not the wrapped
 coordinator SSH identity. Helpers fail clearly if the submodule is absent.
 
@@ -64,7 +63,7 @@ For SSH-key creation also stage `support/ups/coordinator_ed25519.pub` in the
 parent. Never put ciphertext in the parent to work around missing private access.
 Retain pushed private branches/commits referenced by the parent. After pulling
 parent changes, repeat `git submodule update --init --recursive` to select its
-pinned version; do not use `--remote` for normal recovery. Preserve uncommitted
+pinned version; do not use `--remote` for normal recovery. Rerun `make -C support/yubikey tools` during online preparation after changing that version; it refreshes the local package and its dependencies. Preserve uncommitted
 changes before switching versions. Refresh all four recovery USBs after updates.
 
 ## Recovery USB clones
@@ -106,7 +105,7 @@ git -C /media/RECOVERY/homelab rev-parse HEAD
 git -C /media/RECOVERY/homelab submodule status -- secrets/wrapped
 ```
 
-Record both commit IDs; confirm the pinned checkout and required credential files
+Record both commit IDs; confirm the pinned checkout and required credential files and `homelab_secrets/` Python project
 are present. A successful clone or fsck does not prove production credentials have
 been generated. For a refresh, prepare a new destination and retain the previous
 verified kit until replacement checks pass. Recovery tool binaries/dependencies
@@ -124,4 +123,5 @@ normal account hash; SSH deployment installs only the public key.
 
 Git history retains old ciphertext in the private repository.
 Retention, rotation and rollback policy belongs to [rotation and rollback](rotation-and-rollback.md).
+
 

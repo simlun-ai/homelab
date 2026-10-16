@@ -10,7 +10,6 @@ from cryptography.hazmat.primitives.serialization import (
     Encoding, PrivateFormat, PublicFormat, NoEncryption,
     load_ssh_private_key, load_ssh_public_key,
 )
-from . import wrapping
 from .record_store import require_store
 
 REPO = Path(__file__).resolve().parents[2]
@@ -43,6 +42,7 @@ def write_new(path, data):
 
 
 def recover(respond, repo=REPO):
+    from homelab_secrets import wrapping
     require_store(repo)
     with (repo / RECORD).open('rb') as source:
         encoded = source.read(wrapping.MAX_RECORD + 1)
@@ -54,6 +54,7 @@ def recover(respond, repo=REPO):
 
 
 def create(respond, repo=REPO):
+    from homelab_secrets import wrapping
     require_store(repo)
     if (repo / RECORD).exists() or (repo / PUBLIC).exists():
         raise FileExistsError('Reuse existing key; creation never overwrites')
@@ -108,8 +109,9 @@ def main():
         print('Coordinator key removed from this agent.')
     else:
         require_store(REPO)
-        from .yubikey_setup import harden, token, respond, require_no_response_without_touch
-        harden()
+        from homelab_secrets.runtime import harden
+        from homelab_secrets.yubikey import token, respond, require_no_response_without_touch
+        harden(require_terminal=True)
         with token() as session:
             require_no_response_without_touch(session)
             response = lambda challenge: respond(session, challenge)
@@ -117,3 +119,4 @@ def main():
         print({'create': 'Key created and verified. Commit ciphertext and public key; refresh recovery clones.',
                'load': 'Coordinator key loaded into this agent for one hour.',
                'public': 'Public key restored from the wrapped private key.'}[args.action])
+

@@ -7,7 +7,8 @@ import re
 import secrets
 import subprocess
 
-from . import wrapping, coordinator_ssh
+from homelab_secrets import wrapping
+from . import coordinator_ssh
 from .record_store import require_store
 
 HOSTS = ('ups-aux', 'ups-pi', 'ups-metal')
@@ -75,8 +76,9 @@ def main():
     parser.add_argument('--host', required=True, choices=HOSTS)
     args = parser.parse_args()
     require_store(REPO)
-    from .yubikey_setup import harden, token, respond, require_no_response_without_touch
-    harden()
+    from homelab_secrets.runtime import harden
+    from homelab_secrets.yubikey import token, respond, require_no_response_without_touch
+    harden(require_terminal=True)
     if args.action == 'create' and record_path(args.host).exists():
         print('Record already exists; use reveal or apply. Creation never overwrites it.')
         return
@@ -96,3 +98,4 @@ def main():
             else:
                 apply(args.host, password)
                 print('Administrator password applied. Verify local console login.')
+
