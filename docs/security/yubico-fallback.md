@@ -6,43 +6,100 @@ Use this guide to manually verify, debug, and sanity-check our Python implementa
 
 ## Install and inspect
 
-Install while online. The Yubico commands come from `yubikey-personalization`; `python3-cryptography` supplies the encryption library for the later example.
+Install while online. The commands and Python API come from `yubikey-manager`; `python3-cryptography` supplies the encryption library for the later example.
 
 ```sh
-sudo apt install yubikey-personalization python3-cryptography
-ykpersonalize -V
-ykinfo -v -1 -2
-ykinfo -s
+sudo apt install yubikey-manager python3-cryptography
+ykman --version
+ykman info
+ykman otp info
 ```
 
-`ykinfo` reports firmware, slot occupancy (`1` programmed, `0` empty), and serial where available. Connect one token at a time; the CLI normally chooses the first device. Package versions and hardware compatibility still need checking on the actual Ubuntu laptop.
+`ykman info` reports firmware and serial where available; `ykman otp info` reports slot occupancy. Connect exactly one token at a time. Package versions, USB permissions, and compatibility with our legacy firmware still need checking on the actual Ubuntu laptop.
 
 ## Program or replace slot 2
 
-**This overwrites slot 2; slot 1 is left alone.** The native tool uses the same command for an empty or occupied slot and asks `Commit? (y/n)`.
+**This overwrites slot 2; slot 1 is left alone.** Use the successor's Python API for this operation: `ykman otp chalresp --touch 2` uses variable-length processing and has no CLI option to select our fixed 64-byte mode. Its default is therefore not a substitute for the project's configuration, even if an ASCII-only test happens to pass.
+
+Run this public-test-only example with Ubuntu's Python. It requires exactly one accessible OTP device and explicit confirmation before writing either an empty or occupied slot 2:
 
 ```sh
-ykpersonalize -2 -ochal-resp -ochal-hmac -o-hmac-lt64 -ochal-btn-trig \
-  -a000102030405060708090a0b0c0d0e0f10111213
+/usr/bin/python3 - <<'PYTHON'
+from ykman.hid import list_otp_devices
+from yubikit.core.otp import OtpConnection
+from yubikit.yubiotp import HmacSha1SlotConfiguration, SLOT, YubiOtpSession
+
+devices = list_otp_devices()
+if len(devices) != 1:
+    raise SystemExit("Connect exactly one accessible OTP-capable YubiKey")
+with devices[0].open_connection(OtpConnection) as connection:
+    session = YubiOtpSession(connection)
+    print(f"Firmware: {session.version}; slot 2 occupied: "
+          f"{session.get_config_state().is_configured(SLOT.TWO)}")
+    with open("/dev/tty", "r+") as terminal:
+        terminal.write("Type 'overwrite test slot2' to continue: ")
+        terminal.flush()
+        if terminal.readline().strip() != "overwrite test slot2":
+            raise SystemExit("Cancelled")
+    configuration = (HmacSha1SlotConfiguration(bytes(range(20)))
+                     .lt64(False).require_touch(True).allow_update(False))
+    session.put_configuration(SLOT.TWO, configuration)
+PYTHON
 ```
 
-`-ochal-resp` selects challenge-response, `-ochal-hmac` selects HMAC-SHA1, `-o-hmac-lt64` clears variable-length processing, and `-ochal-btn-trig` requires touch. Keep the mode option first among the `-o` options; it resets the defaults, including `allow-update`.
-
-Bare `-a` instead of `-aHEX` prompts for a key; omitting it generates a random key. An existing programming access code requires separate handling. The tool prints the supplied key in its configuration preview, which is why these debugging examples use public test material.
+`lt64(False)` selects fixed-length processing, `require_touch(True)` requires touch, and `allow_update(False)` matches the project helper. An existing programming access code requires separate handling. The example uses only the public test key; use step 00's hidden-input helper for real golden-key material.
 
 ## Query HMAC and check touch
 
-The catalogue challenge is the SHA-256 digest represented as **64 lowercase ASCII hex characters**, with no newline:
+The catalogue challenge is the SHA-256 digest represented as **64 lowercase ASCII hex characters**, with no newline. `ykman otp calculate` accepts hex-encoded bytes, so encode those ASCII characters a second time before passing them:
 
 ```sh
 challenge=$(printf '%s' 'homelab/v1/test/wrapping/demo/r1' | sha256sum | cut -d ' ' -f 1)
-ykchalresp -2 -H "$challenge"
-ykchalresp -2 -H -N "$challenge"
+challenge_hex=$(printf '%s' "$challenge" | od -An -v -tx1 | tr -d ' \n')
+ykman otp calculate 2 "$challenge_hex"
 ```
 
-Touch for the first request; it prints the 20-byte HMAC response as 40 hex characters. For the `-N` request, do not touch: expect a touch-required/would-block error. A USB error alone does not establish touch enforcement. Add `-v` when debugging.
+Touch when prompted; the command prints the 20-byte HMAC response as 40 hex characters. Repeat with another token programmed with the same test key: responses must match. Passing `$challenge` directly would send only 32 decoded bytes and change the derived key.
 
-Repeat the first request with another token programmed with the same test key: responses must match. Do not add `-x` to these commands—it would decode the digest to 32 bytes instead of sending its 64 ASCII characters. For binary challenges, `-x` accepts 128 hex characters representing 64 bytes.
+There is no CLI equivalent of the old nonblocking touch check. Use the successor's API to require an explicit touch-needed status and cancel the request without touching:
+
+```sh
+/usr/bin/python3 - <<'PYTHON'
+from threading import Event, Timer
+from ykman.hid import list_otp_devices
+from yubikit.core import TimeoutError as TokenTimeout
+from yubikit.core.otp import OtpConnection, STATUS_UPNEEDED
+from yubikit.yubiotp import SLOT, YubiOtpSession
+
+devices = list_otp_devices()
+if len(devices) != 1:
+    raise SystemExit("Connect exactly one accessible OTP-capable YubiKey")
+cancel, requested_touch = Event(), Event()
+def keepalive(status):
+    if status == STATUS_UPNEEDED:
+        requested_touch.set()
+        cancel.set()
+
+print("Do NOT touch the test token.", flush=True)
+with devices[0].open_connection(OtpConnection) as connection:
+    session = YubiOtpSession(connection)
+    timer = Timer(5, cancel.set)
+    timer.start()
+    try:
+        session.calculate_hmac_sha1(SLOT.TWO, b"A" * 64, cancel, keepalive)
+    except TokenTimeout:
+        if not requested_touch.is_set():
+            raise SystemExit("FAIL: timeout without proof that touch was required")
+        print("PASS: token explicitly required touch")
+    else:
+        raise SystemExit("FAIL: received a response without touch")
+    finally:
+        timer.cancel()
+        timer.join()
+PYTHON
+```
+
+A timeout or USB error alone does not establish touch enforcement. For complete fixed-length and cross-token verification, run step 00's helper, which also tests a binary 64-byte challenge containing NUL.
 
 ## HMAC verification and encryption in Python
 
@@ -70,7 +127,7 @@ b64 = lambda value: base64.b64encode(value).decode("ascii")
 def wrapping_key():
     print("Touch the test token.")
     result = subprocess.check_output(
-        ["ykchalresp", "-2", "-H", challenge], text=True
+        ["ykman", "otp", "calculate", "2", challenge.encode("ascii").hex()], text=True
     ).strip()
     response = bytes.fromhex(result)
     assert response == hmac.digest(bytes(range(20)), challenge.encode("ascii"), "sha1")
@@ -97,8 +154,8 @@ The header is trusted demonstration data, not an untrusted-record parser. Produc
 
 ## Sources
 
-- [Ubuntu package and dependencies](https://packages.ubuntu.com/noble/amd64/utils/yubikey-personalization).
-- Yubico manuals: [ykinfo](https://developers.yubico.com/yubikey-personalization/Manuals/ykinfo.1.html), [ykpersonalize](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html), [ykchalresp](https://developers.yubico.com/yubikey-personalization/Manuals/ykchalresp.1.html).
-- Yubico source: [key input](https://github.com/Yubico/yubikey-personalization/blob/master/ykpers-args.c), [configuration preview](https://github.com/Yubico/yubikey-personalization/blob/master/ykpersonalize.c).
+- [Ubuntu package and dependencies](https://packages.ubuntu.com/noble/yubikey-manager).
+- [YubiKey Manager OTP commands](https://docs.yubico.com/software/yubikey/tools/ykman/OTP_Commands.html).
+- Yubico 5.9.2 source: [CLI configuration and challenge decoding](https://github.com/Yubico/yubikey-manager/blob/5.9.2/ykman/_cli/otp.py), [fixed-length configuration and HMAC API](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/yubiotp.py), [touch requests and cancellation](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/core/otp.py).
 - Python cryptography: [HKDF](https://cryptography.io/en/stable/hazmat/primitives/key-derivation-functions/#hkdf), [AESGCM](https://cryptography.io/en/stable/hazmat/primitives/aead/#cryptography.hazmat.primitives.ciphers.aead.AESGCM).
 

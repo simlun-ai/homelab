@@ -40,7 +40,7 @@ V1 challenge construction:
 challenge = ASCII(lowercase_hex(SHA256(ASCII(identifier))))
 ```
 
-This produces exactly 64 challenge bytes. Configure matching fixed-length processing on all four tokens and verify it against the software fallback. [Yubico documents](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html) the HMAC and touch flags for firmware 2.2 and later; actual device verification remains required.
+This produces exactly 64 challenge bytes. Configure matching fixed-length processing on all four tokens and verify it against the software fallback. [Yubico’s YubiKey Manager implementation](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/yubiotp.py) provides HMAC-SHA1, fixed-length processing, and touch configuration for firmware 2.2 and later; actual device verification remains required.
 
 The raw response feeds HKDF-SHA-256 and AES-256-GCM using the [v1 encrypted-record format](security.md#challenges-derivation-and-wrapped-credentials). That section owns derivation, authenticated metadata, revision/rotation rules, and validation. The initial shared implementation is exercised by [step 00](../installation/00-yubikey-setup.md); the coordinator password consumer is implemented; other production consumers remain pending.
 

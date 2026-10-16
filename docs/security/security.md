@@ -161,7 +161,7 @@ Existing decisions remain in this document and the [YubiKey catalogue](yubikey.m
 - [JSON canonicalization (RFC 8785)](https://www.rfc-editor.org/rfc/rfc8785).
 - [Python cryptography HKDF](https://cryptography.io/en/stable/hazmat/primitives/key-derivation-functions/#hkdf) and [AESGCM](https://cryptography.io/en/stable/hazmat/primitives/aead/#cryptography.hazmat.primitives.ciphers.aead.AESGCM).
 - [Yubico challenge-response](https://docs.yubico.com/yesdk/users-manual/application-otp/challenge-response.html).
-- [Yubico personalization manual](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html), including legacy firmware flags.
+- [YubiKey Manager OTP implementation](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/yubiotp.py), including legacy firmware support and fixed-length configuration.
 - [Talos disk encryption](https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/disk-encryption).
 - [OpenZFS encryption](https://openzfs.github.io/openzfs-docs/man/master/8/zfs-load-key.8.html#encryption).
 - [OpenTofu state/plan encryption](https://opentofu.org/docs/language/state/encryption/).

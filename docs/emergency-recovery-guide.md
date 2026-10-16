@@ -110,5 +110,5 @@ These references do not replace embedded emergency instructions.
 - Installation plan and runbooks: `docs/installation/README.md`, `docs/installation/00-yubikey-setup.md`, `docs/installation/01-main-coordinator.md`, `docs/installation/02-vault.md`. Step 00 has an initial helper implementation; physical verification remains pending.
 - Planned operating runbooks: `runbooks/restore-openbao.md`, `runbooks/unseal-openbao.md`, `runbooks/operate-talos-kms.md`, `runbooks/operate-vault-bootstrap-kms.md`.
 - [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/).
-- [Yubico personalization manual](https://developers.yubico.com/yubikey-personalization/Manuals/ykpersonalize.1.html).
+- [YubiKey Manager OTP commands](https://docs.yubico.com/software/yubikey/tools/ykman/OTP_Commands.html) and [OTP implementation](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/yubiotp.py).
 
