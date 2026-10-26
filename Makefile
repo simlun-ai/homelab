@@ -1,9 +1,9 @@
 .DEFAULT_GOAL := help
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
-.PHONY: help yubikey-help ups-help ci lint format
+.PHONY: help yubikey-help ups-help ci lint format typecheck
 help:
-	@printf '%s\n' 'Available scopes: make yubikey-help; make ups-help' 'Checks: make ci; make lint; make format'
+	@printf '%s\n' 'Available scopes: make yubikey-help; make ups-help' 'Checks: make ci; make lint; make format; make typecheck'
 
 yubikey-help:
 	@$(MAKE) --no-print-directory -C "$(ROOT)/support/yubikey" help
@@ -25,3 +25,7 @@ format:
 	  --mount "type=bind,src=$(ROOT),dst=/project" \
 	  homelab-ruff:local sh -c \
 	  'ruff check --fix --no-cache scripts tests support ci && ruff format --no-cache scripts tests support ci'
+
+typecheck:
+	@test -f "$(ROOT)/tools/homelab-hsm/homelab_secrets/pyproject.toml" || { printf '%s\n' 'Initialize public code: git submodule update --init --recursive -- tools/homelab-hsm' >&2; exit 2; }
+	cd "$(ROOT)" && docker buildx bake --file docker-bake.hcl --progress=plain typecheck

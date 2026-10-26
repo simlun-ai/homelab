@@ -19,6 +19,7 @@ from cryptography.hazmat.primitives.serialization import (
     load_ssh_private_key,
     load_ssh_public_key,
 )
+from homelab_secrets import wrapping
 
 from .record_store import require_store
 
@@ -29,11 +30,11 @@ RECORD = Path("secrets/wrapped/coordinators-ssh-ed25519.json")
 PUBLIC = Path("support/ups/coordinator_ed25519.pub")
 
 
-def public_bytes(key):
+def public_bytes(key: Ed25519PublicKey) -> bytes:
     return key.public_bytes(Encoding.OpenSSH, PublicFormat.OpenSSH)
 
 
-def read_public(repo=REPO):
+def read_public(repo: Path = REPO) -> bytes:
     data = (repo / PUBLIC).read_bytes()
     if len(data) > 1024 or len(data.splitlines()) != 1:
         raise ValueError("Expected a single public key")
@@ -43,7 +44,7 @@ def read_public(repo=REPO):
     return public_bytes(key)
 
 
-def write_new(path, data):
+def write_new(path: Path, data: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("xb") as target:
         target.write(data)
@@ -51,9 +52,7 @@ def write_new(path, data):
         os.fsync(target.fileno())
 
 
-def recover(respond, repo=REPO):
-    from homelab_secrets import wrapping
-
+def recover(respond: wrapping.Responder, repo: Path = REPO) -> tuple[bytes, bytes]:
     require_store(repo)
     with (repo / RECORD).open("rb") as source:
         encoded = source.read(wrapping.MAX_RECORD + 1)
@@ -64,9 +63,7 @@ def recover(respond, repo=REPO):
     return private, public_bytes(key.public_key())
 
 
-def create(respond, repo=REPO):
-    from homelab_secrets import wrapping
-
+def create(respond: wrapping.Responder, repo: Path = REPO) -> None:
     require_store(repo)
     if (repo / RECORD).exists() or (repo / PUBLIC).exists():
         raise FileExistsError("Reuse existing key; creation never overwrites")
@@ -82,12 +79,12 @@ def create(respond, repo=REPO):
     write_new(repo / PUBLIC, public + b" homelab-coordinators\n")
 
 
-def restore_public(respond, repo=REPO):
+def restore_public(respond: wrapping.Responder, repo: Path = REPO) -> None:
     _, public = recover(respond, repo)
     write_new(repo / PUBLIC, public + b" homelab-coordinators\n")
 
 
-def agent(*args, **kwargs):
+def agent(*args: str, input: bytes | None = None) -> None:
     if not os.environ.get("SSH_AUTH_SOCK"):
         raise RuntimeError("Start a local ssh-agent first")
     subprocess.run(
@@ -96,16 +93,16 @@ def agent(*args, **kwargs):
         stderr=subprocess.DEVNULL,
         check=True,
         timeout=15,
-        **kwargs,
+        input=input,
     )
 
 
-def check(repo=REPO):
+def check(repo: Path = REPO) -> None:
     read_public(repo)
     agent("-T", str(repo / PUBLIC))
 
 
-def load(respond, repo=REPO):
+def load(respond: wrapping.Responder, repo: Path = REPO) -> None:
     expected = read_public(repo)
     private, public = recover(respond, repo)
     if not hmac.compare_digest(expected, public):
@@ -115,7 +112,7 @@ def load(respond, repo=REPO):
     check(repo)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "action", choices=("create", "load", "check", "unload", "public")

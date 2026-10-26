@@ -1,9 +1,9 @@
 group "default" {
-  targets = ["lint", "helpers", "ups", "syntax"]
+  targets = ["lint", "typecheck", "helpers", "ups", "syntax"]
 }
 
 group "ci" {
-  targets = ["lint", "helpers", "ups", "syntax"]
+  targets = ["lint", "typecheck", "helpers", "ups", "syntax"]
 }
 
 target "_common" {
@@ -42,4 +42,10 @@ target "lint-tool" {
   target = "lint-tools"
   tags = ["homelab-ruff:local"]
   output = ["type=docker"]
+}
+
+target "typecheck" {
+  inherits = ["_common"]
+  target = "typecheck"
+  no-cache-filter = ["typecheck"]
 }

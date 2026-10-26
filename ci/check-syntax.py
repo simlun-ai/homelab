@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SKIP = {".git", ".venv", ".ansible", "__pycache__"}
 
 
-def check_file(path):
+def check_file(path: Path) -> None:
     if path.suffix == ".py":
         # compile checks syntax and statement placement without importing or writing pyc.
         compile(path.read_bytes(), str(path), "exec", dont_inherit=True)
@@ -15,7 +15,7 @@ def check_file(path):
         subprocess.run(["bash", "-n", str(path)], check=True)
 
 
-def main():
+def main() -> None:
     checked = 0
     for directory in ("scripts", "tests", "support", "ci"):
         root = ROOT / directory

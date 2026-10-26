@@ -5,15 +5,15 @@ import subprocess
 import sys
 from pathlib import Path
 
-errors = []
+errors: list[str] = []
 
 
-def check(condition, message):
+def check(condition: bool, message: str) -> None:
     if not condition:
         errors.append(message)
 
 
-def output(*args):
+def output(*args: str) -> str:
     return subprocess.check_output(args, text=True).strip()
 
 

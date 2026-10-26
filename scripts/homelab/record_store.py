@@ -8,7 +8,7 @@ class StoreUnavailable(RuntimeError):
     pass
 
 
-def require_store(repo):
+def require_store(repo: Path) -> Path:
     repo = Path(repo).resolve()
     store = repo / "secrets/wrapped"
     message = (
@@ -19,7 +19,7 @@ def require_store(repo):
         if store.is_symlink() or not (store / ".git").exists():
             raise StoreUnavailable(message)
 
-        def git(directory, *args):
+        def git(directory: Path, *args: str) -> str:
             return subprocess.check_output(
                 ["git", "-C", str(directory), *args],
                 stderr=subprocess.DEVNULL,

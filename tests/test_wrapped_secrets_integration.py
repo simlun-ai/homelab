@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from contextlib import ExitStack, redirect_stderr
 from pathlib import Path
+from typing import NoReturn
 
 from cryptography.exceptions import InvalidTag
 from homelab_secrets import wrapping
@@ -19,7 +20,7 @@ from submodule_fixture import prepare_store
 
 
 class WrappedSecretsIntegrationTests(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.contexts = ExitStack()
         self.addCleanup(self.contexts.close)
         self.contexts.enter_context(redirect_stderr(io.StringIO()))
@@ -28,7 +29,7 @@ class WrappedSecretsIntegrationTests(unittest.TestCase):
             (passwords.REPO / "secrets/manifest.json").read_text()
         )["records"]
 
-    def test_manifest_identifiers_and_complete_record_round_trip(self):
+    def test_manifest_identifiers_and_complete_record_round_trip(self) -> None:
         for entry in self.manifest:
             key_id = entry["key_id"]
             self.assertEqual(
@@ -76,11 +77,11 @@ class WrappedSecretsIntegrationTests(unittest.TestCase):
                         plaintext,
                     )
 
-    def test_wrong_context_and_malformed_record_fail_before_response(self):
+    def test_wrong_context_and_malformed_record_fail_before_response(self) -> None:
         key_id = self.manifest[0]["key_id"]
         encoded = wrapping.wrap(b"public dummy", key_id, FAKE_ROOT, 1, self.respond)
 
-        def forbidden_response(challenge):
+        def forbidden_response(challenge: bytes) -> NoReturn:
             self.fail("Invalid record queried the responder")
 
         for record, expected_id, expected_root in (
@@ -95,7 +96,7 @@ class WrappedSecretsIntegrationTests(unittest.TestCase):
             ):
                 wrapping.unwrap(record, expected_id, expected_root, forbidden_response)
 
-    def test_tampered_ciphertext_is_rejected(self):
+    def test_tampered_ciphertext_is_rejected(self) -> None:
         key_id = self.manifest[0]["key_id"]
         record = json.loads(
             wrapping.wrap(b"public dummy", key_id, FAKE_ROOT, 1, self.respond)
@@ -108,7 +109,9 @@ class WrappedSecretsIntegrationTests(unittest.TestCase):
                 json.dumps(record).encode(), key_id, FAKE_ROOT, self.respond
             )
 
-    def test_password_consumers_use_real_wrapping_with_injected_fake_response(self):
+    def test_password_consumers_use_real_wrapping_with_injected_fake_response(
+        self,
+    ) -> None:
         # The callback is test-only; production context/root identifiers stay intact.
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
@@ -129,7 +132,7 @@ class WrappedSecretsIntegrationTests(unittest.TestCase):
                         recovered,
                     )
 
-    def test_ssh_consumer_uses_real_wrapping_with_injected_fake_response(self):
+    def test_ssh_consumer_uses_real_wrapping_with_injected_fake_response(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             prepare_store(repo)

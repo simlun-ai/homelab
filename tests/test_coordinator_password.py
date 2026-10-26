@@ -11,16 +11,16 @@ from homelab import coordinator_password as passwords
 from submodule_fixture import prepare_store
 
 
-def respond(challenge):
+def respond(challenge: bytes) -> bytes:
     return hmac.digest(bytes(range(20)), challenge, "sha1")
 
 
 class PasswordTests(unittest.TestCase):
-    def test_create_recover_distinct_and_no_overwrite(self):
+    def test_create_recover_distinct_and_no_overwrite(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             prepare_store(repo)
-            values = []
+            values: list[bytes] = []
             for host in passwords.HOSTS:
                 passwords.create(host, respond, repo)
                 value = passwords.recover(host, respond, repo)
@@ -32,7 +32,7 @@ class PasswordTests(unittest.TestCase):
                 self.assertEqual(record, passwords.record_path(host, repo).read_bytes())
             self.assertEqual(len(set(values)), 3)
 
-    def test_wrong_host_rejected_before_token(self):
+    def test_wrong_host_rejected_before_token(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             prepare_store(repo)
@@ -45,7 +45,7 @@ class PasswordTests(unittest.TestCase):
                 passwords.recover("ups-pi", token, repo)
             token.assert_not_called()
 
-    def test_failed_verification_writes_nothing(self):
+    def test_failed_verification_writes_nothing(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             prepare_store(repo)
@@ -54,7 +54,7 @@ class PasswordTests(unittest.TestCase):
                     passwords.create("ups-aux", respond, repo)
             self.assertFalse(passwords.record_path("ups-aux", repo).exists())
 
-    def test_delivery_only_in_stdin(self):
+    def test_delivery_only_in_stdin(self) -> None:
         dummy = b"A" * 43
         with (
             patch.object(passwords.coordinator_ssh, "check"),
@@ -70,7 +70,7 @@ class PasswordTests(unittest.TestCase):
                 passwords.apply("ups-pi", b"bad\nroot:injection")
             self.assertEqual(run.call_count, 1)
 
-    def test_manifest_agrees_with_fixed_contexts(self):
+    def test_manifest_agrees_with_fixed_contexts(self) -> None:
         manifest = json.loads((passwords.REPO / "secrets/manifest.json").read_text())
         self.assertEqual(
             [

@@ -13,19 +13,19 @@ PUBLIC_TEST_KEY = bytes(range(20))
 
 
 class SetupTests(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.session = Mock()
         self.session.get_config_state.return_value.is_configured.return_value = False
         self.output = io.StringIO()
 
-    def test_program_refuses_occupied_slot_before_confirmation(self):
+    def test_program_refuses_occupied_slot_before_confirmation(self) -> None:
         self.session.get_config_state.return_value.is_configured.return_value = True
         with patch.object(setup, "confirm") as confirm, self.assertRaises(RuntimeError):
             setup.program(self.session, "key0", PUBLIC_TEST_KEY)
         confirm.assert_not_called()
         self.session.put_configuration.assert_not_called()
 
-    def test_replacement_requires_full_erase_confirmation(self):
+    def test_replacement_requires_full_erase_confirmation(self) -> None:
         self.session.get_config_state.return_value.is_configured.return_value = True
         for answer in (
             "program key0 slot2",
@@ -43,12 +43,17 @@ class SetupTests(unittest.TestCase):
                 self.session.put_configuration.assert_not_called()
                 verify.assert_not_called()
 
-    def test_replacement_writes_only_slot_two_then_verifies(self):
+    def test_replacement_writes_only_slot_two_then_verifies(self) -> None:
         self.session.get_config_state.return_value.is_configured.return_value = True
-        operations = []
-        self.session.put_configuration.side_effect = lambda *args: operations.append(
-            "write"
-        )
+        operations: list[str] = []
+
+        def wrote(*args: object) -> None:
+            operations.append("write")
+
+        def verified(*args: object) -> None:
+            operations.append("verify")
+
+        self.session.put_configuration.side_effect = wrote
         with (
             patch(
                 "builtins.input",
@@ -57,7 +62,7 @@ class SetupTests(unittest.TestCase):
             patch.object(
                 setup,
                 "verify_token",
-                side_effect=lambda *args: operations.append("verify"),
+                side_effect=verified,
             ) as verify,
             redirect_stdout(self.output),
         ):
@@ -74,7 +79,7 @@ class SetupTests(unittest.TestCase):
         )
         self.assertNotIn(PUBLIC_TEST_KEY.hex(), self.output.getvalue())
 
-    def test_cli_passes_explicit_replacement_to_program(self):
+    def test_cli_passes_explicit_replacement_to_program(self) -> None:
         self.session.get_config_state.return_value.is_configured.return_value = True
         with (
             patch.object(
@@ -93,7 +98,9 @@ class SetupTests(unittest.TestCase):
             self.session, "key0", PUBLIC_TEST_KEY, replace=True
         )
 
-    def test_cli_replacement_flag_rejected_before_hardware_for_other_commands(self):
+    def test_cli_replacement_flag_rejected_before_hardware_for_other_commands(
+        self,
+    ) -> None:
         for command in ("inspect", "verify", "verify-set"):
             with (
                 self.subTest(command=command),
@@ -112,13 +119,13 @@ class SetupTests(unittest.TestCase):
                 harden.assert_not_called()
                 token.assert_not_called()
 
-    def test_program_rejects_wrong_key_length_without_writing(self):
+    def test_program_rejects_wrong_key_length_without_writing(self) -> None:
         for golden in (b"short", b"x" * 21):
             with self.assertRaises(ValueError):
                 setup.program(self.session, "key0", golden)
         self.session.put_configuration.assert_not_called()
 
-    def test_program_targets_slot_two_with_fixed_input_and_touch(self):
+    def test_program_targets_slot_two_with_fixed_input_and_touch(self) -> None:
         for occupied in (False, True):
             with self.subTest(occupied=occupied):
                 self.session.reset_mock()
@@ -144,7 +151,7 @@ class SetupTests(unittest.TestCase):
                 verify.assert_called_once_with(self.session, PUBLIC_TEST_KEY)
                 self.assertNotIn(PUBLIC_TEST_KEY.hex(), self.output.getvalue())
 
-    def test_hidden_input_preserves_leading_zeros_and_checks_confirmation(self):
+    def test_hidden_input_preserves_leading_zeros_and_checks_confirmation(self) -> None:
         value = "00" * 2 + "a1" * 18
         with patch.object(setup.getpass, "getpass", side_effect=[value, value.upper()]):
             self.assertEqual(setup.read_golden_key(), bytes.fromhex(value))
@@ -154,9 +161,12 @@ class SetupTests(unittest.TestCase):
         ):
             setup.read_golden_key()
 
-    def test_occupied_slot_one_does_not_block_programming_slot_two(self):
+    def test_occupied_slot_one_does_not_block_programming_slot_two(self) -> None:
+        def configured(slot: SLOT) -> bool:
+            return slot == SLOT.ONE
+
         self.session.get_config_state.return_value.is_configured.side_effect = (
-            lambda slot: slot == SLOT.ONE
+            configured
         )
         with (
             patch.object(setup, "confirm"),
@@ -166,14 +176,14 @@ class SetupTests(unittest.TestCase):
             setup.program(self.session, "key0", PUBLIC_TEST_KEY)
         self.assertEqual(self.session.put_configuration.call_args.args[0], SLOT.TWO)
 
-    def test_old_slot_one_confirmation_is_rejected(self):
+    def test_old_slot_one_confirmation_is_rejected(self) -> None:
         with (
             patch("builtins.input", return_value="program key0 slot1"),
             self.assertRaises(RuntimeError),
         ):
             setup.confirm("key0", "program")
 
-    def test_verify_rejects_wrong_golden_key(self):
+    def test_verify_rejects_wrong_golden_key(self) -> None:
         self.session.get_config_state.return_value.is_configured.return_value = True
         with (
             patch.object(setup, "require_no_response_without_touch"),

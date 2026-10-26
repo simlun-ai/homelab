@@ -19,18 +19,18 @@ ROOT_KEY = "golden-1"
 REPO = Path(__file__).resolve().parents[2]
 
 
-def context(host):
+def context(host: str) -> str:
     if host not in HOSTS:
         raise ValueError("Unknown coordinator")
     return f"homelab/v1/{host}/local-password/administrator/r1"
 
 
-def record_path(host, repo=REPO):
+def record_path(host: str, repo: Path = REPO) -> Path:
     context(host)
     return repo / "secrets/wrapped" / f"{host}-administrator.json"
 
 
-def create(host, respond, repo=REPO):
+def create(host: str, respond: wrapping.Responder, repo: Path = REPO) -> None:
     require_store(repo)
     path = record_path(host, repo)
     if path.exists():
@@ -47,7 +47,7 @@ def create(host, respond, repo=REPO):
         os.fsync(target.fileno())
 
 
-def recover(host, respond, repo=REPO):
+def recover(host: str, respond: wrapping.Responder, repo: Path = REPO) -> bytes:
     require_store(repo)
     with record_path(host, repo).open("rb") as source:
         encoded = source.read(wrapping.MAX_RECORD + 1)
@@ -57,7 +57,7 @@ def recover(host, respond, repo=REPO):
     return password
 
 
-def apply(host, password):
+def apply(host: str, password: bytes) -> None:
     context(host)
     if not re.fullmatch(rb"[A-Za-z0-9_-]{43}", password):
         raise ValueError("Invalid password payload")
@@ -89,7 +89,7 @@ def apply(host, password):
     )
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("create", "reveal", "apply"))
     parser.add_argument("--host", required=True, choices=HOSTS)
