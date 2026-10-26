@@ -105,7 +105,7 @@ Record the tested Git commit, OS/Python and installed package versions, date, an
 
 For each paired recovery USB, follow the [offline clone and verification procedure](../security/encrypted-record-storage.md#recovery-usb-clones). It copies both the full parent repository and the private `secrets/wrapped` submodule; a parent-only clone is not a recovery kit. Initialize the private checkout while GitHub access is available, before going offline. Production records remain absent until generated. Refresh the kits after test results or recovery-critical changes are committed.
 
-Prepare replacement/recovery laptops using section 1 while online, then disconnect before handling the golden key. The USB clones include the private Python project and dependency declarations; they do not include a portable virtualenv. Rerun `tools` after selecting a different submodule version to refresh its package/dependencies. Independent recovery-tool acquisition remains [pending](../security/recovery-procedures.md).
+Prepare replacement/recovery laptops using section 1 while online, then disconnect before handling the golden key. The USB clones include the private Python project and dependency declarations; they do not include a portable virtualenv. Rerun `tools` and `test` after selecting a different submodule version to refresh its package/dependencies and verify the [parent/library contract](../security/helper-implementation.md#coordinator-password-helper). Independent recovery-tool acquisition remains [pending](../security/recovery-procedures.md).
 
 - [ ] Record the real installation results and resolve failures.
 - [ ] Prepare each token's full recovery USB clone and verify the recorded commit offline.
