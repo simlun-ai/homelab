@@ -1,9 +1,9 @@
 group "default" {
-  targets = ["helpers", "ups", "syntax"]
+  targets = ["lint", "helpers", "ups", "syntax"]
 }
 
 group "ci" {
-  targets = ["helpers", "ups", "syntax"]
+  targets = ["lint", "helpers", "ups", "syntax"]
 }
 
 target "_common" {
@@ -29,4 +29,17 @@ target "syntax" {
   inherits = ["_common"]
   target = "syntax"
   no-cache-filter = ["syntax"]
+}
+
+target "lint" {
+  inherits = ["_common"]
+  target = "lint"
+  no-cache-filter = ["lint"]
+}
+
+target "lint-tool" {
+  inherits = ["_common"]
+  target = "lint-tools"
+  tags = ["homelab-ruff:local"]
+  output = ["type=docker"]
 }

@@ -6,3 +6,5 @@ dist/
 /support/yubikey/.venv/
 /support/ups/.venv/
 /support/ups/.ansible/
+
+.ruff_cache/

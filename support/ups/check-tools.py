@@ -25,7 +25,9 @@ def main():
         except importlib.metadata.PackageNotFoundError:
             actual = "not installed"
         if actual != expected:
-            raise SystemExit(f"{package}: expected {expected}, got {actual}; run make tools.")
+            raise SystemExit(
+                f"{package}: expected {expected}, got {actual}; run make tools."
+            )
 
 
 if __name__ == "__main__":

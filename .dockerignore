@@ -1,5 +1,6 @@
 # Include validation files only, even with an initialized private submodule.
 **
+!pyproject.toml
 !scripts/**/*.py
 !scripts/**/*.sh
 !tests/**/*.py
