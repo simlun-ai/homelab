@@ -20,3 +20,10 @@ required-version = "==0.17.2"
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
+
+[tool.pyright]
+include = ["scripts", "tests", "support", "ci"]
+extraPaths = ["scripts", "tests", "tools/homelab-hsm/homelab_secrets/src"]
+pythonVersion = "3.13"
+pythonPlatform = "Linux"
+typeCheckingMode = "strict"

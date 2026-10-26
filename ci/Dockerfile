@@ -59,3 +59,17 @@ COPY --link support/ ./support/
 COPY --link ci/check-syntax.py ./ci/check-syntax.py
 RUN --network=none ruff check --no-cache scripts tests support ci && \
     ruff format --check --no-cache scripts tests support ci
+
+# Match the component's pinned checker and JavaScript runtime.
+FROM node:24.19.0-bookworm-slim AS pyright-node
+RUN npm install --global pyright@1.1.414
+
+FROM helper-tools AS typecheck
+COPY --from=pyright-node /usr/local/bin/node /usr/local/bin/node
+COPY --from=pyright-node /usr/local/lib/node_modules/pyright /opt/pyright
+COPY --link pyproject.toml ./
+COPY --link scripts/ ./scripts/
+COPY --link tests/ ./tests/
+COPY --link support/ ./support/
+COPY --link ci/check-syntax.py ./ci/check-syntax.py
+RUN --network=none node /opt/pyright/index.js --pythonpath support/yubikey/.venv/bin/python

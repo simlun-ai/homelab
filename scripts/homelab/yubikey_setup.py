@@ -13,7 +13,7 @@ from homelab_secrets import wrapping
 from homelab_secrets.runtime import harden as harden_process
 from homelab_secrets.yubikey import require_no_response_without_touch, respond, token
 from ykman.hid import list_otp_devices
-from yubikit.yubiotp import SLOT, HmacSha1SlotConfiguration
+from yubikit.yubiotp import SLOT, HmacSha1SlotConfiguration, YubiOtpSession
 
 LABELS = ("key0", "key1", "key2", "key3")
 TEST_ID = "homelab/v1/setup/verification/cross-token/r1"
@@ -21,11 +21,11 @@ TEST_ROOT = "golden-1"
 CHALLENGES = (b"A" * 64, bytes(range(64)), wrapping.challenge(TEST_ID))
 
 
-def harden():
+def harden() -> None:
     harden_process(require_terminal=True)
 
 
-def read_golden_key():
+def read_golden_key() -> bytes:
     with warnings.catch_warnings():
         warnings.simplefilter("error", getpass.GetPassWarning)
         first = getpass.getpass("Level 1 golden-1 (40 hex characters; hidden): ")
@@ -40,7 +40,7 @@ def read_golden_key():
     return first_bytes
 
 
-def describe(session):
+def describe(session: YubiOtpSession) -> int | None:
     state = session.get_config_state()
     try:
         serial = session.get_serial() or None
@@ -54,7 +54,7 @@ def describe(session):
     return serial
 
 
-def confirm(label, action):
+def confirm(label: str, action: str) -> None:
     expected = f"{action} {label} slot2"
     if action == "replace":
         print(
@@ -66,7 +66,7 @@ def confirm(label, action):
         raise RuntimeError("Device confirmation did not match")
 
 
-def verify_token(session, golden):
+def verify_token(session: YubiOtpSession, golden: bytes) -> None:
     if not session.get_config_state().is_configured(SLOT.TWO):
         raise RuntimeError("Slot 2 is empty")
     for challenge in CHALLENGES:
@@ -78,7 +78,9 @@ def verify_token(session, golden):
     print("PASS: touch gates and three fixed-length challenges match the Level 1 key.")
 
 
-def program(session, label, golden, *, replace=False):
+def program(
+    session: YubiOtpSession, label: str, golden: object, *, replace: bool = False
+) -> None:
     if not isinstance(golden, bytes) or len(golden) != 20:
         raise ValueError("Programming requires exactly 20 golden-key bytes")
     occupied = session.get_config_state().is_configured(SLOT.TWO)
@@ -100,12 +102,12 @@ def program(session, label, golden, *, replace=False):
     verify_token(session, golden)
 
 
-def verify_set(golden):
+def verify_set(golden: bytes) -> None:
     record = None
     payload = secrets.token_bytes(32)
-    seen_serials = set()
+    seen_serials: set[int] = set()
 
-    def software(challenge):
+    def software(challenge: bytes) -> bytes:
         return hmac.digest(golden, challenge, "sha1")
 
     for label in LABELS:
@@ -138,7 +140,7 @@ def verify_set(golden):
     )
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "command", choices=("inspect", "program", "verify", "verify-set")

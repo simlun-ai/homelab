@@ -13,7 +13,7 @@ from submodule_fixture import prepare_store
 
 
 class RecordStoreTests(unittest.TestCase):
-    def test_missing_store_fails_before_generation_or_token(self):
+    def test_missing_store_fails_before_generation_or_token(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             token = Mock()
@@ -28,25 +28,25 @@ class RecordStoreTests(unittest.TestCase):
             token.assert_not_called()
             self.assertEqual(list(repo.iterdir()), [])
 
-    def test_plain_directory_is_not_submodule(self):
+    def test_plain_directory_is_not_submodule(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             (repo / "secrets/wrapped").mkdir(parents=True)
             with self.assertRaises(StoreUnavailable):
                 require_store(repo)
 
-    def test_initialized_gitlink_works(self):
+    def test_initialized_gitlink_works(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             prepare_store(repo)
             self.assertEqual(require_store(repo), repo / "secrets/wrapped")
 
-    def test_absorbed_submodule_gitfile_works(self):
+    def test_absorbed_submodule_gitfile_works(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             store = prepare_store(repo)
 
-            def git(*args):
+            def git(*args: str) -> None:
                 subprocess.run(
                     ["git", "-C", str(repo), *args],
                     check=True,
@@ -72,7 +72,9 @@ class RecordStoreTests(unittest.TestCase):
             self.assertTrue((store / ".git").is_file())
             self.assertEqual(require_store(repo), store)
 
-    def test_missing_records_blocks_credential_clis_before_hardening_or_hardware(self):
+    def test_missing_records_blocks_credential_clis_before_hardening_or_hardware(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             for module, arguments in (
@@ -92,7 +94,7 @@ class RecordStoreTests(unittest.TestCase):
                 token.assert_not_called()
             self.assertEqual(list(repo.iterdir()), [])
 
-    def test_unrelated_checkout_at_records_path_is_rejected(self):
+    def test_unrelated_checkout_at_records_path_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             prepare_store(repo)
@@ -118,7 +120,7 @@ class RecordStoreTests(unittest.TestCase):
                 [repo / "secrets/wrapped/.git"],
             )
 
-    def test_new_private_commits_after_parent_pin_are_allowed(self):
+    def test_new_private_commits_after_parent_pin_are_allowed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             store = prepare_store(repo)

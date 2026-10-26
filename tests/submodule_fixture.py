@@ -1,10 +1,11 @@
 """Local-only Git fixture; never fetches a repository or uses real secrets."""
 
 import subprocess
+from pathlib import Path
 
 
-def prepare_store(repo):
-    def git(path, *args):
+def prepare_store(repo: Path) -> Path:
+    def git(path: Path, *args: str) -> str:
         return subprocess.check_output(
             ["git", "-C", str(path), *args], stderr=subprocess.DEVNULL, text=True
         ).strip()
