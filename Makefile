@@ -1,9 +1,9 @@
 .DEFAULT_GOAL := help
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
-.PHONY: help yubikey-help ups-help ci lint format typecheck
+.PHONY: help yubikey-help ups-help ci lint format typecheck ansible-lint
 help:
-	@printf '%s\n' 'Available scopes: make yubikey-help; make ups-help' 'Checks: make ci; make lint; make format; make typecheck'
+	@printf '%s\n' 'Available scopes: make yubikey-help; make ups-help' 'Checks: make ci; make lint; make format; make typecheck; make ansible-lint'
 
 yubikey-help:
 	@$(MAKE) --no-print-directory -C "$(ROOT)/support/yubikey" help
@@ -29,3 +29,6 @@ format:
 typecheck:
 	@test -f "$(ROOT)/tools/homelab-hsm/homelab_secrets/pyproject.toml" || { printf '%s\n' 'Initialize public code: git submodule update --init --recursive -- tools/homelab-hsm' >&2; exit 2; }
 	cd "$(ROOT)" && docker buildx bake --file docker-bake.hcl --progress=plain typecheck
+
+ansible-lint:
+	cd "$(ROOT)" && docker buildx bake --file docker-bake.hcl --progress=plain ansible-lint

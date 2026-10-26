@@ -1,6 +1,6 @@
-coordinator_management_networks: []
+coordinator_hardening_management_networks: []
 # Future entries: {sources: ['192.0.2.10/32'], protocol: tcp, port: 1234}
-coordinator_firewall_services: []
-coordinator_disable_radios: true
+coordinator_hardening_firewall_services: []
+coordinator_hardening_disable_radios: true
 # Keep mDNS until DNS/SSH aliases work independently.
-coordinator_disable_mdns: false
+coordinator_hardening_disable_mdns: false

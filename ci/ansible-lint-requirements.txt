@@ -1,0 +1,2 @@
+# Development-only; installed alongside the operational UPS dependency pins.
+ansible-lint==26.10.1

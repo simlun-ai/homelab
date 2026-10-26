@@ -7,10 +7,10 @@ owns the intended behaviour. Hardware verification is pending.
 
 | Variable | Purpose |
 | --- | --- |
-| `coordinator_management_networks` | Required SSH source CIDRs, assigned in the UPS inventory. |
-| `coordinator_firewall_services` | Additional source-scoped rules, empty by default. Each entry has `sources` (CIDRs), `protocol` (`tcp` or `udp`), and `port`. |
-| `coordinator_disable_radios` | Default true; disable Bluetooth services and stage boot overlays for wired operation. |
-| `coordinator_disable_mdns` | Default false; preserve mDNS until DNS/SSH aliases work independently. |
+| `coordinator_hardening_management_networks` | Required SSH source CIDRs, assigned in the UPS inventory. |
+| `coordinator_hardening_firewall_services` | Additional source-scoped rules, empty by default. Each entry has `sources` (CIDRs), `protocol` (`tcp` or `udp`), and `port`. |
+| `coordinator_hardening_disable_radios` | Default true; disable Bluetooth services and stage boot overlays for wired operation. |
+| `coordinator_hardening_disable_mdns` | Default false; preserve mDNS until DNS/SSH aliases work independently. |
 
 This role manages the entire SSH server configuration and nftables ruleset.
 No KMS, NUT, or exporter ports are opened automatically. OS packages follow

@@ -44,6 +44,7 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | Python (parent helpers) | 3.13–3.14 on Linux; the HSM code submodule maintains its own support range. |
 | Ruff | Development-only Python lint/format checks; pinned in [pyproject.toml](../pyproject.toml) and the CI tool stage. |
 | Pyright / Node.js | Development-only strict Python type checks; Pyright 1.1.414 / Node 24.19.0 in the CI tool stage. |
+| ansible-lint | Development-only Ansible checks; 26.10.1, with the operational ansible-core pin and the `safety` profile. |
 | Docker with Buildx/BuildKit | Root `make ci` validation; [CI prerequisites](../ci/README.md). |
 | Python cryptography (HKDF/AESGCM), constrained RFC 8785 serialization | Initial [v1 wrapping helper](security/security.md#challenges-derivation-and-wrapped-credentials); step 00 pins live in [the code project’s pyproject.toml](../tools/homelab-hsm/homelab_secrets/pyproject.toml). |
 | YubiKey Manager Python SDK | Selected for [step 00](installation/00-yubikey-setup.md); version pinned in [the code project’s pyproject.toml](../tools/homelab-hsm/homelab_secrets/pyproject.toml), physical-device verification pending. |

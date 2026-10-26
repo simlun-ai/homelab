@@ -11,6 +11,7 @@
 !support/ups/requirements.txt
 !support/ups/check-tools.py
 !support/ups/ansible.cfg
+!support/ups/.ansible-lint
 !support/ups/inventory.yaml
 !support/ups/ansible/**/*.yaml
 !support/ups/ansible/**/*.yml
@@ -24,6 +25,7 @@
 !tools/homelab-hsm/homelab_secrets/scripts/**/*.py
 !tools/homelab-hsm/homelab_secrets/tests/**/*.py
 !ci/Dockerfile
+!ci/ansible-lint-requirements.txt
 !ci/check-syntax.py
 secrets/wrapped
 **/offline

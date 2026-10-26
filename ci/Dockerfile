@@ -73,3 +73,20 @@ COPY --link tests/ ./tests/
 COPY --link support/ ./support/
 COPY --link ci/check-syntax.py ./ci/check-syntax.py
 RUN --network=none node /opt/pyright/index.js --pythonpath support/yubikey/.venv/bin/python
+
+FROM base AS ansible-lint-tools
+COPY --link support/ups/requirements.txt ./support/ups/requirements.txt
+COPY --link ci/ansible-lint-requirements.txt ./ci/ansible-lint-requirements.txt
+RUN --mount=type=cache,id=homelab-ci-ansible-lint-pip,target=/root/.cache/pip,sharing=locked \
+    python3 -m venv /ansible-lint && \
+    /ansible-lint/bin/python -m pip install \
+      -r support/ups/requirements.txt -r ci/ansible-lint-requirements.txt && \
+    /ansible-lint/bin/python -m pip check
+ENV PATH="/ansible-lint/bin:$PATH"
+
+FROM ansible-lint-tools AS ansible-lint
+COPY --link support/ups/ansible.cfg support/ups/inventory.yaml support/ups/.ansible-lint ./support/ups/
+COPY --link support/ups/ansible/ ./support/ups/ansible/
+ENV ANSIBLE_CONFIG="/project/support/ups/ansible.cfg" \
+    ANSIBLE_LOCAL_TEMP="/project/support/ups/.ansible/tmp"
+RUN --network=none cd support/ups && ansible-lint --offline ansible inventory.yaml
