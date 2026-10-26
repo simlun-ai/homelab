@@ -31,3 +31,9 @@ git submodule update --init --recursive -- tools/homelab-hsm
 
 Installation and tests do not require the private records checkout. Operators initialize
 `secrets/wrapped` separately; see [checkout and record updates](docs/security/encrypted-record-storage.md#checkout-and-updates).
+
+## Checks
+
+Run `make ci` with Docker Buildx/BuildKit to run helper tests, Ansible validation,
+and script syntax checks in parallel. Only the public code submodule is needed.
+See [CI instructions](ci/README.md) for prerequisites, individual targets, and scope.

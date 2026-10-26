@@ -25,9 +25,10 @@ Keep details in their owning document and link from other documents. The recover
 | --- | --- |
 | `/README.md` | Brief overview, dependency order, and links to cluster READMEs, docs, and runbooks. |
 | `/AGENTS.md` | Repository editing rules. |
-| `/Makefile` | Help and explicit dispatch to one cluster or supporting-host scope. |
+| `/Makefile` | Help, explicit scope dispatch, and root `make ci` validation. |
 | `/.gitignore` | Downloaded tools and non-secret caches; subject to [secret-handling rules](security/security.md#secret-handling-boundary). |
 | `/pyproject.toml` | Shared Python helper package/development configuration; locking format TBD. |
+| `/ci/`, `/docker-bake.hcl`, `/.github/workflows/ci.yml` | Container-based validation; [CI instructions](../ci/README.md). |
 | `/docs/` | Documents listed above. |
 | `/docs/installation/` | Installation plan and `NN-<headline>.md` runbooks; grow implementation as each step is tried. |
 | `/secrets/manifest.json` | Public credential catalogue; no secrets or checksums. |

@@ -41,6 +41,7 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | Tool / OS | Version |
 | --- | --- |
 | Make, Python, Bash | TBD. |
+| Docker with Buildx/BuildKit | Root `make ci` validation; [CI prerequisites](../ci/README.md). |
 | Python cryptography (HKDF/AESGCM), constrained RFC 8785 serialization | Initial [v1 wrapping helper](security/security.md#challenges-derivation-and-wrapped-credentials); step 00 pins live in [the code project’s pyproject.toml](../tools/homelab-hsm/homelab_secrets/pyproject.toml). |
 | YubiKey Manager Python SDK | Selected for [step 00](installation/00-yubikey-setup.md); version pinned in [the code project’s pyproject.toml](../tools/homelab-hsm/homelab_secrets/pyproject.toml), physical-device verification pending. |
 | kubectl, talosctl, Helm, OpenBao CLI (`bao`) | TBD per scope; talosctl must be compatible with Talos. |
