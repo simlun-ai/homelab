@@ -19,10 +19,10 @@ system-dependencies:
 	@bash "$(SCOPE)/install-system-dependencies.sh"
 
 tools:
-	@test -f "$(ROOT)/secrets/wrapped/homelab_secrets/pyproject.toml" || { printf '%s\n' 'Initialize secrets/wrapped: git submodule update --init --recursive -- secrets/wrapped' >&2; exit 2; }
+	@test -f "$(ROOT)/tools/homelab-hsm/homelab_secrets/pyproject.toml" || { printf '%s\n' 'Initialize tools/homelab-hsm: git submodule update --init --recursive -- tools/homelab-hsm' >&2; exit 2; }
 	@python3 -m venv "$(SCOPE)/.venv"
 	@"$(PYTHON)" -m pip install -r "$(SCOPE)/requirements.txt"
-	@"$(PYTHON)" -m pip install --no-build-isolation --editable "$(ROOT)/secrets/wrapped/homelab_secrets"
+	@"$(PYTHON)" -m pip install --no-build-isolation --editable "$(ROOT)/tools/homelab-hsm/homelab_secrets"
 	@"$(PYTHON)" -m pip check
 
 inspect verify-set:
@@ -34,5 +34,4 @@ program replace verify:
 
 test:
 	@"$(PYTHON)" -I -B "$(ROOT)/scripts/test_helpers.py"
-	@cd "$(ROOT)/secrets/wrapped/homelab_secrets" && "$(PYTHON)" -I -B -m unittest discover -s tests -v
-
+	@cd "$(ROOT)/tools/homelab-hsm/homelab_secrets" && "$(PYTHON)" -I -B -m unittest discover -s tests -v

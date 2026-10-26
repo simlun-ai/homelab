@@ -194,7 +194,7 @@ Four YubiKeys available; use cases and proposed lookups belong in [yubikey.md](s
 | YubiKey Standard | 2.4.1 | OTP | 1 |
 | **Sum** | | | **4** |
 
-The four recovery USB sticks will each hold [full homelab and private-submodule clones](security/encrypted-record-storage.md#recovery-usb-clones), including wrapped records and the recovery guide. Their models, capacities, and acquisition are TBD, so they are not added to the physical disk totals.
+The four recovery USB sticks will each hold [full homelab, code-submodule, and private-records-submodule clones](security/encrypted-record-storage.md#recovery-usb-clones), including wrapped records and the recovery guide. Their models, capacities, and acquisition are TBD, so they are not added to the physical disk totals.
 
 ## Spare drives
 
@@ -211,4 +211,3 @@ The four recovery USB sticks will each hold [full homelab and private-submodule 
 
 - **Restore disk:** 1 × Seagate 3.5" HDD, 20 TB, connected via USB (20,000 GB usable).
 - **Old NAS storage:** 4 × 4 TB 2.5" USB HDDs in ZFS RAID10 (two mirrored vdevs): 16,000 GB raw, 8,000 GB nominal usable.
-

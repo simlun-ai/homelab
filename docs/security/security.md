@@ -22,7 +22,7 @@ We treat the YubiKeys as **mini hardware security modules (HSMs)** for the homel
 
 - Program all four with the same **golden key** and challenge-processing settings: identical effective challenge bytes must produce identical responses.
 - Require physical touch for every hardware challenge-response operation.
-- Keep the tokens at four separate locations, each paired with a USB stick containing [full parent and private-submodule clones](encrypted-record-storage.md#recovery-usb-clones), including wrapped records and the non-secret [Emergency Recovery Guide](../emergency-recovery-guide.md).
+- Keep the tokens at four separate locations, each paired with a USB stick containing [full parent, code-submodule, and private-records-submodule clones](encrypted-record-storage.md#recovery-usb-clones), including wrapped records and the non-secret [Emergency Recovery Guide](../emergency-recovery-guide.md).
 - Keep the golden key separately offline for replacement-token programming and software recovery.
 - Use OTP slot 2 under the [approved setup](yubikey-setup.md). Inspect before programming; overwriting occupied slot 2 requires the explicit replacement confirmation in [step 00](../installation/00-yubikey-setup.md). Preserve slot 1.
 
@@ -190,7 +190,7 @@ do not. Real credential generation and Pi verification remain pending.
 ## Coordinator SSH identity
 
 The three coordinators share one randomly generated, passphrase-less Ed25519
-private key, persisted only as a YubiKey-wrapped record in the private `homelab-wrapped-secrets` submodule and
+private key, persisted only as a YubiKey-wrapped record in the private `homelab-secrets` submodule and
 recovery clones. Its public key is committed normally. Unwrap directly into the
 local workstation OpenSSH agent for a one-hour lifetime before management
 operations; never write a plaintext private-key file or forward the agent.

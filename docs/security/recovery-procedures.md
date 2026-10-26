@@ -23,7 +23,7 @@ workstation disk under the [handling policy](security.md#secret-handling-boundar
 
 Internet access for R2, DNS, and public NTP remains an accepted dependency.
 Recovery tooling must be independently available under the
-[helper design](helper-implementation.md). Retain the private submodule's `homelab_secrets/` project alongside its records; a parent-only checkout cannot run wrap/unwrap. Source clones alone are not sufficient: prepare the scoped environment and pinned dependencies before going offline. Offline dependency packaging and drills remain pending.
+[helper design](helper-implementation.md). Retain `tools/homelab-hsm/homelab_secrets/` and the private `secrets/wrapped/` records checkout; a parent-only checkout cannot run wrap/unwrap. Source clones alone are not sufficient: prepare the scoped environment and pinned dependencies before going offline. The standalone code project includes offline wheel bundles; integrating independent recovery tooling and testing recovery drills remain pending.
 
 ## Evidence and completion
 
@@ -43,4 +43,3 @@ Write and test acquisition, coordinator rebuild, Pi and container restore,
 failure-handling, and USB refresh commands. Record actual hardware/runtime
 details and resource requirements; complete the standalone recovery guide
 and refresh all four kits after recovery-critical changes.
-
