@@ -1,8 +1,8 @@
 # Emergency Recovery Guide
 
-**Homelab Recovery Kit — non-secret, single-file draft.** For recovering Vault and OpenBao when the original hardware or services are unavailable.
+**Non-secret, single-file draft.** For recovering Vault and OpenBao when the original hardware or services are unavailable.
 
-Exact commands and recovery metadata must be completed and tested before use. Essential instructions are included here because the USB copy must work without other local documents.
+Exact commands and recovery metadata must be completed and tested before use. Essential instructions are included here so the guide can be used without other local documents.
 
 ## Revision and recovery metadata
 
@@ -19,7 +19,7 @@ All entries must be non-secret.
 | Tool and backup integrity/checksum verification | TBD. |
 | R2 account, endpoint, bucket, object convention; snapshot selection | TBD. |
 | Additional backup-encryption details | TBD. |
-| Independent encrypted-payload references | Wrapped records in the USB's private `secrets/wrapped/` submodule, with public manifest `secrets/manifest.json` in the parent clone. OpenBao Shamir seal: one share, threshold one; identifier `homelab/v1/vault/openbao-unseal/share-1/r1`. Exact filenames and recovery administration credential TBD. Accessible without Vault, GitHub, or existing R2 credentials. |
+| Independent encrypted-payload references | Wrapped records in the private `secrets/wrapped/` submodule, with public manifest `secrets/manifest.json` in the parent clone. OpenBao Shamir seal: one share, threshold one; identifier `homelab/v1/vault/openbao-unseal/share-1/r1`. Exact filenames and recovery administration credential TBD. Accessible without Vault, GitHub, or existing R2 credentials. |
 | Golden-key retrieval procedure reference | Level 1 Password Management system; exact retrieval steps outside this repository. Never record the key here. |
 | Vault coordinator KMS endpoint, public TLS/DNS-01, preboot DNS/NTP, session controls | TBD; include service acquisition, independent wrapped-payload references, and coordinator rebuild instructions. |
 | KMS adapter endpoint, TLS trust, early-boot networking, transit key mapping/versions | TBD; include adapter acquisition and independent bootstrap-payload references. |
@@ -27,20 +27,19 @@ All entries must be non-secret.
 
 ## Required access and operating rules
 
-Use one working YubiKey and its paired recovery USB containing full, non-shallow clones of homelab, its code submodule, and its private records submodule, including this guide and the wrapped recovery records, plus a recovery workstation with the specified tools. All homelab secrets are rooted in the 20-byte golden key through derivation, wrapping, or OpenBao protected by wrapped unseal material. All four tokens share the golden key and HMAC-SHA1 settings and are kept at separate locations; identical effective challenges produce identical responses. One token suffices; if none works, obtain the separately held offline golden key.
+Use one working YubiKey, the required wrapped records, and a recovery workstation with the specified tools. All homelab secrets are rooted in the 20-byte golden key through derivation, wrapping, or OpenBao protected by wrapped unseal material. All four tokens share the golden key and HMAC-SHA1 settings and are kept at separate locations; identical effective challenges produce identical responses. One token suffices; if none works, obtain the separately held offline golden key.
 
-- The USB contains full clones of all three repositories and both pinned submodule checkouts, including authenticated wrapped records. Never include golden-key material, HMAC responses, derived keys, plaintext credentials/unseal shares/private keys, decrypted secret-bearing configuration, or embedded Git access tokens.
-- Wrapped `homelab-wrap-v1` records may be stored in Git, on workstation disk, on recovery USBs, and on consuming hosts. Never write decrypted secrets, golden-key material, HMAC responses, derived keys, or OpenBao snapshots to workstation disk, including temporary files, caches, shell history, logs, state, or saved plans. Verify memory-only handling, including swap, hibernation, subprocesses, and failure paths.
+- Wrapped `homelab-wrap-v1` records may be stored in Git, on workstation disk, and on consuming hosts. Never write decrypted secrets, golden-key material, HMAC responses, derived keys, or OpenBao snapshots to workstation disk, including temporary files, caches, shell history, logs, state, or saved plans. Verify memory-only handling, including swap, hibernation, subprocesses, and failure paths.
 - Hardware challenge-response requires touch; the golden-key software fallback cannot enforce it.
 - Preserve manual non-Piraeus ZFS pools during node installation or repair; do not wipe or initialize them.
-- Vault recovery must work without its failed OpenBao instance or another cluster. Its system-volume KMS runs independently on the Vault/Backup coordinator; public NTP/Internet is an accepted cold-start dependency. DNS, TLS, and ACME payloads are encrypted at rest. Keep the YubiKey in the workstation laptop and unwrap the repository-owned coordinator SSH key into the local workstation agent (see `runbooks/coordinator-ssh-key.md`) and use the `administrator` account with verified coordinator host identity to deliver authorized material through SSH standard input and a restricted local Unix socket. Send plaintext runtime credentials and unwrapped random 32-byte KMS keys for explicitly authorized Vault nodes, never the golden key or raw HMAC responses; keep secrets out of arguments, files, and logs. KMS authority lasts one hour from successful activation, measured by the coordinator's monotonic clock; requests do not extend it. Expiry or explicit lock discards KMS authority. DNS/TLS/ACME secrets last for the coordinator process lifetime. SSH may disconnect; coordinator restart requires fresh authorization. SSH access must work without Vault/OpenBao. The node KMS key is itself YubiKey-wrapped in a `homelab-wrap-v1` record stored in the repository, USB clones, and coordinator storage. It protects Talos unlock secrets in a distinct `homelab-kms-v1` envelope stored in disk LUKS metadata. Seal creates that envelope during disk preparation; Unseal decrypts it on later boots. Recover the existing node KMS key rather than generating a replacement; retain older generations required by disks. Exact delivery commands and the inner envelope specification remain pending. Communication uses TLS on a trusted network; additional host-to-host network hardening remains TBD.
+- Vault recovery must work without its failed OpenBao instance or another cluster. Its system-volume KMS runs independently on the Vault/Backup coordinator; public NTP/Internet is an accepted cold-start dependency. DNS, TLS, and ACME payloads are encrypted at rest. Keep the YubiKey in the workstation laptop and unwrap the repository-owned coordinator SSH key into the local workstation agent (see `runbooks/coordinator-ssh-key.md`) and use the `administrator` account with verified coordinator host identity to deliver authorized material through SSH standard input and a restricted local Unix socket. Send plaintext runtime credentials and unwrapped random 32-byte KMS keys for explicitly authorized Vault nodes, never the golden key or raw HMAC responses; keep secrets out of arguments, files, and logs. KMS authority lasts one hour from successful activation, measured by the coordinator's monotonic clock; requests do not extend it. Expiry or explicit lock discards KMS authority. DNS/TLS/ACME secrets last for the coordinator process lifetime. SSH may disconnect; coordinator restart requires fresh authorization. SSH access must work without Vault/OpenBao. The node KMS key is itself YubiKey-wrapped in a `homelab-wrap-v1` record stored in the private records repository and coordinator storage. It protects Talos unlock secrets in a distinct `homelab-kms-v1` envelope stored in disk LUKS metadata. Seal creates that envelope during disk preparation; Unseal decrypts it on later boots. Recover the existing node KMS key rather than generating a replacement; retain older generations required by disks. Exact delivery commands and the inner envelope specification remain pending. Communication uses TLS on a trusted network; additional host-to-host network hardening remains TBD.
 - After UPS-triggered shutdown, power machines on manually, one at a time, with Vault services ready before dependent clusters. Disable automatic power-return startup and wake sources where supported; account for device limitations.
 
 ## Recovery repository and local records
 
-Use the USB's checked-out repository and local Git history to find `secrets/wrapped/` and the public identifier-to-file manifest at `secrets/manifest.json`, this guide, and helper source without GitHub or OpenBao. Shared wrap/unwrap source and dependency pins live at `tools/homelab-hsm/homelab_secrets/`; token programming and application-specific delivery remain in the parent. Snapshot backups remain in R2; required binaries/dependencies still need the specified acquisition procedure.
+Use the checked-out repositories and their Git history to find `secrets/wrapped/` and the public identifier-to-file manifest at `secrets/manifest.json`, this guide, and helper source without GitHub or OpenBao. Shared wrap/unwrap source and dependency pins live at `tools/homelab-hsm/homelab_secrets/`; token programming and application-specific delivery remain in the parent. Snapshot backups remain in R2; required binaries/dependencies still need the specified acquisition procedure.
 
-Refresh all four recovery kits after recovery-critical changes, record all three repository commits, and verify all three clones and required records. Copy all three complete repositories, not just the parent or an archive; never leave the private submodule uninitialized. See `docs/security/encrypted-record-storage.md` for copy/verification commands. The coordinator uses its own locally deployed wrapped records at startup; planned Ansible provisioning copies ciphertext without decrypting it. Implementation remains pending.
+The coordinator uses its own locally deployed wrapped records at startup; planned Ansible provisioning copies ciphertext without decrypting it. Implementation remains pending.
 
 ## Recover core-secret access
 
@@ -49,7 +48,7 @@ Refresh all four recovery kits after recovery-critical changes, record all three
 3. Query the token and touch it; keep responses and subsequent secret values in memory.
 4. Derive or unwrap R2 access, backup-decryption, OpenBao unseal/recovery, and node bootstrap/unlock material using the independent payloads. HMAC alone cannot recreate externally issued credentials or OpenBao-generated material.
 
-If a token fails, obtain another token/guide pair. Never guess encoding; overwriting occupied slot 2 requires a separate explicit replacement confirmation.
+If a token fails, obtain another token and the guide. Never guess encoding; overwriting occupied slot 2 requires a separate explicit replacement confirmation.
 
 ## V1 wrapping protocol
 
@@ -81,7 +80,7 @@ The helper uses Python `cryptography` HKDF/AESGCM and an RFC 8785-compatible ser
 
 Retrieve the required golden-key generation from the air-gapped, replicated Level 1 Password Management system. Each entry holds the key as exactly 40 hexadecimal characters, preserving leading zeros, and its generation label matching the record's `root_key`. Level 1's internal procedures and locations are outside this guide. Load the key into the verified memory-only session without logging. The helper must compute HMAC-SHA1 over identical effective challenge bytes, then apply the same derivation/unwrap steps.
 
-Replacement programming must use the same key/settings with **touch required**, preserve occupied slots unless explicitly approved, verify behavior, record the non-secret device identity, and return a current token/guide pair to its location. Initial programming, verification, and slot-replacement commands are documented in [step 00](installation/00-yubikey-setup.md); recovery-tool acquisition and physical verification remain pending.
+Replacement programming must use the same key/settings with **touch required**, preserve occupied slots unless explicitly approved, verify behavior, record the non-secret device identity, and return the token to its separate location. Initial programming, verification, and slot-replacement commands are documented in [step 00](installation/00-yubikey-setup.md); recovery-tool acquisition and physical verification remain pending.
 
 ## Restore Vault and OpenBao
 
@@ -95,11 +94,11 @@ OpenBao backups are online Raft snapshots uploaded by a job inside Vault to Clou
 6. For full Pi recovery, restore/verify the Python gRPC KMS adapter and required OpenBao transit key versions. Backup, Pi, and Metal need this service to unlock Talos system volumes; Vault must unlock independently. An older snapshot may lack transit keys required by newer disks. Verify early-boot network access and TLS trust before starting nodes.
 7. After foundation services are restored and verified, start dependent clusters manually, one machine at a time, checking KMS unlock, dependencies, and storage. A temporary OpenBao container alone does not restore the cluster's KMS endpoints or other services.
 
-## Complete before distributing a usable kit
+## Complete before relying on this guide
 
-Test token failure and the Level 1 fallback, coordinator rebuild with independent SSH access, replacement-Pi restore, RAM-backed container restore, and recovery-kit refresh. Record the repository commit, snapshot identity, key generations, tool versions, result, and recovery time without secrets. A procedure is verified only after successful testing on its required target.
+Test token failure and the Level 1 fallback, coordinator rebuild with independent SSH access, replacement-Pi restore, and RAM-backed container restore. Record the repository commit, snapshot identity, key generations, tool versions, result, and recovery time without secrets. A procedure is verified only after successful testing on its required target.
 
-Fill every recovery-critical field and embed exact acquisition, operating, and failure-handling commands in this file. Test touch enforcement and matching responses across all tokens and the software fallback without recording secret output. Prove both replacement-Pi and workstation-container R2 restores with a separately held token/guide pair and with the golden-key fallback, without the original Vault/coordinator or workstation-disk plaintext secrets. Refresh and verify every USB repository clone after recovery-critical changes.
+Fill every recovery-critical field and embed exact acquisition, operating, and failure-handling commands in this file. Test touch enforcement and matching responses across all tokens and the software fallback without recording secret output. Prove both replacement-Pi and workstation-container R2 restores using a separately held token and the guide, then the golden-key fallback, without the original Vault/coordinator or workstation-disk plaintext secrets.
 
 ## Maintenance references
 

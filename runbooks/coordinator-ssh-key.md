@@ -24,7 +24,7 @@ private key, then writes only:
 
 Commit and push ciphertext in the private submodule first; then commit its
 updated pointer and the public key in `homelab`, using the [storage workflow](../docs/security/encrypted-record-storage.md#checkout-and-updates).
-Refresh the four recovery USB clones. The public
+The public
 [manifest](../secrets/manifest.json) reserves the wrapped record;
 filenames are absent until you generate them with your token. Creation refuses
 to overwrite either file. Reuse this identity when reinstalling a coordinator.

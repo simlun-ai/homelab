@@ -15,7 +15,6 @@ and restore targets.
 | Coordinator loss | Rebuild without Vault/OpenBao, deploy wrapped records, restore independent SSH access and verified host identity, and authorize the existing node KMS key from the workstation. |
 | Vault loss | Restore to a replacement Raspberry Pi 4, preserving manual storage and restoring OpenBao from R2 with the corresponding unseal material. |
 | Emergency secret access | Restore OpenBao into a RAM-backed Linux container on a trusted workstation, without the original Vault or coordinator. |
-| Recovery-kit refresh | Update all four USB repository clones and verify required records, the guide, and independently usable recovery tooling. |
 
 Perform drills in isolation from production integrations and without
 relying on the failed infrastructure. Keep secrets and snapshots off
@@ -40,6 +39,5 @@ required target. Written commands alone do not establish verified recovery.
 ## Remaining implementation work
 
 Write and test acquisition, coordinator rebuild, Pi and container restore,
-failure-handling, and USB refresh commands. Record actual hardware/runtime
-details and resource requirements; complete the standalone recovery guide
-and refresh all four kits after recovery-critical changes.
+and failure-handling commands. Record actual hardware/runtime
+details and resource requirements; complete the standalone recovery guide.

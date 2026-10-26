@@ -8,7 +8,6 @@ Configure and verify all four YubiKeys from a trusted Debian/Ubuntu laptop. Inst
 
 - The four labelled tokens, `key0` through `key3`, and access to Level 1.
 - A trusted Debian/Ubuntu laptop with CPython 3.11–3.14. It can be online for preparation. Use a local terminal without recording during secret handling.
-- Four recovery USBs with empty destination directories. Use the [existing recovery-clone policy](../security/encrypted-record-storage.md#recovery-usb-clones).
 
 After cloning, commands run from the repository root. Helpers use `support/yubikey/.venv/bin/python`; host Python creates the virtualenv and runs the standard-library key-generation example below.
 
@@ -40,7 +39,7 @@ The trusted laptop keeps its existing OS swap/suspend settings. The helper avoid
 
 Using your existing Level 1 process, create `golden-1` from **20 cryptographically random bytes** if it does not exist, or retrieve the existing generation. Preserve exactly 40 hexadecimal characters, including leading zeros, and verify that the offline record is backed up under the [custody policy](../security/golden-key-custody.md).
 
-Generation and storage stay inside Level 1; the helper only consumes its record. Enter the key manually at the helper's hidden local prompts. Never put it in a shell command, environment variable, clipboard, checkout, transfer/recovery USB, or chat. Do not generate a replacement merely because programming or verification failed.
+Generation and storage stay inside Level 1; the helper only consumes its record. Enter the key manually at the helper's hidden local prompts. Never put it in a shell command, environment variable, clipboard, checkout, or chat. Do not generate a replacement merely because programming or verification failed.
 
 ### Generate a new golden key
 
@@ -93,7 +92,7 @@ Enter that saved value at the hidden prompts. Follow the remove/insert sequence 
 
 Expected: each token passes touch and HMAC checks. A fresh dummy credential wrapped with `key0` is unwrapped by all four tokens and the software fallback. The dummy record, payload, HMAC responses, and derived keys remain in process memory. A final PASS establishes agreement with the retrieved Level 1 record; it does not establish recovery of future production credentials.
 
-## 6. Record results and prepare recovery kits
+## 6. Record results
 
 Record the tested Git commit, OS/Python and installed package versions, date, and operator here. Add observed model/firmware/serial-to-label mappings to [inventory.md](../inventory.md#security-keys). Do not save terminal transcripts or secret test values.
 
@@ -104,15 +103,12 @@ Record the tested Git commit, OS/Python and installed package versions, date, an
 | key2 | Pending | Pending | Pending |
 | key3 | Pending | Pending | Pending |
 
-For each paired recovery USB, follow the [offline clone and verification procedure](../security/encrypted-record-storage.md#recovery-usb-clones). It copies the full parent repository, the `tools/homelab-hsm` code submodule, and the private `secrets/wrapped` records submodule; a parent-only clone is not a recovery kit. Initialize the private checkout while GitHub access is available, before going offline. Production records remain absent until generated. Refresh the kits after test results or recovery-critical changes are committed.
-
-Prepare replacement/recovery laptops using section 1 while online, then disconnect before handling the golden key. The USB clones include the separate code project and dependency declarations; they do not include a portable virtualenv. Rerun `tools` and `test` after selecting a different code-submodule version to refresh its package/dependencies and verify the [parent/library contract](../security/helper-implementation.md#coordinator-password-helper). Independent recovery-tool acquisition remains [pending](../security/recovery-procedures.md).
+Prepare replacement/recovery laptops using section 1 while online, then disconnect before handling the golden key. Rerun `tools` and `test` after selecting a different code-submodule version to refresh its package/dependencies and verify the [parent/library contract](../security/helper-implementation.md#coordinator-password-helper). Independent recovery-tool acquisition remains [pending](../security/recovery-procedures.md).
 
 - [ ] Record the real installation results and resolve failures.
-- [ ] Prepare each token's full recovery USB clone and verify the recorded commit offline.
-- [ ] Verify Level 1 backup/retrieval and distribute the four token/USB pairs under the custody policy.
+- [ ] Verify Level 1 backup/retrieval and keep the four tokens at separate locations under the custody policy.
 
-Shut down the air-gapped laptop before reconnecting anything networked. Later record/helper changes require kit refreshes. The [Emergency Recovery Guide](../emergency-recovery-guide.md) still has pending service-recovery work; these kits do not yet constitute a verified Vault recovery path.
+Shut down the air-gapped laptop before reconnecting anything networked. The [Emergency Recovery Guide](../emergency-recovery-guide.md) still has pending service-recovery work; this setup does not yet constitute a verified Vault recovery path.
 
 ## Failure actions
 

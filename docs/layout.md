@@ -15,9 +15,9 @@
 | [YubiKey catalogue](security/yubikey.md) | Credential/use-case catalogue, lookup identifiers, challenge construction, unresolved bootstrap coverage. |
 | [Security work areas](security/security.md#remaining-decisions) | Topic documents under `docs/security/`, recording approved decisions and remaining TBD work. |
 | [Backup and restore](backup-and-restore.md) | Backup design, independent recovery dependencies, restore planning. |
-| [Emergency Recovery Guide](emergency-recovery-guide.md) | Standalone, non-secret USB recovery instructions. |
+| [Emergency Recovery Guide](emergency-recovery-guide.md) | Standalone, non-secret recovery instructions. |
 
-Keep details in their owning document and link from other documents. The USB guide must retain enough recovery instructions to work independently.
+Keep details in their owning document and link from other documents. The recovery guide must retain enough recovery instructions to work independently.
 
 ## Proposed root layout
 

@@ -22,7 +22,7 @@ depend on them.
 Use this material for replacement-token programming and emergency
 software recovery. Loading it onto a workstation follows the
 [memory-only handling policy](security.md#secret-handling-boundary).
-Never include it in the repository or recovery USB clones.
+Never include it in any of the repositories.
 
 Verify each stored entry against a configured YubiKey before relying
 on it, comparing HMAC responses only in memory. The first verification

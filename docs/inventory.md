@@ -194,8 +194,6 @@ Four YubiKeys available; use cases and proposed lookups belong in [yubikey.md](s
 | YubiKey Standard | 2.4.1 | OTP | 1 |
 | **Sum** | | | **4** |
 
-The four recovery USB sticks will each hold [full homelab, code-submodule, and private-records-submodule clones](security/encrypted-record-storage.md#recovery-usb-clones), including wrapped records and the recovery guide. Their models, capacities, and acquisition are TBD, so they are not added to the physical disk totals.
-
 ## Spare drives
 
 - Samsung SSD 870 EVO 2 TB.

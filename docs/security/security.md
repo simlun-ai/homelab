@@ -8,7 +8,7 @@ Helpers must never commit plaintext secrets, golden-key material, HMAC responses
 
 The trusted air-gapped laptop used in [step 00](../installation/00-yubikey-setup.md) retains its existing OS swap/suspend configuration; setup does not disable or reject it. Other recovery environments, including the temporary OpenBao container, still require their documented memory-storage checks.
 
-Authenticated `homelab-wrap-v1` credential records may be committed and persisted on workstation disk, recovery USBs, and consuming hosts under the [encrypted-record storage policy](encrypted-record-storage.md). Decryption remains memory-only.
+Authenticated `homelab-wrap-v1` credential records may be committed and persisted on workstation disk, and consuming hosts under the [encrypted-record storage policy](encrypted-record-storage.md). Decryption remains memory-only.
 
 Public challenges, secret references, and protocol metadata may be committed. HMAC responses, derived values, golden-key material, and plaintext credentials or unseal/recovery material are secret. Keep them out of documentation, fixtures, and test output.
 
@@ -22,7 +22,7 @@ We treat the YubiKeys as **mini hardware security modules (HSMs)** for the homel
 
 - Program all four with the same **golden key** and challenge-processing settings: identical effective challenge bytes must produce identical responses.
 - Require physical touch for every hardware challenge-response operation.
-- Keep the tokens at four separate locations, each paired with a USB stick containing [full parent, code-submodule, and private-records-submodule clones](encrypted-record-storage.md#recovery-usb-clones), including wrapped records and the non-secret [Emergency Recovery Guide](../emergency-recovery-guide.md).
+- Keep the tokens at four separate locations.
 - Keep the golden key separately offline for replacement-token programming and software recovery.
 - Use OTP slot 2 under the [approved setup](yubikey-setup.md). Inspect before programming; overwriting occupied slot 2 requires the explicit replacement confirmation in [step 00](../installation/00-yubikey-setup.md). Preserve slot 1.
 
@@ -32,7 +32,7 @@ Verify programming/query tools and matching behavior on every actual device, inc
 
 ## Golden key and software recovery
 
-Generate the golden key once with suitable randomness and handle it only in memory during programming. Never print, log, or export it to the checkout or recovery USB sticks.
+Generate the golden key once with suitable randomness and handle it only in memory during programming. Never print, log, or export it to the checkout.
 
 The offline record enables replacement tokens and software recovery. The fallback must reproduce the exact effective challenge bytes, HMAC-SHA1 operation, and subsequent derivation/unwrap steps. It cannot enforce touch: possession of the golden key gives access to the entire foundation.
 
@@ -136,7 +136,7 @@ For encrypted `STATE`, networking must work before the machine configuration can
 
 ## Planned YubiKey configuration runbook
 
-The first [00 - YubiKey setup](../installation/00-yubikey-setup.md) implementation targets a trusted Debian/Ubuntu laptop: install and verify dependencies online, then make it air-gapped before handling the golden key. It owns tooling preparation, programming, verification, and recovery-kit setup; physical trials remain pending. Replacement/loss and rotation requirements belong in [recovery procedures](recovery-procedures.md) and [rotation and rollback](rotation-and-rollback.md).
+The first [00 - YubiKey setup](../installation/00-yubikey-setup.md) implementation targets a trusted Debian/Ubuntu laptop: install and verify dependencies online, then make it air-gapped before handling the golden key. It owns tooling preparation, programming and verification; physical trials remain pending. Replacement/loss and rotation requirements belong in [recovery procedures](recovery-procedures.md) and [rotation and rollback](rotation-and-rollback.md).
 
 ## Remaining decisions
 

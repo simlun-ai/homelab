@@ -51,7 +51,7 @@ erasure and the physical label. The Level 1 key uses a hidden local prompt.
 
 - Test tooling preparation/installation and offline execution on the actual laptop.
 - Program and verify all four devices, including the older Standard models.
-- Record device identifiers and verification results; complete the recovery kits.
+- Record device identifiers and verification results.
 
 Golden-key custody and recovery procedures are covered separately in
 [golden-key-custody.md](golden-key-custody.md) and
