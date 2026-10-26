@@ -7,7 +7,7 @@ Configure and verify all four YubiKeys from a trusted Debian/Ubuntu laptop. Inst
 ## Prerequisites
 
 - The four labelled tokens, `key0` through `key3`, and access to Level 1.
-- A trusted Debian/Ubuntu laptop with CPython 3.11–3.14. It can be online for preparation. Use a local terminal without recording during secret handling.
+- A trusted Debian/Ubuntu laptop with CPython 3.13–3.14. It can be online for preparation. Use a local terminal without recording during secret handling.
 
 After cloning, commands run from the repository root. Helpers use `support/yubikey/.venv/bin/python`; host Python creates the virtualenv and runs the standard-library key-generation example below.
 

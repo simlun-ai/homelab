@@ -1,4 +1,4 @@
-# Workstation Ansible environment; Python 3.12–3.14.
+# Workstation Ansible environment; Python 3.13–3.14.
 ansible-core==2.21.5
 cffi==2.1.1
 cryptography==50.0.2

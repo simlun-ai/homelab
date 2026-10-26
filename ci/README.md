@@ -45,7 +45,7 @@ to apply safe fixes and formatting in the same pinned tool image, writing as
 your host UID/GID. These targets do not require the code or records submodules.
 They check parent Python only; `homelab-hsm` keeps its own configuration and CI.
 
-`pyproject.toml` configures Python 3.11 compatibility, 88-character formatting,
+`pyproject.toml` configures Python 3.13 compatibility, 88-character formatting,
 and basic errors, unused code, import ordering, modernization, and common-bug
 rules (`E4`, `E7`, `E9`, `F`, `I`, `UP`, `B`), matching the HSM project's policy.
 Ruff is pinned to 0.17.2 in its tool stage and enforced by `required-version`.

@@ -20,6 +20,7 @@ system-dependencies:
 
 tools:
 	@test -f "$(ROOT)/tools/homelab-hsm/homelab_secrets/pyproject.toml" || { printf '%s\n' 'Initialize tools/homelab-hsm: git submodule update --init --recursive -- tools/homelab-hsm' >&2; exit 2; }
+	@python3 -c 'import sys; sys.exit(0 if (3, 13) <= sys.version_info[:2] < (3, 15) else "Parent helpers require Python 3.13–3.14")'
 	@python3 -m venv "$(SCOPE)/.venv"
 	@"$(PYTHON)" -m pip install -r "$(SCOPE)/requirements.txt"
 	@"$(PYTHON)" -m pip install --no-build-isolation --editable "$(ROOT)/tools/homelab-hsm/homelab_secrets"

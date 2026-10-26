@@ -40,7 +40,8 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 
 | Tool / OS | Version |
 | --- | --- |
-| Make, Python, Bash | TBD. |
+| Make, Bash | TBD. |
+| Python (parent helpers) | 3.13–3.14 on Linux; the HSM code submodule maintains its own support range. |
 | Ruff | Development-only Python lint/format checks; pinned in [pyproject.toml](../pyproject.toml) and the CI tool stage. |
 | Docker with Buildx/BuildKit | Root `make ci` validation; [CI prerequisites](../ci/README.md). |
 | Python cryptography (HKDF/AESGCM), constrained RFC 8785 serialization | Initial [v1 wrapping helper](security/security.md#challenges-derivation-and-wrapped-credentials); step 00 pins live in [the code project’s pyproject.toml](../tools/homelab-hsm/homelab_secrets/pyproject.toml). |
