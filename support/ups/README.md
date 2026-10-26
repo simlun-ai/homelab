@@ -28,6 +28,13 @@ Dependency selection: [ansible-core release](https://pypi.org/project/ansible-co
 [Python compatibility](https://docs.ansible.com/projects/ansible/latest/reference_appendices/release_and_maintenance.html).
 Ubuntu 26.04 is the workstation target; hardware installation remains unverified.
 
+## Static checks
+
+From the repository root, run `make ansible-lint` for the pinned containerized
+`safety` profile. It is also part of `make ci`; see the [CI instructions](../../ci/README.md).
+These checks do not connect to coordinators. Operational inventory and playbook
+syntax checks remain available through this scope's `inventory` and `syntax` targets.
+
 ## Administrator passwords
 
 See the [password runbook](../../runbooks/coordinator-passwords.md) for

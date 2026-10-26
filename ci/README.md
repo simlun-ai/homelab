@@ -13,12 +13,13 @@ emulation configured in the builder. No host Python environment is required.
 Docker needs network access for base images, the Dockerfile frontend, OS packages,
 and Python dependencies during preparation.
 
-`docker-bake.hcl` runs five targets in parallel:
+`docker-bake.hcl` runs six targets in parallel:
 
 | Target | Checks |
 | --- | --- |
 | `lint` | Pinned Ruff lint and formatting checks across parent Python in `scripts/`, `tests/`, `support/`, and `ci/`. |
 | `typecheck` | Pinned strict Pyright across all parent Python, targeting Python 3.13 on Linux and resolving the pinned HSM library source. |
+| `ansible-lint` | Pinned Ansible lint with the `safety` profile across UPS playbooks, tasks, role, and inventory. |
 | `helpers` | Existing editable library installation and dependency pins; `pip check`; parent unit/integration tests and component unit tests through `make -C support/yubikey test`. |
 | `ups` | Pinned Ansible environment, exact tool-version checks, inventory parsing, and all playbook syntax checks through the UPS Makefile. |
 | `syntax` | Parent Python compilation and `bash -n`, including standalone support scripts. Checked scripts are not executed. |
@@ -66,3 +67,18 @@ The build pins Pyright 1.1.414 and Node 24.19.0, matching the HSM pipeline.
 It reuses the helper dependency environment; neither tool is installed into
 an operational environment. Dependency preparation has network access;
 the check itself runs with networking disabled.
+
+## Ansible linting
+
+Run `make ansible-lint` for the same check used by `make ci`. It needs Docker
+and Make, without either submodule, SSH credentials, or coordinator access.
+The Ubuntu 26.04 tool stage installs `ci/ansible-lint-requirements.txt` alongside
+the exact `support/ups/requirements.txt` pins in a separate virtual environment.
+Operational environments are unchanged.
+
+The check runs from `support/ups/`, using its `ansible.cfg` and `.ansible-lint`.
+It covers `ansible/` and `inventory.yaml` with the `safety` profile; warnings
+also fail the build. There is no baseline ignore file or blanket rule skip.
+Network access is disabled during linting, and offline mode prevents dependency
+installation and schema refreshes. The existing UPS inventory and four playbook
+syntax checks remain independent checks; linting does not execute playbooks.

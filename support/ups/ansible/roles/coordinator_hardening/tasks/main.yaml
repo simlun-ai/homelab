@@ -1,6 +1,6 @@
 - name: Require management networks
   ansible.builtin.assert:
-    that: coordinator_management_networks | length > 0
+    that: coordinator_hardening_management_networks | length > 0
 
 - name: Install firewall and security update tooling
   ansible.builtin.apt:
@@ -148,7 +148,7 @@
     masked: true
   loop: [bluetooth.service, hciuart.service]
   when:
-    - coordinator_disable_radios
+    - coordinator_hardening_disable_radios
     - item in ansible_facts.services
 
 - name: Disable wireless radios at the next manual boot
@@ -159,7 +159,7 @@
       [all]
       dtoverlay=disable-wifi
       dtoverlay=disable-bt
-    state: "{{ 'present' if coordinator_disable_radios else 'absent' }}"
+    state: "{{ 'present' if coordinator_hardening_disable_radios else 'absent' }}"
 
 - name: Disable mDNS only when explicitly selected
   ansible.builtin.systemd_service:
@@ -169,5 +169,5 @@
     masked: true
   loop: [avahi-daemon.socket, avahi-daemon.service]
   when:
-    - coordinator_disable_mdns
+    - coordinator_hardening_disable_mdns
     - "'avahi-daemon.service' in ansible_facts.services"

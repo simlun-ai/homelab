@@ -1,9 +1,9 @@
 group "default" {
-  targets = ["lint", "typecheck", "helpers", "ups", "syntax"]
+  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax"]
 }
 
 group "ci" {
-  targets = ["lint", "typecheck", "helpers", "ups", "syntax"]
+  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax"]
 }
 
 target "_common" {
@@ -48,4 +48,10 @@ target "typecheck" {
   inherits = ["_common"]
   target = "typecheck"
   no-cache-filter = ["typecheck"]
+}
+
+target "ansible-lint" {
+  inherits = ["_common"]
+  target = "ansible-lint"
+  no-cache-filter = ["ansible-lint"]
 }
