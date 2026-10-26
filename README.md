@@ -18,3 +18,16 @@ This repository defines and documents my planned homelab infrastructure: four Ta
 | **Metal** | Larger, high-performance primary workload cluster. | Frigate, Immich, Crypto, media services, databases, and other compute- or storage-intensive applications. |
 
 Start with the [installation plan and TODO list](docs/installation/README.md). See [docs/clusters.md](docs/clusters.md) for cluster architecture and [docs/](docs/) for further details.
+
+## Checkout
+
+Clone this repository, then initialize the shared code submodule:
+
+```sh
+git clone https://github.com/simlun-ai/homelab.git
+cd homelab
+git submodule update --init --recursive -- tools/homelab-hsm
+```
+
+Installation and tests do not require the private records checkout. Operators initialize
+`secrets/wrapped` separately; see [checkout, migration, and recovery](docs/security/encrypted-record-storage.md#checkout-and-updates).

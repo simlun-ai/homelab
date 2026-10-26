@@ -39,7 +39,7 @@ Use the [YubiKey or offline golden-key path](security/security.md#core-secret-fo
 | Talos bootstrap/administration material | Rebuild Vault before its control plane or OpenBao is usable. |
 | Helpers, protocol metadata, compatible tools | Obtainable without the failed homelab. |
 
-Wrapped credential records live in the private `homelab-wrapped-secrets` submodule and full recovery USB clones; coordinator records are also deployed locally under the [storage policy](security/encrypted-record-storage.md). Exact record mappings and other recovery artifacts remain TBD. Proposed credential lookups belong in [yubikey.md](security/yubikey.md); secret custody and handling in [security.md](security/security.md).
+Wrapped credential records live in the private `homelab-secrets` submodule and full recovery USB clones; coordinator records are also deployed locally under the [storage policy](security/encrypted-record-storage.md). Exact record mappings and other recovery artifacts remain TBD. Proposed credential lookups belong in [yubikey.md](security/yubikey.md); secret custody and handling in [security.md](security/security.md).
 
 ## Required recovery targets
 
@@ -68,7 +68,7 @@ After restoring OpenBao, verify transit key versions and KMS adapter readiness b
 
 ## Emergency Recovery Guide custody
 
-The **Homelab Recovery Kit** includes full parent and private-submodule clones on each token's paired USB stick, including wrapped records and the non-secret, standalone [Emergency Recovery Guide](emergency-recovery-guide.md). Clone contents and refresh requirements belong in [encrypted-record storage](security/encrypted-record-storage.md#recovery-usb-clones); token and golden-key custody in [security.md](security/security.md#core-secret-foundation).
+The **Homelab Recovery Kit** includes full parent, code-submodule, and private-records-submodule clones on each token's paired USB stick, including wrapped records and the non-secret, standalone [Emergency Recovery Guide](emergency-recovery-guide.md). Clone contents and refresh requirements belong in [encrypted-record storage](security/encrypted-record-storage.md#recovery-usb-clones); token and golden-key custody in [security.md](security/security.md#core-secret-foundation).
 
 The clone contains committed wrapped ciphertext, with no plaintext credentials or golden-key material. Snapshots remain in R2. Complete the guide with exact public protocol parameters, independent tool acquisition, backup locations, and validated recovery commands. The guide must remain understandable without other local documents; executing recovery requires the recorded payloads and tools.
 
@@ -91,4 +91,3 @@ Implement and test the snapshot/upload job, settle the open decisions above, wri
 - [OpenBao security model](https://openbao.org/docs/internals/security/).
 - [OpenBao Raft storage configuration](https://openbao.org/docs/configuration/storage/raft/).
 - [Docker tmpfs mounts](https://docs.docker.com/engine/storage/tmpfs/) (including host swap caveats).
-

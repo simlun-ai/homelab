@@ -18,14 +18,15 @@ Complete this before accessing Level 1 or handling the golden key:
 
 ```sh
 sudo apt install git
-git clone --recurse-submodules git@github.com:simlun-ai/homelab.git
+git clone https://github.com/simlun-ai/homelab.git
 cd homelab
+git submodule update --init --recursive -- tools/homelab-hsm
 bash support/yubikey/install-system-dependencies.sh
 make -C support/yubikey tools
 make -C support/yubikey test
 ```
 
-Expected: the idempotent script installs missing system packages and configures local-user USB access, requesting `sudo` when needed. `tools` uses standard `python3 -m venv`, `pip install -r` with [requirements.txt](../../support/yubikey/requirements.txt), plus the local project at `secrets/wrapped/homelab_secrets` (which owns token/crypto dependency pins), and `pip check`. Both setup commands can be rerun. The tests cover both repositories using disposable public keys and no hardware. The private submodule must be initialized before `tools` or `test`.
+Expected: the idempotent script installs missing system packages and configures local-user USB access, requesting `sudo` when needed. `tools` uses standard `python3 -m venv`, `pip install -r` with [requirements.txt](../../support/yubikey/requirements.txt), plus the local project at `tools/homelab-hsm/homelab_secrets` (which owns token/crypto dependency pins), and `pip check`. Both setup commands can be rerun. The tests cover the parent and code repositories using disposable public keys and no hardware. Only the code submodule must be initialized before `tools` or `test`; token setup and tests do not require private records.
 
 USB permissions apply when a token is next connected. Run the helpers as the local user, not through `sudo`. Finish any dependency troubleshooting while online.
 
@@ -103,9 +104,9 @@ Record the tested Git commit, OS/Python and installed package versions, date, an
 | key2 | Pending | Pending | Pending |
 | key3 | Pending | Pending | Pending |
 
-For each paired recovery USB, follow the [offline clone and verification procedure](../security/encrypted-record-storage.md#recovery-usb-clones). It copies both the full parent repository and the private `secrets/wrapped` submodule; a parent-only clone is not a recovery kit. Initialize the private checkout while GitHub access is available, before going offline. Production records remain absent until generated. Refresh the kits after test results or recovery-critical changes are committed.
+For each paired recovery USB, follow the [offline clone and verification procedure](../security/encrypted-record-storage.md#recovery-usb-clones). It copies the full parent repository, the `tools/homelab-hsm` code submodule, and the private `secrets/wrapped` records submodule; a parent-only clone is not a recovery kit. Initialize the private checkout while GitHub access is available, before going offline. Production records remain absent until generated. Refresh the kits after test results or recovery-critical changes are committed.
 
-Prepare replacement/recovery laptops using section 1 while online, then disconnect before handling the golden key. The USB clones include the private Python project and dependency declarations; they do not include a portable virtualenv. Rerun `tools` and `test` after selecting a different submodule version to refresh its package/dependencies and verify the [parent/library contract](../security/helper-implementation.md#coordinator-password-helper). Independent recovery-tool acquisition remains [pending](../security/recovery-procedures.md).
+Prepare replacement/recovery laptops using section 1 while online, then disconnect before handling the golden key. The USB clones include the separate code project and dependency declarations; they do not include a portable virtualenv. Rerun `tools` and `test` after selecting a different code-submodule version to refresh its package/dependencies and verify the [parent/library contract](../security/helper-implementation.md#coordinator-password-helper). Independent recovery-tool acquisition remains [pending](../security/recovery-procedures.md).
 
 - [ ] Record the real installation results and resolve failures.
 - [ ] Prepare each token's full recovery USB clone and verify the recorded commit offline.
@@ -127,5 +128,3 @@ Shut down the air-gapped laptop before reconnecting anything networked. Later re
 - [Pinned Yubico OTP implementation](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/yubiotp.py): firmware support, fixed-length configuration, and HMAC operations.
 - [Pinned Yubico USB OTP protocol](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/core/otp.py): touch requests and cancellation.
 - [Yubico Linux device permissions](https://github.com/Yubico/yubikey-manager/blob/5.9.2/doc/Device_Permissions.adoc).
-
-

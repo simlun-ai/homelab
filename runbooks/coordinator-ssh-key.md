@@ -8,7 +8,7 @@ on the Pis. This identity is separate from the key used to access GitHub.
 
 ## Generate once
 
-Initialize the [private secrets submodule](../docs/security/encrypted-record-storage.md#checkout-and-updates) first. Run `make -C support/yubikey tools` to install the private library, including after submodule updates. Agent-only check/unload uses the separate UPS environment and does not require the private package.
+Initialize the [private secrets submodule](../docs/security/encrypted-record-storage.md#checkout-and-updates) first. Run `make -C support/yubikey tools` to install the library from `tools/homelab-hsm`, including after code-submodule updates. Agent-only check/unload uses the separate UPS environment and does not require the wrapping package.
 Use the workstation/token prerequisites and memory handling from the
 [password runbook](coordinator-passwords.md#prepare). Then, from the repo root:
 
@@ -123,4 +123,3 @@ updating all three Pis under the [rotation policy](../docs/security/rotation-and
 References: [OpenSSH agent operations](https://man.openbsd.org/ssh-add),
 [public IdentityFile selection](https://man.openbsd.org/ssh_config#IdentityFile),
 [OpenSSH serialization](https://cryptography.io/en/50.0.1/hazmat/primitives/asymmetric/serialization/).
-

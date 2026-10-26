@@ -1,3 +1,6 @@
 [submodule "secrets/wrapped"]
 	path = secrets/wrapped
-	url = git@github.com:simlun-ai/homelab-wrapped-secrets.git
+	url = git@github.com:simlun-ai/homelab-secrets.git
+[submodule "tools/homelab-hsm"]
+	path = tools/homelab-hsm
+	url = https://github.com/simlun-ai/homelab-hsm.git

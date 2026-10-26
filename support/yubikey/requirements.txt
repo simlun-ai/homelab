@@ -1,4 +1,3 @@
-# Shared cryptography and token dependencies are owned by the private project.
+# Shared cryptography and token dependencies are owned by tools/homelab-hsm/homelab_secrets.
 # Setuptools supports its local editable install without build isolation.
 setuptools==80.9.0
-
