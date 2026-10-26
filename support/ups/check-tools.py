@@ -8,8 +8,8 @@ SCOPE = Path(__file__).resolve().parent
 
 
 def main():
-    if not (3, 12) <= sys.version_info[:2] < (3, 15):
-        raise SystemExit("UPS tools require Python 3.12–3.14 (Ubuntu 26.04 uses 3.14).")
+    if not (3, 13) <= sys.version_info[:2] < (3, 15):
+        raise SystemExit("UPS tools require Python 3.13–3.14 (Ubuntu 26.04 uses 3.14).")
     if sys.argv[1:] == ["--python-only"]:
         return
     if sys.argv[1:]:
@@ -25,7 +25,9 @@ def main():
         except importlib.metadata.PackageNotFoundError:
             actual = "not installed"
         if actual != expected:
-            raise SystemExit(f"{package}: expected {expected}, got {actual}; run make tools.")
+            raise SystemExit(
+                f"{package}: expected {expected}, got {actual}; run make tools."
+            )
 
 
 if __name__ == "__main__":

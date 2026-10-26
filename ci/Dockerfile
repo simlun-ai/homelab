@@ -45,3 +45,17 @@ COPY --link tests/ ./tests/
 COPY --link support/ ./support/
 COPY --link ci/check-syntax.py ./ci/check-syntax.py
 RUN --network=none python3 -I -B ci/check-syntax.py
+
+FROM base AS lint-tools
+RUN --mount=type=cache,id=homelab-ci-ruff-pip,target=/root/.cache/pip,sharing=locked \
+    python3 -m venv /ruff && /ruff/bin/python -m pip install ruff==0.17.2
+ENV PATH="/ruff/bin:$PATH"
+
+FROM lint-tools AS lint
+COPY --link pyproject.toml ./
+COPY --link scripts/ ./scripts/
+COPY --link tests/ ./tests/
+COPY --link support/ ./support/
+COPY --link ci/check-syntax.py ./ci/check-syntax.py
+RUN --network=none ruff check --no-cache scripts tests support ci && \
+    ruff format --check --no-cache scripts tests support ci

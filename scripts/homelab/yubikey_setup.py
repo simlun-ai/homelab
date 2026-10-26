@@ -7,13 +7,13 @@ import re
 import secrets
 import sys
 import warnings
-
-from ykman.hid import list_otp_devices
-from yubikit.yubiotp import HmacSha1SlotConfiguration, SLOT
+from functools import partial
 
 from homelab_secrets import wrapping
 from homelab_secrets.runtime import harden as harden_process
-from homelab_secrets.yubikey import token, respond, require_no_response_without_touch
+from homelab_secrets.yubikey import require_no_response_without_touch, respond, token
+from ykman.hid import list_otp_devices
+from yubikit.yubiotp import SLOT, HmacSha1SlotConfiguration
 
 LABELS = ("key0", "key1", "key2", "key3")
 TEST_ID = "homelab/v1/setup/verification/cross-token/r1"
@@ -30,7 +30,9 @@ def read_golden_key():
         warnings.simplefilter("error", getpass.GetPassWarning)
         first = getpass.getpass("Level 1 golden-1 (40 hex characters; hidden): ")
         second = getpass.getpass("Repeat golden-1 (hidden): ")
-    if not re.fullmatch(r"[0-9a-fA-F]{40}", first) or not re.fullmatch(r"[0-9a-fA-F]{40}", second):
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", first) or not re.fullmatch(
+        r"[0-9a-fA-F]{40}", second
+    ):
         raise ValueError("Invalid golden-key input")
     first_bytes, second_bytes = bytes.fromhex(first), bytes.fromhex(second)
     if not hmac.compare_digest(first_bytes, second_bytes):
@@ -44,16 +46,21 @@ def describe(session):
         serial = session.get_serial() or None
     except Exception:
         serial = None
-    print(f"Firmware: {session.version}; serial: {serial if serial else 'unavailable'}; "
-          f"slot 1: {'occupied' if state.is_configured(SLOT.ONE) else 'empty'}; "
-          f"slot 2: {'occupied' if state.is_configured(SLOT.TWO) else 'empty'}")
+    print(
+        f"Firmware: {session.version}; serial: {serial if serial else 'unavailable'}; "
+        f"slot 1: {'occupied' if state.is_configured(SLOT.ONE) else 'empty'}; "
+        f"slot 2: {'occupied' if state.is_configured(SLOT.TWO) else 'empty'}"
+    )
     return serial
 
 
 def confirm(label, action):
     expected = f"{action} {label} slot2"
     if action == "replace":
-        print("This overwrites the existing slot 2 credential. Slot 1 is preserved.", flush=True)
+        print(
+            "This overwrites the existing slot 2 credential. Slot 1 is preserved.",
+            flush=True,
+        )
         expected += " and erase existing credential"
     if input(f"Check the physical label, then type '{expected}': ") != expected:
         raise RuntimeError("Device confirmation did not match")
@@ -76,10 +83,18 @@ def program(session, label, golden, *, replace=False):
         raise ValueError("Programming requires exactly 20 golden-key bytes")
     occupied = session.get_config_state().is_configured(SLOT.TWO)
     if occupied and not replace:
-        print("Stop: slot 2 is occupied. Use verify or explicitly request replacement.", file=sys.stderr)
+        print(
+            "Stop: slot 2 is occupied. Use verify or explicitly request replacement.",
+            file=sys.stderr,
+        )
         raise RuntimeError("Refusing an occupied slot")
     confirm(label, "replace" if occupied else "program")
-    configuration = HmacSha1SlotConfiguration(golden).lt64(False).require_touch(True).allow_update(False)
+    configuration = (
+        HmacSha1SlotConfiguration(golden)
+        .lt64(False)
+        .require_touch(True)
+        .allow_update(False)
+    )
     session.put_configuration(SLOT.TWO, configuration)
     print("Slot 2 programmed; slot 1 was not written. Verification follows.")
     verify_token(session, golden)
@@ -89,7 +104,10 @@ def verify_set(golden):
     record = None
     payload = secrets.token_bytes(32)
     seen_serials = set()
-    software = lambda challenge: hmac.digest(golden, challenge, "sha1")
+
+    def software(challenge):
+        return hmac.digest(golden, challenge, "sha1")
+
     for label in LABELS:
         input("Remove all YubiKeys, then press Enter: ")
         if list_otp_devices():
@@ -103,23 +121,34 @@ def verify_set(golden):
                 seen_serials.add(serial)
             confirm(label, "verify")
             verify_token(session, golden)
-            hardware = lambda challenge: respond(session, challenge)
+            hardware = partial(respond, session)
             if record is None:
                 record = wrapping.wrap(payload, TEST_ID, TEST_ROOT, 1, hardware)
-                if not hmac.compare_digest(wrapping.unwrap(record, TEST_ID, TEST_ROOT, software), payload):
+                if not hmac.compare_digest(
+                    wrapping.unwrap(record, TEST_ID, TEST_ROOT, software), payload
+                ):
                     raise RuntimeError("Software unwrap failed")
-            if not hmac.compare_digest(wrapping.unwrap(record, TEST_ID, TEST_ROOT, hardware), payload):
+            if not hmac.compare_digest(
+                wrapping.unwrap(record, TEST_ID, TEST_ROOT, hardware), payload
+            ):
                 raise RuntimeError("Cross-token unwrap failed")
             print(f"PASS: {label} unwraps the shared in-memory dummy record.")
-    print("PASS: all four labels and the software fallback agree. Record only the non-secret results.")
+    print(
+        "PASS: all four labels and the software fallback agree. Record only the non-secret results."
+    )
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("inspect", "program", "verify", "verify-set"))
+    parser.add_argument(
+        "command", choices=("inspect", "program", "verify", "verify-set")
+    )
     parser.add_argument("--label", choices=LABELS)
-    parser.add_argument("--replace", action="store_true",
-                        help="Allow program to overwrite occupied slot 2 after an erase confirmation")
+    parser.add_argument(
+        "--replace",
+        action="store_true",
+        help="Allow program to overwrite occupied slot 2 after an erase confirmation",
+    )
     args = parser.parse_args()
     if args.command in ("program", "verify") and args.label is None:
         parser.error("--label is required")
@@ -135,8 +164,15 @@ def main():
         return
     with token() as session:
         describe(session)
-        if args.command == "program" and not args.replace and session.get_config_state().is_configured(SLOT.TWO):
-            print("Stop: slot 2 is occupied. Use verify or explicitly request replacement.", file=sys.stderr)
+        if (
+            args.command == "program"
+            and not args.replace
+            and session.get_config_state().is_configured(SLOT.TWO)
+        ):
+            print(
+                "Stop: slot 2 is occupied. Use verify or explicitly request replacement.",
+                file=sys.stderr,
+            )
             raise RuntimeError("Refusing an occupied slot")
         golden = read_golden_key()
         if args.command == "program":
@@ -144,5 +180,3 @@ def main():
         else:
             confirm(args.label, "verify")
             verify_token(session, golden)
-
-

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Read-only checks run on a coordinator after its manual reboot."""
-from pathlib import Path
+
 import subprocess
 import sys
+from pathlib import Path
 
 errors = []
 
@@ -32,7 +33,10 @@ firewall = output("/usr/sbin/nft", "list", "table", "inet", "coordinator")
 check(firewall.count("policy drop;") >= 2, "Input and forwarding must default to drop")
 check(bool(sys.argv[1:]), "No management networks supplied")
 for network in sys.argv[1:]:
-    check(f"{network} tcp dport 22 accept" in firewall, f"Management SSH rule missing: {network}")
+    check(
+        f"{network} tcp dport 22 accept" in firewall,
+        f"Management SSH rule missing: {network}",
+    )
 apt = output("apt-config", "dump")
 for setting in (
     'Unattended-Upgrade::Automatic-Reboot "false";',
@@ -49,13 +53,25 @@ for line in Path("/proc/swaps").read_text().splitlines()[1:]:
     device = line.split()[0]
     check(device.startswith("/dev/zram"), f"Disk swap remains active: {device}")
 for backing in Path("/sys/block").glob("zram*/backing_dev"):
-    check(backing.read_text().strip() == "none", f"Zram writeback remains active: {backing}")
-check(Path("/proc/sys/kernel/core_pattern").read_text().strip() == "|/bin/false",
-      "Core dumps are not disabled")
-check(Path("/proc/sys/fs/suid_dumpable").read_text().strip() == "0",
-      "Setuid core dumps are not disabled")
+    check(
+        backing.read_text().strip() == "none",
+        f"Zram writeback remains active: {backing}",
+    )
+check(
+    Path("/proc/sys/kernel/core_pattern").read_text().strip() == "|/bin/false",
+    "Core dumps are not disabled",
+)
+check(
+    Path("/proc/sys/fs/suid_dumpable").read_text().strip() == "0",
+    "Setuid core dumps are not disabled",
+)
 if errors:
-    raise SystemExit("\n".join(errors) + "\nReboot manually after initial hardening, then rerun this check.")
-print("SSH, firewall, automatic security updates and active memory protections verified.")
+    raise SystemExit(
+        "\n".join(errors)
+        + "\nReboot manually after initial hardening, then rerun this check."
+    )
+print(
+    "SSH, firewall, automatic security updates and active memory protections verified."
+)
 if Path("/run/reboot-required").exists():
     print("Package updates request a manual reboot.")
