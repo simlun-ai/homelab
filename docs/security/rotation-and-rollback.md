@@ -24,7 +24,7 @@ Migrate tokens one at a time, preserving a verified recovery path.
 During migration, record each token's generation and verification status;
 tokens on different generations are not interchangeable.
 
-Refresh coordinator records and all recovery USB clones. Exact migration
+Refresh coordinator records. Exact migration
 commands and completion checks remain pending.
 
 ## Node KMS-key rotation

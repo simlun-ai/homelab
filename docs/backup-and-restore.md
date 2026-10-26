@@ -39,7 +39,7 @@ Use the [YubiKey or offline golden-key path](security/security.md#core-secret-fo
 | Talos bootstrap/administration material | Rebuild Vault before its control plane or OpenBao is usable. |
 | Helpers, protocol metadata, compatible tools | Obtainable without the failed homelab. |
 
-Wrapped credential records live in the private `homelab-secrets` submodule and full recovery USB clones; coordinator records are also deployed locally under the [storage policy](security/encrypted-record-storage.md). Exact record mappings and other recovery artifacts remain TBD. Proposed credential lookups belong in [yubikey.md](security/yubikey.md); secret custody and handling in [security.md](security/security.md).
+Wrapped credential records live in the private `homelab-secrets` submodule; coordinator records are also deployed locally under the [storage policy](security/encrypted-record-storage.md). Exact record mappings and other recovery artifacts remain TBD. Proposed credential lookups belong in [yubikey.md](security/yubikey.md); secret custody and handling in [security.md](security/security.md).
 
 ## Required recovery targets
 
@@ -56,7 +56,7 @@ The container uses a normal Raft-backed server with its storage, snapshot input,
 
 Document both branches in `/runbooks/restore-openbao.md`. Prove snapshot retrieval and identity/integrity, the exact initialize/restore/reseal/unseal sequence, recovery administration access, representative secret reads, and transit decryption of previously sealed test material. New-instance unseal material does not replace the material associated with the snapshot; any forced restore bypasses consistency checks, not encryption.
 
-Run isolated restore drills without the original Vault/coordinator or other clusters. Test ARM64 Pi restoration and the actual workstation architecture/runtime, a separately held token/guide pair, and the offline golden-key fallback. Record snapshot identity/version, recovery time, required RAM, and verification results without secret output; check workstation-disk compliance. Pi recovery additionally verifies manual-storage preservation, cold boot, dependent-node unlock, and resumed backups.
+Run isolated restore drills without the original Vault/coordinator or other clusters. Test ARM64 Pi restoration and the actual workstation architecture/runtime, a separately held token and the guide, and the offline golden-key fallback. Record snapshot identity/version, recovery time, required RAM, and verification results without secret output; check workstation-disk compliance. Pi recovery additionally verifies manual-storage preservation, cold boot, dependent-node unlock, and resumed backups.
 
 ## Vault restore outline
 
@@ -66,13 +66,9 @@ Coordinate [Vault installation](installation/02-vault.md), `/runbooks/operate-va
 
 After restoring OpenBao, verify transit key versions and KMS adapter readiness before starting dependent nodes. Verify snapshot coverage after transit key creation/rotation; an older snapshot may lack keys required by newer disks. The [startup dependency](security/security.md#talos-kms-adapter) must not depend on an encrypted Backup, Pi, or Metal node.
 
-## Emergency Recovery Guide custody
+## Wrapped-record backups
 
-The **Homelab Recovery Kit** includes full parent, code-submodule, and private-records-submodule clones on each token's paired USB stick, including wrapped records and the non-secret, standalone [Emergency Recovery Guide](emergency-recovery-guide.md). Clone contents and refresh requirements belong in [encrypted-record storage](security/encrypted-record-storage.md#recovery-usb-clones); token and golden-key custody in [security.md](security/security.md#core-secret-foundation).
-
-The clone contains committed wrapped ciphertext, with no plaintext credentials or golden-key material. Snapshots remain in R2. Complete the guide with exact public protocol parameters, independent tool acquisition, backup locations, and validated recovery commands. The guide must remain understandable without other local documents; executing recovery requires the recorded payloads and tools.
-
-Refresh every clone after recovery-critical record, protocol, helper, guide, tool-pin, destination, or procedure changes and record its commit. Refresh commands and verification procedures remain TBD.
+Backup storage and procedures for wrapped credential records are deferred until there is material worth backing up. The [Emergency Recovery Guide](emergency-recovery-guide.md) remains a draft; its recovery commands and metadata still need completion and testing.
 
 ## Other backup coverage
 

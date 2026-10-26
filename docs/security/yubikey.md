@@ -14,7 +14,7 @@ The logical key-value store consists of:
 - A YubiKey response used to derive its wrapping key.
 - An authenticated encrypted record containing the credential.
 
-The token stores the golden key. Credential records live in the private `homelab-secrets` submodule and recovery USB clones under the [storage policy](encrypted-record-storage.md). Retrieving a wrapped credential requires both a working token and its encrypted record.
+The token stores the golden key. Credential records live in the private `homelab-secrets` submodule under the [storage policy](encrypted-record-storage.md). Retrieving a wrapped credential requires both a working token and its encrypted record.
 
 [HMAC-SHA1 challenge-response](https://developers.yubico.com/Developer_Program/Guides/Touch_triggered_OTP.html) accepts challenges up to 64 bytes and returns a deterministic response for the same challenge and secret. It does not itself encrypt or store arbitrary credential values.
 
@@ -161,4 +161,4 @@ Each registered credential needs its exact identifier, consumer, encrypted-paylo
 
 Record identifiers and metadata only. Never record golden-key bytes, HMAC responses, derived keys, or plaintext credentials.
 
-Retain required older generations and payloads until migration and restore tests pass. Public protocol metadata must also appear in every standalone [Emergency Recovery Guide](../emergency-recovery-guide.md); the paired USB holds the full parent, code-submodule, and private-records-submodule clones, including wrapped records, under the [storage policy](encrypted-record-storage.md).
+Retain required older generations and payloads until migration and restore tests pass. Public protocol metadata must also appear in every standalone [Emergency Recovery Guide](../emergency-recovery-guide.md).

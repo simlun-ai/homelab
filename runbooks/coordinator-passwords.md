@@ -48,7 +48,7 @@ those expected contexts rather than trusting metadata in a supplied record.
 
 Commit and push the three generated JSON records in the private submodule,
 then commit its updated pointer in `homelab`, following the [storage workflow](../docs/security/encrypted-record-storage.md#checkout-and-updates).
-Refresh all four recovery USB clones before relying on the passwords. No plaintext passwords or password
+No plaintext passwords or password
 hashes belong in Git. Preserve the records when reinstalling a Pi.
 
 ## Use during installation or recovery

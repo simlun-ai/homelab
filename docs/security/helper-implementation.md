@@ -108,7 +108,7 @@ validation limits must be specified before implementation.
 | --- | --- | --- |
 | Golden key | Four YubiKeys; backup in Level 1 | Used inside the token normally; workstation memory during programming or software recovery. |
 | YubiKey response and wrapping key | None | Briefly in workstation memory while wrapping or unwrapping. |
-| Node KMS key | Wrapped record in Git, recovery USB clones, and coordinator local storage | Briefly on the workstation; coordinator memory for the authorized hour. |
+| Node KMS key | Wrapped record in Git and coordinator local storage | Briefly on the workstation; coordinator memory for the authorized hour. |
 | Talos disk unlock secret | KMS-encrypted payload in disk LUKS metadata | Talos memory during setup/unlock; coordinator memory only while processing the request. |
 | Derived KMS payload key | None | Coordinator memory only while processing Seal or Unseal. |
 | LUKS volume encryption key | Protected by LUKS keyslots on the node | Node memory while the volume is unlocked; never sent to the coordinator. |
