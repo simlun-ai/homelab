@@ -43,6 +43,13 @@ Both credential helpers require an initialized Git submodule at `secrets/wrapped
 before reading or generating records; missing checkout errors precede token access.
 Public documentation and agent-only checks do not require private access. The full helper test suite requires the installed private package.
 
+`make -C support/yubikey test` also runs the parent/library contract tests in
+`tests/test_wrapped_secrets_integration.py`: complete JSON records, manifest
+identifiers, malformed/tampered input, and the password/SSH consumers. These use
+the public `golden-fake-1` software responder without mocking cryptography;
+consumer tests retain their production context identifiers inside temporary test
+repositories. No real token, credential, or SSH connection is used.
+
 ## Coordinator SSH helper
 
 `scripts/homelab/coordinator_ssh.py` generates one Ed25519 identity using the
