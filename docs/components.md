@@ -50,6 +50,7 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | YubiKey Manager Python SDK | Selected for [step 00](installation/00-yubikey-setup.md); version pinned in [the code project’s pyproject.toml](../tools/homelab-hsm/homelab_secrets/pyproject.toml), physical-device verification pending. |
 | kubectl, talosctl, Helm, OpenBao CLI (`bao`) | TBD per scope; talosctl must be compatible with Talos. |
 | OpenTofu CLI (`tofu`) | Independently pinned per scope; catalog version above. |
+| [pftf/RPi4 EDK2 UEFI firmware](https://github.com/pftf/RPi4) | v1.53 selected only for the [Vault Pi 4 installation experiment](installation/02-vault.md#first-installation-experiment-pi-4-uefi); unverified. |
 | Raspberry Pi OS Lite | 64-bit; exact image release TBD. Selected for all UPS coordinators on microSD; [base setup](../runbooks/ups-coordinator-base-setup.md). |
 | Ansible | ansible-core and dependencies pinned in [requirements.txt](../support/ups/requirements.txt); base bootstrap implemented, hardware verification pending. |
 | nftables, unattended-upgrades | Raspberry Pi OS repository versions; [shared hardening](security/coordinator-hardening.md) implemented, hardware verification pending. |

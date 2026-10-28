@@ -28,7 +28,7 @@ Per-device power-return support, settings, and verification remain TBD, includin
 - **Storage:** ZFS mirror (RAID 1) using the other 2 × 128 GB Intenso USB SSDs.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
 - **Network:** 1 Gbit router connectivity, as for the Pi cluster.
-- **Boot configuration:** Latest EEPROM firmware, with USB boot given priority.
+- **Boot configuration:** Latest EEPROM firmware, with USB boot given priority. The [draft UEFI installation experiment](installation/02-vault.md#first-installation-experiment-pi-4-uefi) will try SD-first EEPROM boot with pftf/EDK2 on a dedicated microSD card; not yet verified or adopted. Card model/capacity is TBD and excluded from disk totals as unlisted boot media.
 
 ## Backup
 
