@@ -24,8 +24,8 @@ firmware, serial number where available, and configured slot.
 
 ## Programming and verification
 
-Install and verify dependencies while the trusted laptop is online, then
-make it air-gapped before handling the golden key. Program one token at a time.
+Use the offline level1vault live OS. Install homelab-hsm from its transported
+wheel bundle and program one token at a time using its Python CLI.
 Handle the golden key and HMAC responses only in memory, following
 [security.md](security.md).
 
@@ -47,9 +47,9 @@ only after these checks pass.
 The first helper and pinned-tooling implementation is available in
 [00 - YubiKey setup](../installation/00-yubikey-setup.md). It preserves
 occupied slot 2 by default; explicit replacement requires confirming its
-erasure and the physical label. The Level 1 key uses a hidden local prompt.
+erasure and the physical label. The Level 1 key arrives through a pipe from pass; confirmations use /dev/tty.
 
-- Test tooling preparation/installation and offline execution on the actual laptop.
+- Test tooling preparation/installation and offline execution in the actual live OS.
 - Program and verify all four devices, including the older Standard models.
 - Record device identifiers and verification results.
 

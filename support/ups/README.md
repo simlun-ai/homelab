@@ -39,7 +39,7 @@ syntax checks remain available through this scope's `inventory` and `syntax` tar
 
 See the [password runbook](../../runbooks/coordinator-passwords.md) for
 `password-create`, `password-reveal`, and `password-apply`, each with `HOST=...`.
-These reuse `support/yubikey/.venv` and keep secrets out of Ansible.
+These reuse `HSM_VENV` (default `~/.local/share/homelab/venvs/hsm`), installed by `make -C support/hsm tools`, and keep secrets out of Ansible. Use the same override for installation and consumers.
 
 ## Shared SSH identity
 

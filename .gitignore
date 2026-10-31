@@ -3,7 +3,6 @@ __pycache__/
 *.egg-info/
 build/
 dist/
-/support/yubikey/.venv/
 /support/ups/.venv/
 /support/ups/.ansible/
 

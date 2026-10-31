@@ -34,7 +34,7 @@ Create each part when a runbook first needs it, following [layout.md](../layout.
 | Path | First use |
 | --- | --- |
 | `scripts/homelab/`, `pyproject.toml` | Python helpers, including any token programming/verification support needed in step 00. |
-| `support/yubikey/` | Step 00 system dependencies, Python requirements, and explicit Make entry points. |
+| `support/hsm/` | Offline environment for parent application helpers; standalone step 00 uses the homelab-hsm Python CLI. |
 | `support/ups/` | Coordinator configuration, Ansible, services, and scoped tooling. |
 | `secrets/manifest.json` | Public credential catalogue. |
 | `secrets/wrapped/` | Private `homelab-secrets` submodule containing authenticated encrypted records only. |

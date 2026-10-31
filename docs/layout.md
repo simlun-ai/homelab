@@ -40,7 +40,7 @@ Keep details in their owning document and link from other documents. The recover
 | `/charts/` | Repository-owned Helm source where useful. |
 | `/tofu/modules/` | Reusable modules; live roots/state stay with their scopes. |
 | `/support/ups/` | Shutdown-coordinator management and Vault bootstrap KMS configuration. |
-| `/support/yubikey/` | Token setup scope; system installer, Python requirements, virtualenv, and Make entry points for step 00. |
+| `/support/hsm/` | Offline HSM environment for parent application helpers; token setup CLI belongs to homelab-hsm. |
 | `/runbooks/` | Reusable supporting-host setup, ongoing operation, maintenance, and recovery procedures. |
 
 ## Common cluster layout
@@ -81,7 +81,7 @@ Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered co
 | `/make/helm.mk` | Render/deploy selected releases. |
 | `/make/tofu.mk` | Operate the selected root/state. |
 | `/make/storage.mk` | Validate disks, coordinate assigned Piraeus preparation, inspect manual pools. |
-| `/scripts/homelab/` | Token programming/verification and application consumers; shared wrapping/token access is imported from `tools/homelab-hsm/homelab_secrets`. Workstation unseal, [Talos KMS adapter](security/security.md#talos-kms-adapter), and [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms) remain planned. |
+| `/scripts/homelab/` | Application consumers; shared wrapping/token access is imported from `tools/homelab-hsm/homelab_secrets`. Workstation unseal, [Talos KMS adapter](security/security.md#talos-kms-adapter), and [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms) remain planned. |
 | `/scripts/bash/` | Small shell helpers. |
 | `/charts/<chart>/` | Chart definition, values, templates, dependency locks. |
 | `/tofu/modules/<module>/` | Shared definitions without credentials or ownership of other scopes' state. |
@@ -96,7 +96,7 @@ Each cluster scope owns `toolchain.yaml` and `bin/`. Cluster pins cover `kubectl
 
 Make verifies pins, uses absolute executable paths, and prepends the scope's `bin/` to subprocess `PATH`. Missing/mismatched tools fail or trigger pinned installation; never fall back to global tools. Document/check bootstrap Make and helper-runtime prerequisites.
 
-The first implemented scope is `support/yubikey/`: an idempotent script installs system dependencies, and standard `venv`/`pip` installs the pinned build tooling and the local `tools/homelab-hsm/homelab_secrets` code project into its ignored `.venv/`. The code project's `pyproject.toml` owns token/crypto pins and installs `homelab-wrap` and `homelab-unwrap`. Make invokes that virtualenv's Python directly. See [step 00](installation/00-yubikey-setup.md) for preparation/install commands.
+`support/hsm/` prepares the offline wheel bundle from the pinned code submodule for parent application helpers. Its environment defaults to `~/.local/share/homelab/venvs/hsm`, outside the checkout; override `HSM_VENV` consistently for installation and consumers. The code project owns dependency pins and all HSM CLIs. [Step 00](installation/00-yubikey-setup.md) instead uses the standalone imported HSM checkout directly, without parent Make entry points.
 
 Illustrative targets, not yet implemented:
 

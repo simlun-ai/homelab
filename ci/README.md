@@ -20,7 +20,7 @@ and Python dependencies during preparation.
 | `lint` | Pinned Ruff lint and formatting checks across parent Python in `scripts/`, `tests/`, `support/`, and `ci/`. |
 | `typecheck` | Pinned strict Pyright across all parent Python, targeting Python 3.13 on Linux and resolving the pinned HSM library source. |
 | `ansible-lint` | Pinned Ansible lint with the `safety` profile across UPS playbooks, tasks, role, and inventory. |
-| `helpers` | Existing editable library installation and dependency pins; `pip check`; parent unit/integration tests and component unit tests through `make -C support/yubikey test`. |
+| `helpers` | Offline hashed-wheel installation into `/opt/homelab-hsm`; `pip check`; parent unit/integration tests and component unit tests through `make -C support/hsm test`. |
 | `ups` | Pinned Ansible environment, exact tool-version checks, inventory parsing, and all playbook syntax checks through the UPS Makefile. |
 | `syntax` | Parent Python compilation and `bash -n`, including standalone support scripts. Checked scripts are not executed. |
 
