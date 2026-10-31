@@ -9,15 +9,10 @@ RUN --mount=type=cache,id=homelab-ci-apt-packages,target=/var/cache/apt,sharing=
     bash ca-certificates git make python3 python3-venv
 
 FROM base AS helper-tools
-RUN --mount=type=cache,id=homelab-ci-apt-packages,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=homelab-ci-apt-lists,target=/var/lib/apt/lists,sharing=locked \
-    apt-get update && apt-get install -y --no-install-recommends \
-    build-essential python3-dev swig pkg-config libpcsclite-dev
-COPY --link support/yubikey/Makefile support/yubikey/requirements.txt ./support/yubikey/
-COPY --link tools/homelab-hsm/homelab_secrets/pyproject.toml ./tools/homelab-hsm/homelab_secrets/
-COPY --link tools/homelab-hsm/homelab_secrets/src/ ./tools/homelab-hsm/homelab_secrets/src/
-RUN --mount=type=cache,id=homelab-ci-helper-pip,target=/root/.cache/pip,sharing=locked \
-    make -C support/yubikey tools
+ENV HSM_VENV=/opt/homelab-hsm
+COPY --link support/hsm/Makefile ./support/hsm/
+COPY --link tools/homelab-hsm/homelab_secrets/ ./tools/homelab-hsm/homelab_secrets/
+RUN --network=none make -C support/hsm tools
 
 FROM helper-tools AS helpers
 COPY --link scripts/ ./scripts/
@@ -26,8 +21,8 @@ COPY --link secrets/manifest.json ./secrets/manifest.json
 COPY --link tools/homelab-hsm/homelab_secrets/scripts/ ./tools/homelab-hsm/homelab_secrets/scripts/
 COPY --link tools/homelab-hsm/homelab_secrets/tests/ ./tools/homelab-hsm/homelab_secrets/tests/
 RUN --network=none test ! -e secrets/wrapped && \
-    support/yubikey/.venv/bin/python -m pip check && \
-    make -C support/yubikey test
+    /opt/homelab-hsm/bin/python -m pip check && \
+    make -C support/hsm test
 
 FROM base AS ups-tools
 COPY --link support/ups/Makefile support/ups/requirements.txt support/ups/check-tools.py support/ups/ansible.cfg ./support/ups/
@@ -72,7 +67,7 @@ COPY --link scripts/ ./scripts/
 COPY --link tests/ ./tests/
 COPY --link support/ ./support/
 COPY --link ci/check-syntax.py ./ci/check-syntax.py
-RUN --network=none node /opt/pyright/index.js --pythonpath support/yubikey/.venv/bin/python
+RUN --network=none node /opt/pyright/index.js --pythonpath /opt/homelab-hsm/bin/python
 
 FROM base AS ansible-lint-tools
 COPY --link support/ups/requirements.txt ./support/ups/requirements.txt

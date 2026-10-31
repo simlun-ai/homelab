@@ -9,22 +9,21 @@ SSH key generation and agent loading belong to that separate runbook.
 
 ## Prepare
 
-Initialize the [private secrets submodule](../docs/security/encrypted-record-storage.md#checkout-and-updates) before generating or recovering records. Rerun `make -C support/yubikey tools` after code-submodule updates to install the matching library and dependencies from `tools/homelab-hsm`; record-only updates do not change the Python environment.
+Initialize the [private secrets submodule](../docs/security/encrypted-record-storage.md#checkout-and-updates) before generating or recovering records. Rerun `make -C support/hsm tools` after code-submodule updates to install the matching library and dependencies from `tools/homelab-hsm`; record-only updates do not change the Python environment.
 
 Complete [YubiKey setup and verification](../docs/installation/00-yubikey-setup.md)
 first. Use a trusted Linux workstation, an unrecorded local terminal and one
 verified token. Install the pinned token tooling:
 
 ```sh
-make -C support/yubikey system-dependencies
-make -C support/yubikey tools
+make -C support/hsm system-dependencies
+make -C support/hsm tools
 ```
 
 Follow the [memory-only policy](../docs/security/security.md#secret-handling-boundary).
 Do not use terminal/session recording, clipboard history, shell tracing or saved
 Imager credentials. Do not suspend/hibernate while secrets are in memory; ensure
-this workstation's swap cannot persist secrets. This is separate from step 00's
-explicit air-gapped laptop exception. The helper disables its core dumps and
+this workstation's swap cannot persist secrets. Step 00 instead runs inside level1vault and follows its live-OS policy. The helper disables its core dumps and
 process dumping, requires a terminal, suppresses SDK logs and exception details,
 and never explicitly writes plaintext to disk. It does not configure the OS or
 guarantee Python memory zeroization.

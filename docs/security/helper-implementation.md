@@ -2,7 +2,7 @@
 
 **Initial token setup and wrapping helpers implemented; hardware verification and service helpers pending.**
 
-[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Token programming and application consumers live under `scripts/homelab/`. Shared wrapping, read-only token access, and the `homelab-wrap`/`homelab-unwrap` commands live in `tools/homelab-hsm/homelab_secrets/`, a separate code submodule. Its `pyproject.toml` owns crypto/token dependency pins; `support/yubikey/` installs it locally into the scoped virtualenv. The coordinator password and SSH key workflows use `secrets/wrapped/`; real records require local token-backed generation. Coordinator KMS services and OpenBao integration remain pending.
+[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Application consumers live under `scripts/homelab/`. Key generation, token programming/verification, shared wrapping and the `homelab-hsm`/`homelab-wrap`/`homelab-unwrap` commands live in homelab-hsm, pinned for application use at `tools/homelab-hsm/homelab_secrets/`. Standalone step 00 uses the separately imported HSM repository. Its `pyproject.toml` owns crypto/token dependency pins; `support/hsm/` installs its committed wheels offline into an external virtualenv for application helpers. The coordinator password and SSH key workflows use `secrets/wrapped/`; real records require local token-backed generation. Coordinator KMS services and OpenBao integration remain pending.
 
 ## Workstation helper
 
@@ -14,7 +14,6 @@ Parent helpers reuse the library. Existing and planned consumers cover:
 - Unseal OpenBao over verified TLS.
 - Deliver ZFS keys directly to the unlock command.
 - Authorize the coordinator over SSH.
-- Verify token behavior without printing secret responses.
 - Perform explicit software recovery using the golden key from Level 1.
 
 Pin dependencies and compatible hardware tools. Validate records and
@@ -43,7 +42,7 @@ Both credential helpers require an initialized Git submodule at `secrets/wrapped
 before reading or generating records; missing checkout errors precede token access.
 Public documentation and agent-only checks do not require private access. The full helper test suite requires the installed code package, not the private records checkout.
 
-`make -C support/yubikey test` also runs the parent/library contract tests in
+`make -C support/hsm test` also runs the parent/library contract tests in
 `tests/test_wrapped_secrets_integration.py`: complete JSON records, manifest
 identifiers, malformed/tampered input, and the password/SSH consumers. These use
 the public `golden-fake-1` software responder without mocking cryptography;

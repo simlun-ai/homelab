@@ -76,7 +76,7 @@ For SSH-key creation also stage `support/ups/coordinator_ed25519.pub` in the
 parent. Never put ciphertext in the parent to work around missing private access.
 Retain pushed private branches/commits referenced by the parent. After pulling
 parent changes, repeat `git submodule update --init --recursive -- tools/homelab-hsm secrets/wrapped` to select both
-pinned versions; do not use `--remote` for normal recovery. Rerun `make -C support/yubikey tools` during online preparation after changing the code-submodule version; it refreshes the local package and its dependencies. Record-only updates do not require reinstalling Python. Preserve uncommitted
+pinned versions; do not use `--remote` for normal recovery. Rerun `make -C support/hsm tools` after changing the code-submodule version; it installs the matching committed wheels offline into the external environment. Record-only updates do not require reinstalling Python. Preserve uncommitted
 changes before switching versions.
 
 ## Coordinator deployment

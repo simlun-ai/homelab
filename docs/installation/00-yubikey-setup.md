@@ -1,100 +1,105 @@
 # 00 - YubiKey setup
 
-**First implementation; physical programming and verification pending.**
+**Implementation available; physical programming and verification pending.**
 
-Configure and verify all four YubiKeys from a trusted Debian/Ubuntu laptop. Install and verify dependencies while the laptop is online, then make it air-gapped before handling the golden key. The [approved setup](../security/yubikey-setup.md) owns slot/settings; [Level 1](../security/golden-key-custody.md) owns golden-key custody. No production credential records are created in this step.
+Configure the four labelled tokens `key0` through `key3` inside an offline
+[level1vault](https://github.com/simlun-ai/level1vault) live OS session. The
+[approved setup](../security/yubikey-setup.md) owns the settings; the
+[custody policy](../security/golden-key-custody.md) owns generation retention.
+No production credential records are created in this step.
 
-## Prerequisites
+## 1. Enter the offline workspace and prepare tools
 
-- The four labelled tokens, `key0` through `key3`, and access to Level 1.
-- A trusted Debian/Ubuntu laptop with CPython 3.13–3.14. It can be online for preparation. Use a local terminal without recording during secret handling.
-
-After cloning, commands run from the repository root. Helpers use `support/yubikey/.venv/bin/python`; host Python creates the virtualenv and runs the standard-library key-generation example below.
-
-## 1. Install and verify dependencies — laptop online
-
-Complete this before accessing Level 1 or handling the golden key:
-
-```sh
-sudo apt install git
-git clone https://github.com/simlun-ai/homelab.git
-cd homelab
-git submodule update --init --recursive -- tools/homelab-hsm
-bash support/yubikey/install-system-dependencies.sh
-make -C support/yubikey tools
-make -C support/yubikey test
-```
-
-Expected: the idempotent script installs missing system packages and configures local-user USB access, requesting `sudo` when needed. `tools` uses standard `python3 -m venv`, `pip install -r` with [requirements.txt](../../support/yubikey/requirements.txt), plus the local project at `tools/homelab-hsm/homelab_secrets` (which owns token/crypto dependency pins), and `pip check`. Both setup commands can be rerun. The tests cover the parent and code repositories using disposable public keys and no hardware. Only the code submodule must be initialized before `tools` or `test`; token setup and tests do not require private records.
-
-USB permissions apply when a token is next connected. Run the helpers as the local user, not through `sudo`. Finish any dependency troubleshooting while online.
-
-## 2. Make the laptop air-gapped
-
-Disconnect network cables and disable Wi-Fi/Bluetooth before opening Level 1 or entering the golden key. Keep the laptop disconnected throughout programming and verification.
-
-The trusted laptop keeps its existing OS swap/suspend settings. The helper avoids secret files and output, disables its core dumps and SDK logging, and uses hidden prompts under the [secret-handling policy](../security/security.md#secret-handling-boundary).
-
-## 3. Establish the Level 1 record
-
-Using your existing Level 1 process, create `golden-1` from **20 cryptographically random bytes** if it does not exist, or retrieve the existing generation. Preserve exactly 40 hexadecimal characters, including leading zeros, and verify that the offline record is backed up under the [custody policy](../security/golden-key-custody.md).
-
-Generation and storage stay inside Level 1; the helper only consumes its record. Enter the key manually at the helper's hidden local prompts. Never put it in a shell command, environment variable, clipboard, checkout, or chat. Do not generate a replacement merely because programming or verification failed.
-
-### Generate a new golden key
-
-If `golden-1` does not yet exist, on the trusted laptop, **after disconnecting it from all networks**, generate 20 cryptographically random bytes as 40 hexadecimal characters:
+Boot level1vault with networking disconnected and use `start 1` (or the active
+pair number). Work as simlun inside its tmux session. Assume `pass` is already
+configured in the persistent home. Import the separately prepared repositories
+using [level1vault Git transport](https://github.com/simlun-ai/level1vault/blob/main/docs/GIT-BUNDLES.md):
 
 ```sh
-python3 -c 'import secrets; print(secrets.token_hex(20))'
+sudo workspace-transport-import 1
+workspace-transport-import-git-bundles /mnt/workspace/inbox/<delivery>/git-bundles
 ```
 
-Run this once, preserve the output in your offline Level 1 Password Management system, and use that same value for all four YubiKeys. The key appears in the terminal, so avoid terminal recording or output redirection.
-
-## 4. Inspect and program one token at a time
-
-Connect only `key0`:
+Replace `<delivery>` with the reported directory. The checkouts are
+`/mnt/workspace/git/homelab` and `/mnt/workspace/git/homelab-hsm`. Token setup uses
+the standalone HSM checkout; neither the code nor private-records submodule needs
+initializing. No clone, apt or online pip command runs in this session.
 
 ```sh
-make -C support/yubikey inspect
-make -C support/yubikey program LABEL=key0
+python3 -B /mnt/workspace/git/homelab-hsm/homelab_secrets/scripts/offline.py \
+  install --venv /mnt/workspace/venvs/homelab-hsm
+source /mnt/workspace/venvs/homelab-hsm/bin/activate
+homelab-hsm --help
 ```
 
-Inspect prints firmware, serial where available, and slot occupancy. Compare the device with the [inventory](../inventory.md#security-keys). Stop on an unexpected device. The program command asks for the Level 1 key twice, then asks you to type `program key0 slot2` after checking the physical label. By default it refuses occupied slot 2; slot 1 is never written.
+The installer verifies the committed wheels and runs hardware-free tests. Its
+external environment leaves both imported repositories clean for future updates.
+Reinstall after importing updated HSM code. Record both Git revisions used; this
+standalone ceremony does not select its tools through homelab's submodule pin.
 
-Expected: slot 2 is programmed, then verification alternates **do not touch** probes with explicit touch prompts. It compares three public 64-byte challenges with software HMAC in memory and prints a non-secret PASS. Responses and derived keys are never displayed. Source support covers firmware 2.2 onward; actual compatibility with both older Standard tokens must be proved here.
+## 2. Establish or retrieve golden-1
 
-If slot 2 already contains the golden key, or a run was interrupted after the write, use verification instead of programming again:
+Follow [level1vault's pass custody procedure](https://github.com/simlun-ai/level1vault/blob/main/docs/HSM.md#establish-the-stored-generation-once).
+It owns terminal pinentry setup, checking for an existing entry and first-time
+generation directly into `pass`. The item is **`yubikey/hsm/golden-1`**, containing
+only 40 hex characters representing 20 random bytes, including leading zeros.
+
+Do not generate a replacement after an installation, retrieval, programming or
+verification failure. Never display, copy/paste or manually transcribe the key.
+Use a local unrecorded terminal with shell tracing disabled. Enable `pipefail`
+and stop on every failed pipeline. Keep the session offline throughout.
+
+## 3. Inspect and program one token at a time
+
+Connect only `key0`, then inspect it:
 
 ```sh
-make -C support/yubikey verify LABEL=key0
+homelab-hsm inspect
 ```
 
-To deliberately replace a different slot 2 configuration after checking its current use:
+Compare firmware, serial where available and slot occupancy with the
+[inventory](../inventory.md#security-keys). Stop on an unexpected device.
+Program from the saved entry using level1vault's [programming pipeline](https://github.com/simlun-ai/level1vault/blob/main/docs/HSM.md#program-and-verify-from-the-saved-entry)
+and `homelab-hsm program --label key0`.
+
+The CLI reads the key from stdin and physical confirmation from `/dev/tty`.
+Type `program key0 slot2` only after checking the label. It refuses occupied
+slot 2 by default and never writes slot 1. Programming is followed by three
+public-challenge HMAC comparisons and alternating no-touch/touch checks.
+Responses and derived keys remain in memory; only public results are printed.
+
+If slot 2 already holds the key, or a write was interrupted, retrieve the same
+entry and pipe it to `homelab-hsm verify --label key0`. For deliberate erasure
+of a different slot 2 credential, use `homelab-hsm program --label key0 --replace`
+and type `replace key0 slot2 and erase existing credential`. A programming access
+code requires separate handling. Full CLI behavior belongs to
+[homelab-hsm](https://github.com/simlun-ai/homelab-hsm/blob/main/homelab_secrets/SETUP.md).
+
+Remove the token and repeat for `key1`, `key2` and `key3`, changing the label.
+Verify actual compatibility with both older Standard tokens; software tests do
+not establish hardware support.
+
+## 4. Verify the complete set and stored entry
+
+Retrieve the saved entry afresh and pipe it to:
 
 ```sh
-make -C support/yubikey replace LABEL=key0
+homelab-hsm verify-set --labels key0 key1 key2 key3
 ```
 
-This invokes `program --replace`. After the hidden key prompts, confirm the physical label and type `replace key0 slot2 and erase existing credential`. It overwrites the existing slot 2 credential, preserves slot 1, and immediately runs the same verification. A slot protected by an existing programming access code requires separate handling.
+This command requires piped key input; use the complete pipeline from the
+[level1vault runbook](https://github.com/simlun-ai/level1vault/blob/main/docs/HSM.md#program-and-verify-from-the-saved-entry).
+Follow its removal, insertion, label and touch prompts. Repeated serials are
+rejected when available; otherwise check distinct physical labels yourself.
+All four devices and software must unwrap the same disposable in-memory record.
+PASS establishes agreement with the retrieved entry, not recovery of future
+production credentials.
 
-Remove the token and repeat inspection and the appropriate command for `key1`, `key2`, and `key3`, changing `LABEL` and the confirmation label.
+## 5. Record results, replicate and finish
 
-## 5. Verify the complete set and offline record
-
-Reopen the saved `golden-1` record from Level 1, then run:
-
-```sh
-make -C support/yubikey verify-set
-```
-
-Enter that saved value at the hidden prompts. Follow the remove/insert sequence for all four labels. The helper rejects repeated serials when available; where a serial is unavailable, distinct physical labels are the operator's check.
-
-Expected: each token passes touch and HMAC checks. A fresh dummy credential wrapped with `key0` is unwrapped by all four tokens and the software fallback. The dummy record, payload, HMAC responses, and derived keys remain in process memory. A final PASS establishes agreement with the retrieved Level 1 record; it does not establish recovery of future production credentials.
-
-## 6. Record results
-
-Record the tested Git commit, OS/Python and installed package versions, date, and operator here. Add observed model/firmware/serial-to-label mappings to [inventory.md](../inventory.md#security-keys). Do not save terminal transcripts or secret test values.
+Record both tested Git revisions, OS/Python/package versions, date and operator.
+Update [inventory](../inventory.md#security-keys) with observed model, firmware
+and serial-to-label mappings. Never save transcripts or secret test values.
 
 | Token | Programmed | Individual checks | Cross-token checks |
 | --- | --- | --- | --- |
@@ -103,24 +108,21 @@ Record the tested Git commit, OS/Python and installed package versions, date, an
 | key2 | Pending | Pending | Pending |
 | key3 | Pending | Pending | Pending |
 
-Prepare replacement/recovery laptops using section 1 while online, then disconnect before handling the golden key. Rerun `tools` and `test` after selecting a different code-submodule version to refresh its package/dependencies and verify the [parent/library contract](../security/helper-implementation.md#coordinator-password-helper). Independent recovery-tool acquisition remains [pending](../security/recovery-procedures.md).
+- [ ] Verify real USB access and GnuPG pinentry inside simlun's live tmux session.
+- [ ] Record real programming/touch/verification results for every token.
+- [ ] Follow level1vault's [replication and retrieval acceptance](https://github.com/simlun-ai/level1vault/blob/main/docs/HSM.md#replication-and-acceptance).
+- [ ] Keep tokens at separate locations under the custody policy.
 
-- [ ] Record the real installation results and resolve failures.
-- [ ] Verify Level 1 backup/retrieval and keep the four tokens at separate locations under the custody policy.
-
-Shut down the air-gapped laptop before reconnecting anything networked. The [Emergency Recovery Guide](../emergency-recovery-guide.md) still has pending service-recovery work; this setup does not yet constitute a verified Vault recovery path.
+Exit all panes and follow `start`'s export and poweroff prompts. The
+[Emergency Recovery Guide](../emergency-recovery-guide.md) still has pending
+service-recovery work; this ceremony is not a verified Vault recovery path.
 
 ## Failure actions
 
 | Failure | Action |
 | --- | --- |
-| Dependency installation or `pip check` failure | Resolve it during online preparation, before retrieving secrets; rerun system dependencies and `tools`. |
-| No token or multiple tokens | Connect one device, check its enabled OTP interface and local-seat USB permissions, then retry inspection. |
-| Occupied slot 2 | Use `verify` when it already holds the golden key. Use `replace` only after reviewing the existing credential and explicitly confirming its erasure. |
-| Interrupted write, touch failure, or HMAC/unwrap mismatch | Remove/reinsert the token and run `verify`. Keep it marked unverified; report only the phase and public device metadata. Do not delete the Level 1 record, generate a new golden key, or continue to coordinator setup. |
-
-## Upstream references
-
-- [Pinned Yubico OTP implementation](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/yubiotp.py): firmware support, fixed-length configuration, and HMAC operations.
-- [Pinned Yubico USB OTP protocol](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/core/otp.py): touch requests and cancellation.
-- [Yubico Linux device permissions](https://github.com/Yubico/yubikey-manager/blob/5.9.2/doc/Device_Permissions.adoc).
+| Offline installation fails | Stop before retrieving the key. Prepare corrected code/wheels or OS on the online workstation, transport them and retry offline. |
+| pass retrieval or pinentry fails | Check the configured store, GnuPG identity and terminal using level1vault's procedure. Do not replace the entry. |
+| No token, multiple tokens or permission failure | Connect one expected device; check enabled OTP interface and simlun's device-group access. |
+| Occupied slot 2 | Verify if it holds the same key; replace only after reviewing its use and confirming erasure. |
+| Interrupted write, touch failure, HMAC or unwrap mismatch | Reinsert and verify using the saved entry. Keep it marked unverified; report only public metadata and phase. Do not regenerate or continue coordinator setup. |

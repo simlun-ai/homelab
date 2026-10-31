@@ -6,7 +6,7 @@ help:
 	@printf '%s\n' 'Available scopes: make yubikey-help; make ups-help' 'Checks: make ci; make lint; make format; make typecheck; make ansible-lint'
 
 yubikey-help:
-	@$(MAKE) --no-print-directory -C "$(ROOT)/support/yubikey" help
+	@$(MAKE) --no-print-directory -C "$(ROOT)/support/hsm" help
 
 
 ups-help:

@@ -6,13 +6,13 @@
 
 Helpers must never commit plaintext secrets, golden-key material, HMAC responses, or derived keys, or explicitly write them to workstation disk, including ignored files, temporary files, caches, shell history, logs, saved plans, local state, and crash dumps. Use process memory or streams; account for subprocesses and failure paths.
 
-The trusted air-gapped laptop used in [step 00](../installation/00-yubikey-setup.md) retains its existing OS swap/suspend configuration; setup does not disable or reject it. Other recovery environments, including the temporary OpenBao container, still require their documented memory-storage checks.
+[Step 00](../installation/00-yubikey-setup.md) runs inside the offline level1vault live OS. Its environment policy belongs to level1vault; helpers disable core dumps and keep decrypted keys in memory/streams. Other recovery environments, including the temporary OpenBao container, still require their documented memory-storage checks.
 
 Authenticated `homelab-wrap-v1` credential records may be committed and persisted on workstation disk, and consuming hosts under the [encrypted-record storage policy](encrypted-record-storage.md). Decryption remains memory-only.
 
 Public challenges, secret references, and protocol metadata may be committed. HMAC responses, derived values, golden-key material, and plaintext credentials or unseal/recovery material are secret. Keep them out of documentation, fixtures, and test output.
 
-Encrypted persistence in cluster services, remote state, and backups is allowed, including protected Talos state, appropriately encrypted Kubernetes secret storage, and OpenBao storage. Transport must not stage decrypted secrets or OpenBao snapshots on workstation disk. The separately held offline golden-key record is outside the repository and workstation storage.
+Encrypted persistence in cluster services, remote state, and backups is allowed, including protected Talos state, appropriately encrypted Kubernetes secret storage, and OpenBao storage. Transport must not stage decrypted secrets or OpenBao snapshots on workstation disk. The separately held offline golden-key record is encrypted by pass inside level1vault's encrypted workspace, outside these code and wrapped-record repositories.
 
 ## Core-secret foundation
 
@@ -32,7 +32,7 @@ Verify programming/query tools and matching behavior on every actual device, inc
 
 ## Golden key and software recovery
 
-Generate the golden key once with suitable randomness and handle it only in memory during programming. Never print, log, or export it to the checkout.
+Generate the golden key once with suitable randomness and handle it only in memory during programming. Never display, log, or export it to the checkout. The generator emits it only to a pipe for encrypted storage.
 
 The offline record enables replacement tokens and software recovery. The fallback must reproduce the exact effective challenge bytes, HMAC-SHA1 operation, and subsequent derivation/unwrap steps. It cannot enforce touch: possession of the golden key gives access to the entire foundation.
 
@@ -87,7 +87,7 @@ The caller supplies the expected `key_id` and allowed root generation independen
 - Preserve the root generation, exact identifier, encrypted record, and any trusted freshness metadata needed for each retained disk or backup. HMAC cannot reconstruct externally issued credentials or OpenBao-generated material. Independent-access requirements belong in [backup-and-restore.md](../backup-and-restore.md#independent-recovery-material).
 - Keep responses and derived keys within their authorized memory-only lifetime. KMS expiry must discard both, including copies that could recreate wrapping authority.
 
-The initial helper uses Python `cryptography`'s HKDF and AESGCM APIs. Its validated header contains only restricted ASCII strings and integers within the exact JSON range, so sorted compact JSON provides RFC 8785 canonicalization for this schema. Package pins and dependency installation belong to [step 00](../installation/00-yubikey-setup.md). Before production use, verify disposable test vectors, matching behavior across all four tokens and the software fallback, malformed/tampered records, identifier substitution, rotation, and memory handling. Never use or publish real golden-key responses as test vectors.
+The initial helper uses Python `cryptography`'s HKDF and AESGCM APIs. Its validated header contains only restricted ASCII strings and integers within the exact JSON range, so sorted compact JSON provides RFC 8785 canonicalization for this schema. Package pins and offline installation belong to homelab-hsm; [step 00](../installation/00-yubikey-setup.md) documents their use. Before production use, verify disposable test vectors, matching behavior across all four tokens and the software fallback, malformed/tampered records, identifier substitution, rotation, and memory handling. Never use or publish real golden-key responses as test vectors.
 
 Challenge-response needs helper logic; it is not native ZFS unlock integration or an OpenBao seal mechanism. OpenPGP and PKCS#11 are outside the chosen foundation.
 
@@ -136,7 +136,7 @@ For encrypted `STATE`, networking must work before the machine configuration can
 
 ## Planned YubiKey configuration runbook
 
-The first [00 - YubiKey setup](../installation/00-yubikey-setup.md) implementation targets a trusted Debian/Ubuntu laptop: install and verify dependencies online, then make it air-gapped before handling the golden key. It owns tooling preparation, programming and verification; physical trials remain pending. Replacement/loss and rotation requirements belong in [recovery procedures](recovery-procedures.md) and [rotation and rollback](rotation-and-rollback.md).
+[00 - YubiKey setup](../installation/00-yubikey-setup.md) uses the level1vault live OS and separately imported homelab-hsm checkout. HSM commands install from committed wheels offline; level1vault owns pass storage/retrieval and homelab-hsm owns generation/programming/verification. Physical trials remain pending. Replacement/loss and rotation requirements belong in [recovery procedures](recovery-procedures.md) and [rotation and rollback](rotation-and-rollback.md).
 
 ## Remaining decisions
 

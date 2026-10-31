@@ -37,7 +37,7 @@ Use one working YubiKey, the required wrapped records, and a recovery workstatio
 
 ## Recovery repository and local records
 
-Use the checked-out repositories and their Git history to find `secrets/wrapped/` and the public identifier-to-file manifest at `secrets/manifest.json`, this guide, and helper source without GitHub or OpenBao. Shared wrap/unwrap source and dependency pins live at `tools/homelab-hsm/homelab_secrets/`; token programming and application-specific delivery remain in the parent. Snapshot backups remain in R2; required binaries/dependencies still need the specified acquisition procedure.
+Use the checked-out repositories and their Git history to find `secrets/wrapped/` and the public identifier-to-file manifest at `secrets/manifest.json`, this guide, and helper source without GitHub or OpenBao. Shared wrap/unwrap source and dependency pins live at `tools/homelab-hsm/homelab_secrets/`; homelab-hsm also owns generation and token programming/verification, while application-specific delivery remains in the parent. Snapshot backups remain in R2; required binaries/dependencies still need the specified acquisition procedure.
 
 The coordinator uses its own locally deployed wrapped records at startup; planned Ansible provisioning copies ciphertext without decrypting it. Implementation remains pending.
 
@@ -74,7 +74,7 @@ Obtain the expected identifier and allowed root generation independently; compar
 
 Every encryption uses fresh cryptographic random salt and nonce; never reuse a key/nonce pair. Updates/rewrapping increment the record revision. An old authentic record can still decrypt. Track revisions and explicitly select records for recovery; strong rollback enforcement through independently trusted revision or digest state is deferred. Retain the generations and records needed by the selected disk or snapshot. Changing the identifier's wrapping generation cannot revoke a token sharing the golden key.
 
-The helper uses Python `cryptography` HKDF/AESGCM and an RFC 8785-compatible serializer; pins live in `tools/homelab-hsm/homelab_secrets/pyproject.toml`. Prepare the scoped environment using `make -C support/yubikey tools` while online; the code submodule also includes standalone offline wheel bundles. Preparing and verifying the complete recovery environment independently remains TBD. KMS session expiry discards the node KMS keys, derived payload keys, and secret copies, separately from the coordinator's longer-lived DNS/TLS/ACME material. Raw YubiKey responses and wrapping keys remain only briefly on the workstation.
+The helper uses Python `cryptography` HKDF/AESGCM and an RFC 8785-compatible serializer; pins live in `tools/homelab-hsm/homelab_secrets/pyproject.toml`. Prepare the application environment using `make -C support/hsm tools` from committed offline wheels. Token replacement uses the standalone HSM CLI inside level1vault, with encrypted pass custody as documented in step 00. Preparing and verifying the complete recovery environment independently remains TBD. KMS session expiry discards the node KMS keys, derived payload keys, and secret copies, separately from the coordinator's longer-lived DNS/TLS/ACME material. Raw YubiKey responses and wrapping keys remain only briefly on the workstation.
 
 ## Golden-key fallback and replacement token
 

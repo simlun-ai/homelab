@@ -1,5 +1,6 @@
 .DEFAULT_GOAL := help
 SCOPE := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+HSM_VENV ?= $(HOME)/.local/share/homelab/venvs/hsm
 PYTHON := $(SCOPE)/.venv/bin/python
 ANSIBLE_PLAYBOOK := $(SCOPE)/.venv/bin/ansible-playbook
 export ANSIBLE_CONFIG := $(SCOPE)/ansible.cfg
@@ -63,12 +64,12 @@ bootstrap verify harden verify-hardening: check-tools ssh-key-check
 password-create password-reveal password-apply:
 	@case "$$HOST" in ups-aux|ups-pi|ups-metal) ;; \
 	  *) printf '%s\n' 'Set HOST to exactly ups-aux, ups-pi, or ups-metal.' >&2; exit 2;; esac; \
-	exec "$(SCOPE)/../yubikey/.venv/bin/python" -I -B \
+	exec "$(HSM_VENV)/bin/python" -I -B \
 	  "$(SCOPE)/../../scripts/coordinator_password_cli.py" $(patsubst password-%,%,$@) --host "$$HOST"
 
 .PHONY: ssh-key-create ssh-key-load ssh-key-public ssh-key-unload ssh-key-check
 ssh-key-create ssh-key-load ssh-key-public:
-	@"$(SCOPE)/../yubikey/.venv/bin/python" -I -B \
+	@"$(HSM_VENV)/bin/python" -I -B \
 	  "$(SCOPE)/../../scripts/coordinator_ssh_cli.py" $(patsubst ssh-key-%,%,$@)
 
 ssh-key-check ssh-key-unload: check-tools

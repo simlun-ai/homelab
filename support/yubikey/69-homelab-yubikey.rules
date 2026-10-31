@@ -1,2 +1,0 @@
-# OTP-capable USB products in the current inventory; access for the local seat.
-ACTION=="add|change", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1050", ATTRS{idProduct}=="0010|0407", TAG+="uaccess"
