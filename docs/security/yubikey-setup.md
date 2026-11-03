@@ -8,7 +8,7 @@ Configure OTP slot 2 on all four YubiKeys with:
 
 - The same 20-byte golden key.
 - HMAC-SHA1 challenge-response.
-- Fixed 64-byte challenge processing.
+- Variable-length processing (`HMAC_LT64`) for 44-byte NUL-free challenges.
 - Physical touch required for every response.
 
 Slot 1 remains available. Programming access codes are deferred to
@@ -32,7 +32,7 @@ Handle the golden key and HMAC responses only in memory, following
 Verify on every token:
 
 - A challenge produces no response without physical touch.
-- Several public 64-byte challenges produce identical responses across
+- Several distinct public 44-byte challenges produce identical responses across
   all four tokens and the software fallback.
 - A dummy credential wrapped using one token can be unwrapped using
   every other token.
