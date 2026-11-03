@@ -11,7 +11,7 @@ All entries must be non-secret.
 | Field | Value |
 | --- | --- |
 | Guide revision / repository commit; last verified restore | TBD. |
-| Core-secret protocol version and YubiKey HMAC slot | `homelab-wrap-v1`; OTP slot 2 selected, fixed 64-byte challenges, touch required. Programming/verification pending. |
+| Core-secret protocol version and YubiKey HMAC slot | `homelab-wrap-v1`; OTP slot 2 selected, 44-byte Base64 challenges with HMAC_LT64, touch required. Programming/verification pending. |
 | Effective challenge bytes, encoding, purpose identifiers, length/padding | V1 construction below; exact recovery identifiers and device verification TBD. |
 | Derivation/wrapping algorithms, output encoding, public parameters | HKDF-SHA-256 + AES-256-GCM; JSON/JCS and padded Base64 as specified below. |
 | Snapshot OpenBao version, ARM64 Pi and workstation recovery images/tools; independent acquisition locations | TBD. |
@@ -59,7 +59,7 @@ Records have exactly seven fields: `format` (`homelab-wrap-v1`), `root_key` (pub
 `revision` is an integer from 1 through 9007199254740991. Salt, nonce, and ciphertext use canonical padded standard Base64 without whitespace. Decode a 32-byte salt, a 12-byte nonce, and ciphertext ending in the full 16-byte GCM tag.
 
 ```text
-challenge = ASCII(lowercase_hex(SHA256(ASCII(key_id))))
+challenge = ASCII(Base64(SHA256(ASCII(key_id))))
 response = HMAC-SHA1(golden_key, challenge)
 info = ASCII("homelab-wrap-v1") || NUL || ASCII(root_key) || NUL || ASCII(key_id)
 wrapping_key = HKDF-SHA-256(input=response, salt=salt, info=info, length=32)
@@ -68,7 +68,7 @@ aad = UTF8(JCS(header))
 secret_bytes = AES-256-GCM.decrypt(wrapping_key, nonce, ciphertext, aad)
 ```
 
-The token computes the HMAC with touch; software fallback performs the identical operation. The challenge is exactly 64 bytes with fixed-length processing. Use the raw 20-byte response, full HKDF extract-and-expand, one zero byte for each `NUL`, byte concatenation for `||`, and RFC 8785 canonicalization for `JCS`.
+The token computes the HMAC with touch; software fallback performs the identical operation. The challenge is exactly 44 bytes: padded standard Base64 of the full SHA-256 digest, with no whitespace or newline. Enable `HMAC_LT64` on every token; the SDK pads the USB frame and the token processes only the 44 challenge bytes. Use the raw 20-byte response, full HKDF extract-and-expand, one zero byte for each `NUL`, byte concatenation for `||`, and RFC 8785 canonicalization for `JCS`.
 
 Obtain the expected identifier and allowed root generation independently; compare them before querying the token. Reject unknown formats, missing/extra/duplicate fields, invalid types/encodings/lengths, and failed authentication. Release plaintext only after authentication succeeds. Helper size limits remain TBD. Strong rollback enforcement is deferred; initial tooling does not independently enforce record freshness.
 

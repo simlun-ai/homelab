@@ -19,7 +19,7 @@ ykman otp info
 
 ## Program or replace slot 2
 
-**This overwrites slot 2; slot 1 is left alone.** Use the successor's Python API for this operation: `ykman otp chalresp --touch 2` uses variable-length processing and has no CLI option to select our fixed 64-byte mode. Its default is therefore not a substitute for the project's configuration, even if an ASCII-only test happens to pass.
+**This overwrites slot 2; slot 1 is left alone.** Use the successor's Python API below to enable variable-length processing and physical touch consistently on every token, including firmware 2.2.
 
 Run this public-test-only example with Ubuntu's Python. It requires exactly one accessible OTP device and explicit confirmation before writing either an empty or occupied slot 2:
 
@@ -42,24 +42,24 @@ with devices[0].open_connection(OtpConnection) as connection:
         if terminal.readline().strip() != "overwrite test slot2":
             raise SystemExit("Cancelled")
     configuration = (HmacSha1SlotConfiguration(bytes(range(20)))
-                     .lt64(False).require_touch(True).allow_update(False))
+                     .lt64(True).require_touch(True).allow_update(False))
     session.put_configuration(SLOT.TWO, configuration)
 PYTHON
 ```
 
-`lt64(False)` selects fixed-length processing, `require_touch(True)` requires touch, and `allow_update(False)` matches the project helper. An existing programming access code requires separate handling. The example uses only the public test key; use step 00's hidden-input helper for real golden-key material.
+`lt64(True)` selects variable-length processing, `require_touch(True)` requires touch, and `allow_update(False)` matches the project helper. An existing programming access code requires separate handling. The example uses only the public test key; use step 00's hidden-input helper for real golden-key material.
 
 ## Query HMAC and check touch
 
-The catalogue challenge is the SHA-256 digest represented as **64 lowercase ASCII hex characters**, with no newline. `ykman otp calculate` accepts hex-encoded bytes, so encode those ASCII characters a second time before passing them:
+The catalogue challenge is the SHA-256 digest represented as **44 padded standard Base64 ASCII characters**, with no newline. `ykman otp calculate` accepts hex-encoded bytes, so hex-encode those ASCII characters before passing them:
 
 ```sh
-challenge=$(printf '%s' 'homelab/v1/test/wrapping/demo/r1' | sha256sum | cut -d ' ' -f 1)
+challenge=$(printf '%s' 'homelab/v1/test/wrapping/demo/r1' | openssl dgst -sha256 -binary | base64 -w0)
 challenge_hex=$(printf '%s' "$challenge" | od -An -v -tx1 | tr -d ' \n')
 ykman otp calculate 2 "$challenge_hex"
 ```
 
-Touch when prompted; the command prints the 20-byte HMAC response as 40 hex characters. Repeat with another token programmed with the same test key: responses must match. Passing `$challenge` directly would send only 32 decoded bytes and change the derived key.
+Touch when prompted; the command prints the 20-byte HMAC response as 40 hex characters. Repeat with another token programmed with the same test key: responses must match. Passing `$challenge` directly would treat Base64 as hex and fail.
 
 There is no CLI equivalent of the old nonblocking touch check. Use the successor's API to require an explicit touch-needed status and cancel the request without touching:
 
@@ -86,7 +86,7 @@ with devices[0].open_connection(OtpConnection) as connection:
     timer = Timer(5, cancel.set)
     timer.start()
     try:
-        session.calculate_hmac_sha1(SLOT.TWO, b"A" * 64, cancel, keepalive)
+        session.calculate_hmac_sha1(SLOT.TWO, b"A" * 44, cancel, keepalive)
     except TokenTimeout:
         if not requested_touch.is_set():
             raise SystemExit("FAIL: timeout without proof that touch was required")
@@ -99,7 +99,7 @@ with devices[0].open_connection(OtpConnection) as connection:
 PYTHON
 ```
 
-A timeout or USB error alone does not establish touch enforcement. For complete fixed-length and cross-token verification, run step 00's helper, which also tests a binary 64-byte challenge containing NUL.
+A timeout or USB error alone does not establish touch enforcement. For complete challenge and cross-token verification, run step 00's helper, which checks three distinct 44-byte NUL-free challenges against software HMAC.
 
 ## HMAC verification and encryption in Python
 
@@ -119,7 +119,7 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 key_id = "homelab/v1/test/wrapping/demo/r1"
 root_key = "demo-only"
-challenge = hashlib.sha256(key_id.encode("ascii")).hexdigest()
+challenge = base64.b64encode(hashlib.sha256(key_id.encode("ascii")).digest()).decode("ascii")
 salt, nonce = os.urandom(32), os.urandom(12)
 info = f"homelab-wrap-v1\0{root_key}\0{key_id}".encode("ascii")
 b64 = lambda value: base64.b64encode(value).decode("ascii")

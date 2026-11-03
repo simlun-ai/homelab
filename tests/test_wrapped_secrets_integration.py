@@ -34,7 +34,7 @@ class WrappedSecretsIntegrationTests(unittest.TestCase):
             key_id = entry["key_id"]
             self.assertEqual(
                 wrapping.challenge(key_id),
-                hashlib.sha256(key_id.encode("ascii")).hexdigest().encode("ascii"),
+                base64.b64encode(hashlib.sha256(key_id.encode("ascii")).digest()),
             )
             for plaintext in (b"", b"public dummy password", bytes(range(256)) + b"\n"):
                 with self.subTest(key_id=key_id, size=len(plaintext)):

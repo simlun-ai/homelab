@@ -37,10 +37,10 @@ Identifiers use lowercase ASCII letters, digits, hyphens, and `/`, with nonempty
 V1 challenge construction:
 
 ```text
-challenge = ASCII(lowercase_hex(SHA256(ASCII(identifier))))
+challenge = ASCII(Base64(SHA256(ASCII(identifier))))
 ```
 
-This produces exactly 64 challenge bytes. Configure matching fixed-length processing on all four tokens and verify it against the software fallback. [Yubico’s YubiKey Manager implementation](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/yubiotp.py) provides HMAC-SHA1, fixed-length processing, and touch configuration for firmware 2.2 and later; actual device verification remains required.
+This produces exactly 44 ASCII bytes using padded standard Base64, with no newline or NUL. Enable variable-length processing (`HMAC_LT64`, `lt64(True)`) on all four tokens. This avoids a [documented firmware 2.2 bug](https://github.com/Yubico/yubico-pam/blob/master/ykpamcfg.c) that returns identical responses for different challenges when the flag is clear. Verify every device against software HMAC before acceptance. This replaces the unused 64-byte hexadecimal challenge definition; credential identifiers retain their `homelab/v1/` namespace.
 
 The raw response feeds HKDF-SHA-256 and AES-256-GCM using the [v1 encrypted-record format](security.md#challenges-derivation-and-wrapped-credentials). That section owns derivation, authenticated metadata, revision/rotation rules, and validation. The initial shared implementation is exercised by [step 00](../installation/00-yubikey-setup.md); the coordinator password consumer is implemented; other production consumers remain pending.
 

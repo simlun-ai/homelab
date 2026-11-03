@@ -126,3 +126,21 @@ service-recovery work; this ceremony is not a verified Vault recovery path.
 | No token, multiple tokens or permission failure | Connect one expected device; check enabled OTP interface and simlun's device-group access. |
 | Occupied slot 2 | Verify if it holds the same key; replace only after reviewing its use and confirming erasure. |
 | Interrupted write, touch failure, HMAC or unwrap mismatch | Reinsert and verify using the saved entry. Keep it marked unverified; report only public metadata and phase. Do not regenerate or continue coordinator setup. |
+
+## Firmware 2.2 compatibility update
+
+A physical run on `key3` (firmware 2.2.3, serial 1020513) reported a successful
+slot 2 write but failed software HMAC comparison, including after reinsertion
+without the cancelled no-touch probe. The old helper disabled `HMAC_LT64`,
+which is affected by a documented firmware 2.2 bug. This is not verification
+acceptance; the other device results remain pending.
+
+Use the updated homelab-hsm checkout and its rebuilt offline bundle. All tokens
+must use `HMAC_LT64` and the new 44-byte challenge protocol described in
+[yubikey.md](../security/yubikey.md). Keep the existing `yubikey/hsm/golden-1`
+entry: do not generate or replace it to resolve this failure. For each occupied
+slot 2 programmed with the old helper, use the existing explicit `program
+--replace` procedure, confirm the physical label, and repeat verification and
+`verify-set`. Slot 1 remains untouched. Updated physical verification is pending.
+
+The v1 challenge definition is updated in place before real credential use.
