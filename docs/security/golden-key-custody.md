@@ -1,6 +1,6 @@
 # Golden-key custody
 
-**Decision approved; backup and recovery verification pending.**
+**Golden-1 custody, replication and independent replica retrieval verified 2026-11-04.**
 
 Store each golden-key generation using **pass inside the offline level1vault
 live OS**, in its persistent encrypted workspace/home. The initial item is
@@ -30,5 +30,9 @@ an active USB mirror alone is not an independent backup.
 
 Verify the retrieved entry against the tokens before relying on it, comparing
 HMAC responses only in memory. [Step 00](../installation/00-yubikey-setup.md) owns
-the four-token ceremony and public results. Actual token, backup and retrieval
-acceptance remain pending; physical storage locations stay outside this repository.
+the four-token ceremony and public results. The saved `golden-1` entry was
+verified against all four tokens and the software fallback. The operator also
+confirmed workspace replication and saved-entry retrieval/verification from
+independent read-only replicas. This establishes custody acceptance for the
+initial generation; future production-credential and service recovery drills
+remain separate. Physical storage locations stay outside this repository.

@@ -1,12 +1,12 @@
 # YubiKey Credential Catalogue
 
-**Initial setup/wrapping helpers implemented; physical programming and verification pending.** Coordinator administrator password and shared SSH key lookups are implemented; actual records require local generation with a verified token. Other production lookups remain proposed.
+**Initial setup/wrapping helpers implemented; all four tokens physically verified 2026-11-04.** Coordinator administrator password and shared SSH key lookups are implemented; actual records require local generation with a verified token. Other production lookups remain proposed.
 
 This document owns the lookup catalogue. Hardware inventory belongs in [inventory.md](../inventory.md#security-keys); golden-key custody, secret handling, and encryption policy belong in [security.md](security.md); recovery requirements belong in [backup-and-restore.md](../backup-and-restore.md).
 
 ## Model
 
-The four YubiKeys act as interchangeable mini HSMs, each holding the same 20-byte golden key and requiring touch for HMAC-SHA1 challenge-response. The [approved setup](yubikey-setup.md) selects OTP slot 2 and the existing labels `key0` through `key3`; programming and verification remain pending.
+The four YubiKeys act as interchangeable mini HSMs, each holding the same 20-byte golden key and requiring touch for HMAC-SHA1 challenge-response. The [approved setup](yubikey-setup.md) selects OTP slot 2 and the existing labels `key0` through `key3`; programming and verification are complete; [step 00](../installation/00-yubikey-setup.md) records acceptance results.
 
 The logical key-value store consists of:
 
