@@ -11,7 +11,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Initialize public code at the parent-pinned revision
-        run: git submodule update --init --recursive -- tools/homelab-hsm
+        run: |
+          # Use anonymous HTTPS in CI; developer checkouts keep the SSH URL.
+          git config submodule.tools/homelab-hsm.url https://github.com/simlun-ai/homelab-hsm.git
+          git submodule update --init --recursive -- tools/homelab-hsm
       - uses: docker/setup-buildx-action@v4
       - name: Run the same checks as local development
         run: make ci
