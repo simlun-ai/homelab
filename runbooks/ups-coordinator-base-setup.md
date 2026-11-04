@@ -9,16 +9,16 @@ Hardware/power assignments belong in the [inventory](../docs/inventory.md). Exec
 Have the repository checked out, a microSD card and reader, and a verified YubiKey available. Use wired Ethernet, DHCP, and Internet access independent of the homelab clusters. Card models/capacities remain TBD.
 
 Use Python 3.13–3.14 for both the UPS and HSM helper environments. With pyenv
-installed and initialized in your shell, select Python 3.13 before running any
-`make tools` commands. If it is not installed, first prepare pyenv's
+installed and initialized in your shell, the repository's `.python-version`
+selects Python 3.13.18 for `make tools`. If it is not installed, first prepare pyenv's
 [Python build dependencies](https://github.com/pyenv/pyenv/wiki#suggested-build-environment).
 
 From the repository root, in the same shell:
 
 ```sh
 bash support/ups/install-system-dependencies.sh
-pyenv install -s 3.13
-pyenv shell 3.13
+pyenv install -s 3.13.18
+pyenv shell --unset
 python3 --version
 make -C support/ups tools
 make -C support/ups syntax
