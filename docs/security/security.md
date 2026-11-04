@@ -1,6 +1,6 @@
 # Security
 
-**Planned design.** YubiKey programming, integrations, and verification are not completed.
+**YubiKey foundation verified; service integrations remain in progress.** Initial token programming, cross-token/software checks and independent replica retrieval passed on 2026-11-04; [step 00](../installation/00-yubikey-setup.md) records the scope.
 
 ## Secret-handling boundary
 
@@ -36,11 +36,11 @@ Generate the golden key once with suitable randomness and handle it only in memo
 
 The offline record enables replacement tokens and software recovery. The fallback must reproduce the exact effective challenge bytes, HMAC-SHA1 operation, and subsequent derivation/unwrap steps. It cannot enforce touch: possession of the golden key gives access to the entire foundation.
 
-Store golden-key generations in the existing air-gapped, replicated Level 1 Password Management system under the [custody policy](golden-key-custody.md). Loading a key into a recovery workstation must follow the memory-only rule; retrieval and verification steps remain pending.
+Store golden-key generations in the existing air-gapped, replicated Level 1 Password Management system under the [custody policy](golden-key-custody.md). Loading a key into a recovery workstation must follow the memory-only rule; initial replica retrieval and token verification passed; future service-recovery drills remain separate.
 
 ## Challenges, derivation, and wrapped credentials
 
-**Decision:** Use HKDF-SHA-256 and AES-256-GCM for direct YubiKey wrapping, with the `homelab-wrap-v1` JSON record below. The initial shared helper is implemented for [step 00](../installation/00-yubikey-setup.md); physical-token verification and production integrations remain pending. The [YubiKey catalogue](yubikey.md) owns identifiers, challenge construction, consumers, and unresolved bootstrap coverage; OTP slot 2 is selected under the [approved setup](yubikey-setup.md).
+**Decision:** Use HKDF-SHA-256 and AES-256-GCM for direct YubiKey wrapping, with the `homelab-wrap-v1` JSON record below. The initial shared helper is implemented for [step 00](../installation/00-yubikey-setup.md); physical-token verification passed on all four devices; production integrations remain pending. The [YubiKey catalogue](yubikey.md) owns identifiers, challenge construction, consumers, and unresolved bootstrap coverage; OTP slot 2 is selected under the [approved setup](yubikey-setup.md).
 
 ### Derivation and encryption
 
@@ -134,22 +134,22 @@ Planned placement is Vault, beside OpenBao, so the adapter is available before d
 
 For encrypted `STATE`, networking must work before the machine configuration can be read, and custom CA certificates stored in `STATE` cannot establish KMS trust. Settle early-boot addressing/DNS and a Talos-supported TLS trust path before rollout. Adapter packaging, endpoint, authentication, timeouts, key mapping/rotation, and restore tests remain TBD; do not copy the reference test server's random-data fallback behavior.
 
-## Planned YubiKey configuration runbook
+## YubiKey configuration runbook
 
-[00 - YubiKey setup](../installation/00-yubikey-setup.md) uses the level1vault live OS and separately imported homelab-hsm checkout. HSM commands install from committed wheels offline; level1vault owns pass storage/retrieval and homelab-hsm owns generation/programming/verification. Physical trials remain pending. Replacement/loss and rotation requirements belong in [recovery procedures](recovery-procedures.md) and [rotation and rollback](rotation-and-rollback.md).
+[00 - YubiKey setup](../installation/00-yubikey-setup.md) uses the level1vault live OS and separately imported homelab-hsm checkout. HSM commands install from committed wheels offline; level1vault owns pass storage/retrieval and homelab-hsm owns generation/programming/verification. Initial physical-token and replica-retrieval acceptance is complete; see step 00. Replacement/loss and rotation requirements belong in [recovery procedures](recovery-procedures.md) and [rotation and rollback](rotation-and-rollback.md).
 
 ## Remaining decisions
 
 Approved topic decisions and remaining implementation work:
 
 - [Encrypted-record storage](encrypted-record-storage.md) — decision approved; implementation pending.
-- [YubiKey setup](yubikey-setup.md) — decision approved; programming and verification pending.
+- [YubiKey setup](yubikey-setup.md) — configured and physically verified on all four tokens.
 - [Yubico CLI fallback](yubico-fallback.md) — manually verify, debug, and sanity-check our Python implementation with Ubuntu-packaged Yubico tools; reference only, not selected or hardware-tested.
-- [Golden-key custody](golden-key-custody.md) — decision approved; backup and recovery verification pending.
+- [Golden-key custody](golden-key-custody.md) — initial generation custody, replication and independent replica retrieval verified.
 - [OpenBao unseal](openbao-unseal.md) — unseal decision approved; implementation, recovery administration, and restore verification pending.
 - [Credential catalogue](yubikey.md#record-and-maintenance-requirements) — catalogue rules approved; production entries and consumer integrations pending.
 - [Coordinator sessions](coordinator-sessions.md) — decision approved; implementation and verification pending.
-- [Helper implementation](helper-implementation.md) — initial token/wrapping helpers implemented; physical verification and service helpers pending.
+- [Helper implementation](helper-implementation.md) — initial token/wrapping helpers physically verified; service helpers pending.
 - [Rotation and rollback](rotation-and-rollback.md) — decision approved; procedures and verification pending. Strong rollback enforcement deferred.
 - [Recovery procedures](recovery-procedures.md) — recovery requirements approved; commands and drills pending.
 

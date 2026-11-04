@@ -1,6 +1,6 @@
 # 00 - YubiKey setup
 
-**Implementation available; physical programming and verification pending.**
+**Completed: physical programming, verification and replica-retrieval acceptance confirmed 2026-11-04.**
 
 Configure the four labelled tokens `key0` through `key3` inside an offline
 [level1vault](https://github.com/simlun-ai/level1vault) live OS session. The
@@ -66,6 +66,7 @@ The CLI reads the key from stdin and physical confirmation from `/dev/tty`.
 Type `program key0 slot2` only after checking the label. It refuses occupied
 slot 2 by default and never writes slot 1. Programming is followed by three
 public-challenge HMAC comparisons and alternating no-touch/touch checks.
+Remove your finger during the two-second pause before each no-touch probe.
 Responses and derived keys remain in memory; only public results are printed.
 
 If slot 2 already holds the key, or a write was interrupted, retrieve the same
@@ -103,15 +104,32 @@ and serial-to-label mappings. Never save transcripts or secret test values.
 
 | Token | Programmed | Individual checks | Cross-token checks |
 | --- | --- | --- | --- |
-| key0 | Pending | Pending | Pending |
-| key1 | Pending | Pending | Pending |
-| key2 | Pending | Pending | Pending |
-| key3 | Pending | Pending | Pending |
+| key0 | PASS | PASS | PASS |
+| key1 | PASS | PASS | PASS |
+| key2 | PASS | PASS | PASS |
+| key3 | PASS | PASS | PASS |
 
-- [ ] Verify real USB access and GnuPG pinentry inside simlun's live tmux session.
-- [ ] Record real programming/touch/verification results for every token.
-- [ ] Follow level1vault's [replication and retrieval acceptance](https://github.com/simlun-ai/level1vault/blob/main/docs/HSM.md#replication-and-acceptance).
-- [ ] Keep tokens at separate locations under the custody policy.
+Acceptance completed on 2026-11-04 in the offline level1vault session, using
+Python 3.13.5 and the updated installed HSM helper. All four tokens passed
+three 44-byte HMAC/software comparisons, no-touch/touch checks, and
+`verify-set`: each unwrapped the shared in-memory dummy record, and the software
+fallback agreed. The operator subsequently confirmed workspace replication and
+saved-entry retrieval/verification from independent read-only replicas.
+
+- [x] Verify real USB access and GnuPG pinentry inside simlun's live tmux session.
+- [x] Record real programming/touch/verification results for every token.
+- [x] Follow level1vault's [replication and retrieval acceptance](https://github.com/simlun-ai/level1vault/blob/main/docs/HSM.md#replication-and-acceptance).
+
+Device firmware and serial mappings are recorded in [inventory](../inventory.md#security-keys).
+The fixes used were homelab-hsm [#7](https://github.com/simlun-ai/homelab-hsm/pull/7)
+and [#8](https://github.com/simlun-ai/homelab-hsm/pull/8). Exact tested checkout
+SHAs, live-image build ID, full installed package versions and replica checkpoint
+IDs were not captured in this acceptance record. This does not establish
+recovery of future production credentials or deployed services.
+
+Ongoing custody: keep tokens and independent workspace copies at separate
+locations, retain required generations, and repeat retrieval checks after changes.
+Physical locations remain outside this repository.
 
 Exit all panes and follow `start`'s export and poweroff prompts. The
 [Emergency Recovery Guide](../emergency-recovery-guide.md) still has pending
@@ -132,8 +150,9 @@ service-recovery work; this ceremony is not a verified Vault recovery path.
 A physical run on `key3` (firmware 2.2.3, serial 1020513) reported a successful
 slot 2 write but failed software HMAC comparison, including after reinsertion
 without the cancelled no-touch probe. The old helper disabled `HMAC_LT64`,
-which is affected by a documented firmware 2.2 bug. This is not verification
-acceptance; the other device results remain pending.
+which is affected by a documented firmware 2.2 bug. After enabling `HMAC_LT64`
+and using 44-byte challenges, key3 passed programming verification, a separate
+verification, and the full cross-token set check.
 
 Use the updated homelab-hsm checkout and its rebuilt offline bundle. All tokens
 must use `HMAC_LT64` and the new 44-byte challenge protocol described in
@@ -141,6 +160,14 @@ must use `HMAC_LT64` and the new 44-byte challenge protocol described in
 entry: do not generate or replace it to resolve this failure. For each occupied
 slot 2 programmed with the old helper, use the existing explicit `program
 --replace` procedure, confirm the physical label, and repeat verification and
-`verify-set`. Slot 1 remains untouched. Updated physical verification is pending.
+`verify-set`. Slot 1 remains untouched. This updated configuration passed
+physical verification on all four devices.
 
-The v1 challenge definition is updated in place before real credential use.
+The v1 challenge definition was updated in place before real credential use.
+
+Firmware 5.2.4 on key1 intermittently returned a response during the next
+no-touch probe after a successful touched request. Prompting finger removal and
+waiting two seconds before each probe resolved the observed failure; the installed
+fix passed on key1 and in the full set check. The underlying sensor/firmware
+mechanism remains unconfirmed. The probe still requires touch-needed status
+and rejects immediate responses and unconfirmed timeouts.

@@ -187,12 +187,17 @@ Three Eaton UPS units protect Metal:
 
 Four YubiKeys available; use cases and proposed lookups belong in [yubikey.md](security/yubikey.md), and configuration/custody policy in [security.md](security/security.md#core-secret-foundation).
 
-| Model | Firmware | Enabled interfaces | Quantity |
-| --- | --- | --- | --- |
-| YubiKey 5 NFC | 5.2.4 | OTP + FIDO + CCID | 2 |
-| YubiKey Standard | 2.2.3 | OTP | 1 |
-| YubiKey Standard | 2.4.1 | OTP | 1 |
-| **Sum** | | | **4** |
+| Label | Model | Firmware | Serial | Enabled interfaces |
+| --- | --- | --- | --- | --- |
+| key0 | YubiKey 5 NFC | 5.2.4 | 10649811 | OTP + FIDO + CCID |
+| key1 | YubiKey 5 NFC | 5.2.4 | 10649813 | OTP + FIDO + CCID |
+| key2 | YubiKey Standard | 2.4.1 | 1903813 | OTP |
+| key3 | YubiKey Standard | 2.2.3 | 1020513 | OTP |
+
+**Total: 4 tokens.** All four were programmed in OTP slot 2 with the same
+`golden-1` key and passed physical touch/HMAC and cross-token/software checks
+on 2026-11-04. Slot 1 was preserved. Detailed acceptance results belong in
+[step 00](installation/00-yubikey-setup.md#5-record-results-replicate-and-finish).
 
 ## Spare drives
 

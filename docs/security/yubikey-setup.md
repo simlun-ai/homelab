@@ -1,6 +1,6 @@
 # YubiKey setup
 
-**Decision approved; programming and verification pending.**
+**Configured and physically verified on all four tokens; acceptance completed 2026-11-04.**
 
 ## Configuration
 
@@ -42,16 +42,20 @@ Keep responses and decrypted dummy payloads in memory during testing.
 Record each token as configured only after programming, and verified
 only after these checks pass.
 
-## Remaining implementation work
+## Verified implementation
 
-The first helper and pinned-tooling implementation is available in
+The helper and pinned-tooling implementation is available in
 [00 - YubiKey setup](../installation/00-yubikey-setup.md). It preserves
 occupied slot 2 by default; explicit replacement requires confirming its
 erasure and the physical label. The Level 1 key arrives through a pipe from pass; confirmations use /dev/tty.
 
-- Test tooling preparation/installation and offline execution in the actual live OS.
-- Program and verify all four devices, including the older Standard models.
-- Record device identifiers and verification results.
+Offline installation and execution, programming, individual touch/HMAC checks,
+and cross-token/software dummy-record unwrap passed on all four devices,
+including both older Standard models. Workspace replication and saved-entry
+retrieval from independent read-only replicas were also confirmed.
+[Step 00](../installation/00-yubikey-setup.md#5-record-results-replicate-and-finish)
+owns the public acceptance results; [inventory](../inventory.md#security-keys)
+records the serial-to-label mapping.
 
 Golden-key custody and recovery procedures are covered separately in
 [golden-key-custody.md](golden-key-custody.md) and

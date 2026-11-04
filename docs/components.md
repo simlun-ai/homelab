@@ -47,7 +47,7 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | ansible-lint | Development-only Ansible checks; 26.10.1, with the operational ansible-core pin and the `safety` profile. |
 | Docker with Buildx/BuildKit | Root `make ci` validation; [CI prerequisites](../ci/README.md). |
 | Python cryptography (HKDF/AESGCM), constrained RFC 8785 serialization | Initial [v1 wrapping helper](security/security.md#challenges-derivation-and-wrapped-credentials); step 00 pins live in [the code project’s pyproject.toml](../tools/homelab-hsm/homelab_secrets/pyproject.toml). |
-| YubiKey Manager Python SDK | Selected for [step 00](installation/00-yubikey-setup.md); version pinned in [the code project’s pyproject.toml](../tools/homelab-hsm/homelab_secrets/pyproject.toml), physical-device verification pending. |
+| YubiKey Manager Python SDK | Selected for [step 00](installation/00-yubikey-setup.md); version pinned in [the code project’s pyproject.toml](../tools/homelab-hsm/homelab_secrets/pyproject.toml), physical-device verification passed on all four tokens on 2026-11-04. |
 | kubectl, talosctl, Helm, OpenBao CLI (`bao`) | TBD per scope; talosctl must be compatible with Talos. |
 | OpenTofu CLI (`tofu`) | Independently pinned per scope; catalog version above. |
 | [pftf/RPi4 EDK2 UEFI firmware](https://github.com/pftf/RPi4) | v1.53 selected only for the [Vault Pi 4 installation experiment](installation/02-vault.md#first-installation-experiment-pi-4-uefi); unverified. |

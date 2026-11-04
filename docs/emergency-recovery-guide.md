@@ -11,8 +11,8 @@ All entries must be non-secret.
 | Field | Value |
 | --- | --- |
 | Guide revision / repository commit; last verified restore | TBD. |
-| Core-secret protocol version and YubiKey HMAC slot | `homelab-wrap-v1`; OTP slot 2 selected, 44-byte Base64 challenges with HMAC_LT64, touch required. Programming/verification pending. |
-| Effective challenge bytes, encoding, purpose identifiers, length/padding | V1 construction below; exact recovery identifiers and device verification TBD. |
+| Core-secret protocol version and YubiKey HMAC slot | `homelab-wrap-v1`; OTP slot 2 selected, 44-byte Base64 challenges with HMAC_LT64, touch required. All four tokens programmed and verified 2026-11-04; see step 00. |
+| Effective challenge bytes, encoding, purpose identifiers, length/padding | V1 construction below; all four devices verified; exact production recovery identifiers TBD. |
 | Derivation/wrapping algorithms, output encoding, public parameters | HKDF-SHA-256 + AES-256-GCM; JSON/JCS and padded Base64 as specified below. |
 | Snapshot OpenBao version, ARM64 Pi and workstation recovery images/tools; independent acquisition locations | TBD. |
 | Container memory mounts, required RAM, runtime/swap/logging checks; tested Pi/container procedures | TBD. |
@@ -52,7 +52,7 @@ If a token fails, obtain another token and the guide. Never guess encoding; over
 
 ## V1 wrapping protocol
 
-**Selected design; helper and device verification pending.** This embedded specification must remain synchronized with the maintained security policy.
+**Token/wrapping foundation physically verified; service-recovery integration pending.** This embedded specification must remain synchronized with the maintained security policy.
 
 Records have exactly seven fields: `format` (`homelab-wrap-v1`), `root_key` (public generation label, initially `golden-1`), `key_id`, `revision`, `salt`, `nonce`, and `ciphertext`. Root labels use lowercase ASCII letters, digits, and hyphens. Identifiers follow `homelab/v1/<scope>/<purpose>/<resource>/r<generation>`, with lowercase ASCII letters, digits, hyphens, and slash-separated nonempty segments; no whitespace or trailing newline. Exact resource identifiers remain to be recorded.
 
@@ -80,7 +80,7 @@ The helper uses Python `cryptography` HKDF/AESGCM and an RFC 8785-compatible ser
 
 Retrieve the required golden-key generation from the air-gapped, replicated Level 1 Password Management system. Each entry holds the key as exactly 40 hexadecimal characters, preserving leading zeros, and its generation label matching the record's `root_key`. Level 1's internal procedures and locations are outside this guide. Load the key into the verified memory-only session without logging. The helper must compute HMAC-SHA1 over identical effective challenge bytes, then apply the same derivation/unwrap steps.
 
-Replacement programming must use the same key/settings with **touch required**, preserve occupied slots unless explicitly approved, verify behavior, record the non-secret device identity, and return the token to its separate location. Initial programming, verification, and slot-replacement commands are documented in [step 00](installation/00-yubikey-setup.md); recovery-tool acquisition and physical verification remain pending.
+Replacement programming must use the same key/settings with **touch required**, preserve occupied slots unless explicitly approved, verify behavior, record the non-secret device identity, and return the token to its separate location. Initial programming, verification, and slot-replacement commands are documented in [step 00](installation/00-yubikey-setup.md); initial offline tool installation, physical-token checks and independent replica retrieval passed on 2026-11-04. Future recovery-tool refreshes and full service-recovery drills remain separate.
 
 ## Restore Vault and OpenBao
 
@@ -106,7 +106,7 @@ These references do not replace embedded emergency instructions.
 
 - Policies: `docs/security/security.md` and `docs/backup-and-restore.md`.
 - Credential catalogue and v1 challenge format: `docs/security/yubikey.md`; wrapping specification: `docs/security/security.md`. Keep the embedded protocol synchronized and add exact recovery-critical identifiers before distributing the guide.
-- Installation plan and runbooks: `docs/installation/README.md`, `docs/installation/00-yubikey-setup.md`, `docs/installation/01-main-coordinator.md`, `docs/installation/02-vault.md`. Step 00 has an initial helper implementation; physical verification remains pending.
+- Installation plan and runbooks: `docs/installation/README.md`, `docs/installation/00-yubikey-setup.md`, `docs/installation/01-main-coordinator.md`, `docs/installation/02-vault.md`. Step 00 completed physical programming, cross-token/software checks and independent replica retrieval on 2026-11-04.
 - Planned operating runbooks: `runbooks/restore-openbao.md`, `runbooks/unseal-openbao.md`, `runbooks/operate-talos-kms.md`, `runbooks/operate-vault-bootstrap-kms.md`.
 - [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/).
 - [YubiKey Manager OTP commands](https://docs.yubico.com/software/yubikey/tools/ykman/OTP_Commands.html) and [OTP implementation](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/yubiotp.py).
