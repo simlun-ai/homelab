@@ -26,7 +26,8 @@ The base flow does not reboot hosts. KMS, NUT, and exporters remain unimplemente
 
 Dependency selection: [ansible-core release](https://pypi.org/project/ansible-core/2.21.5/),
 [Python compatibility](https://docs.ansible.com/projects/ansible/latest/reference_appendices/release_and_maintenance.html).
-Ubuntu 26.04 is the workstation target; hardware installation remains unverified.
+Ubuntu 22.04 or newer is the workstation target, with Python 3.13–3.14 selected
+through pyenv as described in the runbook. Hardware installation remains unverified.
 
 ## Static checks
 
