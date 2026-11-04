@@ -54,19 +54,22 @@ allowed. Token setup and automated tests do not need
 it; integration tests use public dummy material in temporary repositories.
 
 The checkout is normally detached at the parent-pinned commit. Before generating
-or updating credentials, create a uniquely named branch in the submodule:
+or updating credentials, switch to the private repository's `main` and update it:
 
 ```sh
-git -C secrets/wrapped switch -c credential-update
+git -C secrets/wrapped fetch origin
+git -C secrets/wrapped switch main
+git -C secrets/wrapped pull --ff-only origin main
 ```
 
 Run the relevant credential helper. Review changes, then commit and push the
-private repository **first** (example for one generated password):
+private repository's `main` **first**, then the parent pointer (example for one
+generated password):
 
 ```sh
 git -C secrets/wrapped add ups-aux-administrator.json
 git -C secrets/wrapped commit -m "Add ups-aux administrator password"
-git -C secrets/wrapped push -u origin HEAD
+git -C secrets/wrapped push origin main
 git add secrets/wrapped secrets/manifest.json
 git commit -m "Update wrapped credential reference"
 git push
@@ -74,7 +77,8 @@ git push
 
 For SSH-key creation also stage `support/ups/coordinator_ed25519.pub` in the
 parent. Never put ciphertext in the parent to work around missing private access.
-Retain pushed private branches/commits referenced by the parent. After pulling
+Keep parent-pinned private commits reachable from the private repository's `main`.
+After pulling
 parent changes, repeat `git submodule update --init --recursive -- tools/homelab-hsm secrets/wrapped` to select both
 pinned versions; do not use `--remote` for normal recovery. Rerun `make -C support/hsm tools` after changing the code-submodule version; it installs the matching committed wheels offline into the external environment. Record-only updates do not require reinstalling Python. Preserve uncommitted
 changes before switching versions.
