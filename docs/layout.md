@@ -139,7 +139,7 @@ Use one `/support/ups/` scope for Ansible provisioning and ongoing management of
 | `README.md` | Operational entry points and links to mappings/recovery. |
 | `Makefile` | Implemented local tools/inventory/syntax targets and single-host bootstrap/hardening/verification. |
 | `requirements.txt` and `.venv/` | Implemented Ansible dependency pins and ignored tools, invoked explicitly as in the YubiKey scope. |
-| `install-system-dependencies.sh`, `check-tools.py` | Ubuntu 26.04 workstation prerequisites and runtime/dependency verification. |
+| `install-system-dependencies.sh`, `check-tools.py` | Ubuntu 22.04+ workstation prerequisites and Python 3.13–3.14 runtime/dependency verification. |
 | `inventory.yaml`, `ansible.cfg` | Three approved hostnames, `administrator` SSH account, and strict SSH settings; IP addresses TBD. |
 | `ansible/playbooks/`, `ansible/tasks/`, `ansible/files/` | Implemented single-host bootstrap, sudo policy, and verification. |
 | `ansible/roles/` | Implemented `coordinator_hardening`; shutdown-manager/service roles remain planned. |

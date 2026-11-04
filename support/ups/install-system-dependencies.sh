@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run from the Ubuntu 26.04 workstation, never on a coordinator.
+# Run from an Ubuntu 22.04+ workstation, never on a coordinator.
 source /etc/os-release
-if [[ "${ID:-}" != ubuntu || "${VERSION_ID:-}" != 26.04 ]]; then
-    printf '%s\n' 'This workstation installer targets Ubuntu 26.04.' >&2
+if [[ "${ID:-}" != ubuntu ]] || ! dpkg --compare-versions "${VERSION_ID:-0}" ge 22.04; then
+    printf '%s\n' 'This workstation installer requires Ubuntu 22.04 or newer.' >&2
     exit 1
 fi
 
@@ -23,4 +23,4 @@ if (("${#missing[@]}")); then
     apt-get update
     apt-get install --yes --no-install-recommends "${missing[@]}"
 fi
-printf '%s\n' 'UPS workstation dependencies are ready.'
+printf '%s\n' 'UPS workstation packages are ready; make tools requires Python 3.13–3.14.'

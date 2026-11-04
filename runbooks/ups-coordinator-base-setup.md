@@ -4,19 +4,31 @@
 
 Hardware/power assignments belong in the [inventory](../docs/inventory.md). Executable configuration and dependency pins live in [`support/ups/`](../support/ups/README.md).
 
-## 1. Prepare the Ubuntu 26.04 workstation
+## 1. Prepare the Ubuntu 22.04+ workstation
 
 Have the repository checked out, a microSD card and reader, and a verified YubiKey available. Use wired Ethernet, DHCP, and Internet access independent of the homelab clusters. Card models/capacities remain TBD.
 
-From the repository root:
+Use Python 3.13–3.14 for both the UPS and HSM helper environments. With pyenv
+installed and initialized in your shell, the repository's `.python-version`
+selects Python 3.13.18 for `make tools`. If it is not installed, first prepare pyenv's
+[Python build dependencies](https://github.com/pyenv/pyenv/wiki#suggested-build-environment).
+
+From the repository root, in the same shell:
 
 ```sh
 bash support/ups/install-system-dependencies.sh
+pyenv install -s 3.13.18
+python3 --version
 make -C support/ups tools
 make -C support/ups syntax
 ```
 
-The installer uses sudo for workstation packages. Ansible runs locally in the scope's virtualenv; the Pis do not need an Ansible agent. Do not run `make tools` with sudo.
+The installer uses sudo for workstation packages; it does not upgrade the system Python.
+The Makefiles use the selected `python3` to create their virtualenvs. Keep this
+pyenv selection when following the SSH/password runbooks or rebuilding either
+environment. An existing virtualenv created with another Python version must be
+removed and recreated with `make tools`.
+Ansible runs locally in the scope's virtualenv; the Pis do not need an Ansible agent. Do not run `make tools` with sudo.
 
 Download Raspberry Pi Imager for the workstation's architecture from [Raspberry Pi](https://www.raspberrypi.com/software/), make the AppImage executable, and launch it using the upstream Linux instructions.
 
