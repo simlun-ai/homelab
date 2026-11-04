@@ -18,7 +18,6 @@ From the repository root, in the same shell:
 ```sh
 bash support/ups/install-system-dependencies.sh
 pyenv install -s 3.13.18
-pyenv shell --unset
 python3 --version
 make -C support/ups tools
 make -C support/ups syntax
