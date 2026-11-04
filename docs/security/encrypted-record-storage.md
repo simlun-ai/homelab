@@ -63,20 +63,21 @@ git -C secrets/wrapped pull --ff-only origin main
 ```
 
 Run the relevant credential helper. Review changes, then commit and push the
-private repository's `main` **first**, then the parent pointer (example for one
-generated password):
+private repository's `main` **first**, then the parent pointer. For SSH-key creation,
+first run `git add support/ups/coordinator_ed25519.pub` in the parent so the public
+key is included in the same parent commit. Stage `secrets/manifest.json` only if
+you changed its entries; credential generation does not update it.
 
 ```sh
-git -C secrets/wrapped add ups-aux-administrator.json
-git -C secrets/wrapped commit -m "Add ups-aux administrator password"
+git -C secrets/wrapped add -A
+git -C secrets/wrapped commit
 git -C secrets/wrapped push origin main
-git add secrets/wrapped secrets/manifest.json
+git add secrets/wrapped
 git commit -m "Update wrapped credential reference"
 git push
 ```
 
-For SSH-key creation also stage `support/ups/coordinator_ed25519.pub` in the
-parent. Never put ciphertext in the parent to work around missing private access.
+Never put ciphertext in the parent to work around missing private access.
 Keep parent-pinned private commits reachable from the private repository's `main`.
 After pulling
 parent changes, repeat `git submodule update --init --recursive -- tools/homelab-hsm secrets/wrapped` to select both
