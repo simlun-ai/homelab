@@ -13,7 +13,7 @@ Raw disk capacity, RAM and equipment counts include cold spares and all drives l
 
 Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capacity of its smallest member. Figures include OS disks and exclude filesystem overhead and any additional Piraeus replication. Unlisted boot media are not counted.
 
-Architecture is in [clusters.md](clusters.md), encryption in [security.md](security/security.md#disk-encryption-and-opentofu), and provisioning/power-return policy in [layout.md](layout.md).
+See [clusters.md](clusters.md) for architecture, [network.md](network.md) for VLANs and addressing, [security.md](security/security.md#disk-encryption-and-opentofu) for encryption, and [layout.md](layout.md) for provisioning and power-return policy.
 
 All UPS shutdown coordinators will use Raspberry Pi 3 Model B computers with 1 GB RAM. Each will boot Raspberry Pi OS Lite (64-bit) from a microSD card; card models/capacities are TBD and remain excluded from disk totals as unlisted boot media. Each will use a suitably rated 230 V AC to 5 V DC power adapter connected to a battery-backed outlet of the UPS it monitors.
 
@@ -27,7 +27,7 @@ Per-device power-return support, settings, and verification remain TBD, includin
 - **OS drives:** 2 × 128 GB Intenso USB SSDs in MD RAID1 (128 GB nominal usable).
 - **Storage:** ZFS mirror (RAID 1) using the other 2 × 128 GB Intenso USB SSDs.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
-- **Network:** 1 Gbit router connectivity, as for the Pi cluster.
+- **Network:** 1 Gbit Ethernet on `k8s-aux` (VLAN 10), static `10.10.0.10`.
 - **Boot configuration:** Latest EEPROM firmware, with USB boot given priority. The [draft UEFI installation experiment](installation/02-vault.md#first-installation-experiment-pi-4-uefi) will try SD-first EEPROM boot with pftf/EDK2 on a dedicated microSD card; not yet verified or adopted. Card model/capacity is TBD and excluded from disk totals as unlisted boot media.
 
 ## Backup
@@ -36,13 +36,14 @@ Per-device power-return support, settings, and verification remain TBD, includin
 - **RAM:** 8 GB.
 - **OS drive:** Intel 180 GB SSD.
 - **Storage:** ZFS mirror (RAID 1), consisting of two 8 TB Samsung USB HDDs, each with a 3.5-inch form factor.
+- **Network:** `k8s-aux` (VLAN 10), static `10.10.0.15`.
 
 ## Shared infrastructure
 
 Shared exclusively by the **Vault and Backup clusters**:
 
 - **UPS:** 1 × Eaton 3S700 supplying power to both clusters.
-- **Shutdown coordinator:** `ups-aux`, 1 × Raspberry Pi 3 Model B with 1 GB RAM, connected to this UPS via USB for monitoring and safe shutdown of both Vault and Backup. This supporting host is separate from their Talos nodes and is the planned host for [Vault's bootstrap KMS](security/security.md#vault-bootstrap-kms).
+- **Shutdown coordinator:** `ups-aux`, 1 × Raspberry Pi 3 Model B with 1 GB RAM and static `10.10.0.5` on `k8s-aux` (VLAN 10). It connects to the UPS via USB for monitoring and safe shutdown of both clusters and is the planned host for [Vault's bootstrap KMS](security/security.md#vault-bootstrap-kms).
 
 ## Pi
 
@@ -51,7 +52,7 @@ Shared exclusively by the **Vault and Backup clusters**:
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub per Pi.
 - **Disks:** SATA SSDs through SATA-to-USB 3 adapters; [models and allocation](#ssd-inventory-and-layout) below.
 - **Power:** Official USB-C power adapters for both the Pis and hubs, supplied from 230 V mains.
-- **Network:** One Netgear 1 Gbit router connecting all five Pis.
+- **Network:** One Netgear 1 Gbit switch connects all five Pis on `k8s-pi` (VLAN 11).
 - **UPS:** Everything powered through an Eaton 3S850.
 - **Boot configuration:** All five Raspberry Pi 4 nodes running the latest EEPROM firmware, with USB boot given priority.
 

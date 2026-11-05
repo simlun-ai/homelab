@@ -4,6 +4,8 @@
 
 Install the independent Vault cluster after the [main coordinator](01-main-coordinator.md) is ready. Firmware-card preparation can be tried separately while the coordinator/KMS work is pending.
 
+Use `10.10.0.10/24` with gateway `10.10.0.1` on `k8s-aux` (VLAN 10) for the installed Vault node. Plan for this address to be available before Talos loads encrypted `STATE`, so the node can reach the coordinator's KMS on `10.10.0.5`. The preboot configuration and KMS endpoint are still TBD. See the [network overview](../network.md) for the Vault load balancer pool and proposed Kubernetes CIDRs.
+
 ## First installation experiment: Pi 4 UEFI
 
 The first method to try is [pftf/RPi4](https://github.com/pftf/RPi4) firmware on a dedicated microSD card, booting a generic Talos ARM64 installer from USB and installing onto the assigned OS SSD mirror. This is a candidate installation method, not a settled design or a verified supported combination.

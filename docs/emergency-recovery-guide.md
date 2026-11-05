@@ -21,6 +21,7 @@ All entries must be non-secret.
 | Additional backup-encryption details | TBD. |
 | Independent encrypted-payload references | Wrapped records in the private `secrets/wrapped/` submodule, with public manifest `secrets/manifest.json` in the parent clone. OpenBao Shamir seal: one share, threshold one; identifier `homelab/v1/vault/openbao-unseal/share-1/r1`. Exact filenames and recovery administration credential TBD. Accessible without Vault, GitHub, or existing R2 credentials. |
 | Golden-key retrieval procedure reference | Level 1 Password Management system; exact retrieval steps outside this repository. Never record the key here. |
+| Auxiliary network and static hosts | `k8s-aux` (VLAN 10), `10.10.0.0/24`, gateway `10.10.0.1`. `ups-aux` is `10.10.0.5`, the Vault Talos node is `10.10.0.10`, and the Backup Talos node is `10.10.0.15`. |
 | Vault coordinator KMS endpoint, public TLS/DNS-01, preboot DNS/NTP, session controls | TBD; include service acquisition, independent wrapped-payload references, and coordinator rebuild instructions. |
 | KMS adapter endpoint, TLS trust, early-boot networking, transit key mapping/versions | TBD; include adapter acquisition and independent bootstrap-payload references. |
 | Per-device power-return limitations and manual startup procedure | TBD. |

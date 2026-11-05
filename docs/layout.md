@@ -7,7 +7,8 @@
 | Document | Authoritative content |
 | --- | --- |
 | [Inventory](inventory.md) | Hardware, node/disk assignments, shared equipment, capacity totals. |
-| [Clusters](clusters.md) | Topology, dependencies, services, networking, workload and replica placement. |
+| [Clusters](clusters.md) | Topology, dependencies, services, workload and replica placement. |
+| [Network](network.md) | VLANs, addressing, cluster networking, and gateway outage behavior. |
 | [Components](components.md) | Software catalog and versions; operational pins remain scope-owned. |
 | This document | Directory ownership, tool scopes, provisioning boundaries, operating entry points. |
 | [Installation](installation/README.md) | Main implementation TODO list, numbered installation runbooks, and verification progress. |
@@ -140,7 +141,7 @@ Use one `/support/ups/` scope for Ansible provisioning and ongoing management of
 | `Makefile` | Implemented local tools/inventory/syntax targets and single-host bootstrap/hardening/verification. |
 | `requirements.txt` and `.venv/` | Implemented Ansible dependency pins and ignored tools, invoked explicitly as in the YubiKey scope. |
 | `install-system-dependencies.sh`, `check-tools.py` | Ubuntu 22.04+ workstation prerequisites and Python 3.13–3.14 runtime/dependency verification. |
-| `inventory.yaml`, `ansible.cfg` | Three approved hostnames, `administrator` SSH account, and strict SSH settings; IP addresses TBD. |
+| `inventory.yaml`, `ansible.cfg` | Three approved hostnames, `administrator` SSH account, and strict SSH settings. See [first boot and trusted SSH access](../runbooks/ups-coordinator-base-setup.md#3-first-boot-and-trusted-ssh-access) for address and name resolution setup. |
 | `ansible/playbooks/`, `ansible/tasks/`, `ansible/files/` | Implemented single-host bootstrap, sudo policy, and verification. |
 | `ansible/roles/` | Implemented `coordinator_hardening`; shutdown-manager/service roles remain planned. |
 | `ansible/templates/` | Non-secret service templates. |
