@@ -24,7 +24,8 @@ These instructions apply to the entire homelab repository.
 ## Documentation responsibilities
 
 - `docs/inventory.md`: Physical machines, cluster membership, hardware, network interfaces, disks, OS and storage layout, spares, shared equipment, and aggregate inventory counts.
-- `docs/clusters.md`: Kubernetes cluster topology, dependencies, platform services, networking, storage integration, backup and secrets architecture.
+- `docs/clusters.md`: Kubernetes cluster topology, dependencies, platform services, storage integration, backup and secrets architecture.
+- `docs/network.md`: VLANs, IP allocations, Kubernetes networking, and gateway outage behavior.
 - `docs/components.md`: Software/component catalog and versions, separated into **Infrastructure** and **Workloads**.
 - `docs/layout.md`: Draft repository structure, configuration ownership, tooling scopes, automation boundaries, and links to detailed policies.
 - `docs/installation/README.md`: Main installation and implementation TODO list, step order, and progress. Numbered `docs/installation/NN-<headline>.md` runbooks own prerequisites, executable steps, verification results, and recovery actions. Shared UPS coordinator base setup lives in `runbooks/ups-coordinator-base-setup.md`; step 01 links to it and owns only the additional Vault Talos KMS setup. Develop helpers and repository structure as each step is tried; distinguish written instructions, implemented code, and verified installation. Link to architecture and policy rather than duplicating them.

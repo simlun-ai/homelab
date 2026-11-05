@@ -58,9 +58,11 @@ Never copy private keys onto the card or put credentials in the inventory or sav
 
 ## 3. First boot and trusted SSH access
 
-Insert the card, connect Ethernet, and deliberately power on using its UPS-backed adapter. Wait for first-boot setup, find the address in DHCP leases, and create a reservation.
+Insert the card, connect Ethernet, and deliberately power on using its UPS-backed adapter. Wait for first-boot setup and find the initial address in DHCP leases.
 
-The [Ansible inventory](../support/ups/inventory.yaml) uses the three approved hostnames. Make them resolve through workstation DNS or existing SSH configuration. Alternatively, add a verified `ansible_host` address to the appropriate inventory entry. Management IPs remain unassigned in the repository.
+Connect `ups-aux` to `k8s-aux` (VLAN 10). From its local console, configure wired Ethernet with the static address `10.10.0.5/24` and gateway `10.10.0.1` so the host can reach the Talos nodes without a DHCP lease. Use a DHCP reservation for `ups-pi` and `ups-metal` during base setup. Their final addresses are TBD. See the [network overview](../docs/network.md) for allocations.
+
+The [Ansible inventory](../support/ups/inventory.yaml) and the coordinator credential helpers use the three approved hostnames. Make `ups-aux` resolve to `10.10.0.5` through workstation DNS or SSH configuration, and set up the other names once their addresses are known. An `ansible_host` override affects Ansible only.
 
 Verify the SSH host-key fingerprint from a trusted local source. On the Pi's local console:
 
@@ -103,7 +105,7 @@ Repeat with `HOST=ups-pi` and `HOST=ups-metal`. A missing, unknown, or multi-hos
 
 ## 5. Apply shared hardening
 
-Run from a workstation address in `192.168.254.0/24`, after bootstrap:
+After bootstrap, run from a workstation address in `192.168.254.0/24`. For `ups-aux`, verify SSH access from that subnet to `10.10.0.5` through the UniFi gateway before applying hardening.
 
 ```sh
 make -C support/ups harden HOST=ups-aux

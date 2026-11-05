@@ -2,7 +2,7 @@
 
 **Planned architecture; deployment is unverified.** All four Kubernetes clusters target Talos Linux.
 
-Hardware and disk assignments belong in [inventory.md](inventory.md); tool scopes and provisioning rules in [layout.md](layout.md); secret handling and encryption in [security.md](security/security.md).
+See the [network overview](network.md) for VLANs, IP allocations, and the CNI and load balancer plan. See [inventory.md](inventory.md) for hardware and disk assignments, [layout.md](layout.md) for tool scopes and provisioning, and [security.md](security/security.md) for secret handling and encryption.
 
 ## Vault
 
@@ -10,7 +10,7 @@ Independent, single-node foundation. All other clusters depend on its services. 
 
 | Function | Components |
 | --- | --- |
-| Networking | Flannel pod networking (no Cilium), MetalLB LoadBalancer services, Traefik ingress. |
+| Ingress | Traefik. |
 | Storage | Local persistent volumes via ZFS LocalPV on the [Vault data mirror](inventory.md#vault), separate from the OS mirror. |
 | Observability | kube-prometheus-stack (Prometheus, Grafana, Alertmanager), with Telegram notifications; Headlamp for cluster visibility. |
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
@@ -22,7 +22,7 @@ OpenBao storage, backups, and recovery are specified in [backup-and-restore.md](
 
 ## Backup
 
-Single-node cluster on the [Lenovo ThinkCentre M93p Tiny](inventory.md#backup), using its manually prepared ZFS mirror. Depends on Vault. Workloads, backup software, retention, and storage integration remain TBD.
+Single-node cluster on the [Lenovo ThinkCentre M93p Tiny](inventory.md#backup), using its manually prepared ZFS mirror. Depends on Vault. Garage is planned for backup storage. Backup clients, retention, and storage integration remain TBD in the [backup design](backup-and-restore.md#other-backup-coverage).
 
 ## Shared infrastructure
 

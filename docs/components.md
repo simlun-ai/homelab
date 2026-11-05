@@ -9,9 +9,9 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | Talos | v1.14.2 | v1.14.2 | v1.14.2 | v1.14.2 | v1.14.2 |
 | Piraeus Operator | v2.12.0 |  |  | v2.12.0 | v2.12.0 |
 | ZFS (Talos system extension) | v2.4.4 | v2.4.4 | v2.4.4 | v2.4.4 | v2.4.4 |
-| Cilium | v1.20.2 |  |  |  |  |
-| Flannel | v0.28.9 | v0.28.9 |  |  |  |
-| MetalLB | v0.16.0 | v0.16.0 |  |  |  |
+| Cilium | v1.20.2 |  |  | v1.20.2 | v1.20.2 |
+| Flannel | v0.28.9 | v0.28.9 | v0.28.9 |  |  |
+| MetalLB | v0.16.0 | v0.16.0 | v0.16.0 |  |  |
 | Traefik | v3.7.14 | v3.7.14 |  |  |  |
 | kube-prometheus-stack (Helm chart) | v92.3.0 | v92.3.0 |  |  |  |
 | Loki | v3.7.8 |  |  |  |  |
@@ -21,7 +21,7 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | OpenTofu | v1.13.1 |  |  |  |  |
 | External Secrets Operator | v2.11.0 | v2.11.0 | v2.11.0 | v2.11.0 | v2.11.0 |
 | cert-manager | v1.21.2 | v1.21.2 |  |  |  |
-| Garage | v2.4.1 |  |  |  |  |
+| Garage | v2.4.1 |  | v2.4.1 |  |  |
 | PostgreSQL | v18.6 |  |  |  |  |
 | Headlamp | v0.45.0 | v0.45.0 |  |  |  |
 

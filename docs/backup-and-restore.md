@@ -72,7 +72,7 @@ Backup storage and procedures for wrapped credential records are deferred until 
 
 ## Other backup coverage
 
-Other cluster data, manual pools, cluster state, and supporting hosts still need coverage, destination, retention, and restore policies. The inventory's restore disk does not establish such a policy.
+Garage is planned on the Backup cluster for periodic backups. Its coverage, clients, schedules, retention, and restore procedures remain TBD. Vault's OpenBao Raft snapshots use Cloudflare R2 as described above. Manual pools, cluster state, and supporting hosts still need explicit coverage. The inventory's restore disk does not establish a backup policy.
 
 ## Planned work
 
