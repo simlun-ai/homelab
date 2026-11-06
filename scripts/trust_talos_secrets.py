@@ -59,19 +59,6 @@ def require_private_repository() -> None:
         raise ValueError("Unexpected record directory")
 
 
-def check_version(talosctl: str) -> None:
-    response = subprocess.run(
-        [talosctl, "version", "--client", "--short"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        check=True,
-        timeout=15,
-    )
-    pin = talos_version().encode("ascii")
-    if re.search(rb"(?<![a-zA-Z0-9.])" + re.escape(pin) + rb"(?![a-zA-Z0-9.])", response.stdout) is None:
-        raise ValueError("Talos CLI version does not match the cluster pin")
-
-
 def generate(talosctl: str) -> bytes:
     response = subprocess.run(
         [
@@ -96,7 +83,6 @@ def generate(talosctl: str) -> bytes:
 def initialize(talosctl: str, wrap_cli: str) -> None:
     if os.path.lexists(RECORD):
         raise FileExistsError("Talos bootstrap record already exists")
-    check_version(talosctl)
     plaintext = generate(talosctl)
     # homelab-wrap verifies the AEAD record and creates ciphertext exclusively.
     subprocess.run(
@@ -186,7 +172,7 @@ def main() -> int:
         # Never expose subprocess stderr: it may contain secret-bearing content.
         print(
             "Talos bootstrap operation failed; details suppressed. Check the "
-            "private record, tool versions, swap, output pipe, token and touch.",
+            "private record, swap, output pipe, token and touch.",
             file=sys.stderr,
         )
         return 1

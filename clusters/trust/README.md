@@ -38,9 +38,10 @@ Do not apply this partial public bundle to a node.
 
 `scripts/trust_talos_secrets.py` implements two explicit operations. This
 script is **not** wired into production Make targets and does not apply Talos
-configurations. The operator must provide full paths to the matching
-`talosctl` binary (version read from `clusters/trust/versions.yaml`) and installed `homelab-wrap` or `homelab-unwrap`
-from the pinned HSM environment. No ambient PATH fallback is accepted.
+configurations. The operator must provide absolute paths to `talosctl` and the installed
+`homelab-wrap` or `homelab-unwrap` from the pinned HSM environment.
+The requested Talos target version comes from `clusters/trust/versions.yaml`;
+the helper does not check the CLI version (the scoped toolchain owns that). No ambient PATH fallback is accepted.
 
 The private `secrets/wrapped/` submodule must be initialized and swap disabled.
 The script disables core dumps/ptrace and suppresses subprocess error output.

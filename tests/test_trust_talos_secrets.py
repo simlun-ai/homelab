@@ -13,23 +13,6 @@ spec.loader.exec_module(module)
 
 
 class TrustSecretsTests(unittest.TestCase):
-    def test_version_mismatch_rejected(self) -> None:
-        with (
-            patch.object(module, "talos_version", return_value="v2.3.4"),
-            patch.object(module.subprocess, "run") as run,
-        ):
-            run.return_value.stdout = b"v2.3.3"
-            with self.assertRaises(ValueError):
-                module.check_version("/abs/talosctl")
-
-    def test_cli_version_follows_pin(self) -> None:
-        with (
-            patch.object(module, "talos_version", return_value="v2.3.4"),
-            patch.object(module.subprocess, "run") as run,
-        ):
-            run.return_value.stdout = b"Client:\\n  Tag: v2.3.4\\n"
-            module.check_version("/abs/talosctl")
-
     def test_reads_version_from_cluster_scope(self) -> None:
         self.assertEqual(module.talos_version(), "v1.14.5")
 
@@ -41,7 +24,9 @@ class TrustSecretsTests(unittest.TestCase):
             )
             argv = run.call_args.args[0]
             self.assertEqual(argv[-2:], ["--output-file", "-"])
-            self.assertEqual(argv[argv.index("--talos-version") + 1], module.talos_version())
+            self.assertEqual(
+                argv[argv.index("--talos-version") + 1], module.talos_version()
+            )
 
     def test_init_refuses_existing_record_before_tool_calls(self) -> None:
         with patch.object(module.os.path, "lexists", return_value=True):
@@ -53,7 +38,6 @@ class TrustSecretsTests(unittest.TestCase):
     def test_init_only_passes_plaintext_over_stdin(self) -> None:
         with (
             patch.object(module.os.path, "lexists", return_value=False),
-            patch.object(module, "check_version"),
             patch.object(module, "generate", return_value=b"disposable"),
             patch.object(module.subprocess, "run") as run,
         ):
