@@ -133,6 +133,15 @@ make -C support/ups bootstrap HOST=ups-aux ASK_BECOME_PASS=1
 
 Use its existing initial sudo password; it is not saved in the repository or a file. If no working administrative access exists, correct the image/account setup first. Later runs use the normal passwordless command. The separate verification target performs no configuration changes.
 
+Bootstrap sets `LOGIN_TIMEOUT 180` in `/etc/login.defs` to give the operator
+three minutes to enter the wrapped administrator password at the local console.
+The setting takes effect at the next console login.
+
+Rerun bootstrap on an already hardened coordinator to apply this setting.
+Bootstrap and hardening use the same ownership and permissions for the
+administrator's SSH files. The hardening role owns the SSH daemon, firewall,
+and other security settings separately.
+
 Repeat with `HOST=ups-pi` and `HOST=ups-metal`. A missing, unknown, or multi-host selection is rejected. A second bootstrap on an unchanged host should report no changes.
 
 ## 5. Apply shared hardening

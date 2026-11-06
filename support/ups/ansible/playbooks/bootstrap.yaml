@@ -41,6 +41,14 @@
       ansible.builtin.command: /usr/sbin/visudo -c
       changed_when: false
 
+    - name: Allow three minutes for local console login
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/login.defs
+        regexp: '^\s*LOGIN_TIMEOUT(\s|$)'
+        line: LOGIN_TIMEOUT 180
+        create: false
+
     - name: Look up the administrator home
       ansible.builtin.getent:
         database: passwd
