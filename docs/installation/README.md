@@ -8,7 +8,7 @@ Main TODO list for installing the homelab and implementing its helpers and repos
 | --- | --- | --- | --- |
 | [00 - YubiKey setup](00-yubikey-setup.md) | Verified procedure | Offline setup helpers, shared wrapping library/CLI and external virtualenv | PASS 2026-11-04: all four tokens, cross-token/software unwrap and independent replica retrieval |
 | [01 - Main coordinator](01-main-coordinator.md) | Shared base setup linked; additional KMS TODO | Base inventory, scoped tools, bootstrap/hardening/verification, wrapped administrator password and shared SSH key workflows; KMS TODO | `ups-aux` base setup verified on 2026-11-06. KMS pending. |
-| [02 - Trust](02-trust.md) | Draft Pi 4 UEFI firmware-card experiment; installation TODO | TODO | Not tried |
+| [02 - Trust](02-trust.md) | Living encrypted Talos/Kubernetes bootstrap roadmap and draft Pi 4 UEFI experiment | Roadmap started; provisioning and coordinator KMS pending | Trust node installation not tried |
 
 Keep detailed TODOs and verification results in the owning runbook. Update this table as work progresses; written instructions or configuration alone do not establish a verified installation.
 
