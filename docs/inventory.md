@@ -43,7 +43,7 @@ Per-device power-return support, settings, and verification remain TBD, includin
 Shared exclusively by the **Vault and Backup clusters**:
 
 - **UPS:** 1 × Eaton 3S700 supplying power to both clusters.
-- **Shutdown coordinator:** `ups-aux`, 1 × Raspberry Pi 3 Model B with 1 GB RAM and static `10.10.0.5` on `k8s-aux` (VLAN 10). **Wired Ethernet MAC address:** TBD. It connects to the UPS via USB for monitoring and safe shutdown of both clusters and is the planned host for [Vault's bootstrap KMS](security/security.md#vault-bootstrap-kms).
+- **Shutdown coordinator:** `ups-aux`, 1 × Raspberry Pi 3 Model B with 1 GB RAM and static `10.10.0.5` on `k8s-aux` (VLAN 10). **Wired Ethernet MAC address:** `b8:27:eb:58:e9:8f`. It connects to the UPS via USB for monitoring and safe shutdown of both clusters and is the planned host for [Vault's bootstrap KMS](security/security.md#vault-bootstrap-kms).
 
 ## Pi
 
