@@ -133,7 +133,7 @@ Physical locations remain outside this repository.
 
 Exit all panes and follow `start`'s export and poweroff prompts. The
 [Emergency Recovery Guide](../emergency-recovery-guide.md) still has pending
-service-recovery work; this ceremony is not a verified Vault recovery path.
+service-recovery work; this ceremony is not a verified Trust recovery path.
 
 ## Failure actions
 

@@ -6,7 +6,7 @@
 
 Keep the YubiKey in the workstation laptop. Load the [repository-owned shared SSH key](../../runbooks/coordinator-ssh-key.md)
 into the local agent and use the `administrator` account. SSH access and host-key verification must work independently
-of Vault and OpenBao.
+of Trust and OpenBao.
 
 The coordinator starts with KMS locked; UPS management remains available.
 
@@ -32,7 +32,7 @@ on both hosts.
 
 | Material delivered | Lifetime |
 | --- | --- |
-| Unwrapped random 32-byte KMS keys for explicitly authorized Vault nodes | One-hour boot window. |
+| Unwrapped random 32-byte KMS keys for explicitly authorized Trust nodes | One-hour boot window. |
 | Decrypted DNS API credential, TLS private key, and ACME account secrets | Coordinator process lifetime. |
 
 Start the one-hour window on successful KMS activation, measured by the
@@ -62,7 +62,7 @@ Define the SSH payload, command, socket permissions, daemon validation,
 failure handling, and memory cleanup. Verify disconnect, expiry, lock,
 restart, and certificate-renewal behavior.
 
-The [two-layer KMS design](helper-implementation.md#vault-kms-two-layers)
+The [two-layer KMS design](helper-implementation.md#trust-kms-two-layers)
 uses YubiKey-wrapped node KMS keys to support fresh Seal payloads and
 existing Unseal payloads. Exact envelope and delivery specifications
 remain pending; do not give the coordinator raw HMAC responses or

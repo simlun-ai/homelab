@@ -12,9 +12,9 @@ and restore targets.
 | Scenario | Required proof |
 | --- | --- |
 | Token failure | Recover with another token; separately test the Level 1 golden-key software fallback. |
-| Coordinator loss | Rebuild without Vault/OpenBao, deploy wrapped records, restore independent SSH access and verified host identity, and authorize the existing node KMS key from the workstation. |
-| Vault loss | Restore to a replacement Raspberry Pi 4, preserving manual storage and restoring OpenBao from R2 with the corresponding unseal material. |
-| Emergency secret access | Restore OpenBao into a RAM-backed Linux container on a trusted workstation, without the original Vault or coordinator. |
+| Coordinator loss | Rebuild without Trust/OpenBao, deploy wrapped records, restore independent SSH access and verified host identity, and authorize the existing node KMS key from the workstation. |
+| Trust loss | Restore to a replacement Raspberry Pi 4, preserving manual storage and restoring OpenBao from R2 with the corresponding unseal material. |
+| Emergency secret access | Restore OpenBao into a RAM-backed Linux container on a trusted workstation, without the original Trust or coordinator. |
 
 Perform drills in isolation from production integrations and without
 relying on the failed infrastructure. Keep secrets and snapshots off

@@ -32,7 +32,7 @@ commands and completion checks remain pending.
 Rewrapping a node KMS key under a new golden key preserves its value and
 disk compatibility. Replacing the actual node KMS key requires migrating
 disk payloads to the new KMS-key generation under the
-[two-layer design](helper-implementation.md#vault-kms-two-layers).
+[two-layer design](helper-implementation.md#trust-kms-two-layers).
 Verify unlock and recovery before retiring the previous key.
 
 ## Retention and exposure

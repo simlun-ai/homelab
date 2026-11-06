@@ -77,16 +77,16 @@ These identifiers propose coverage for the credential roles already documented i
 
 | Identifier suffix | Protected material | Consumer |
 | --- | --- | --- |
-| `vault/openbao-unseal/share-1/r1` | OpenBao-generated unseal share; one share, threshold one under the [unseal policy](openbao-unseal.md). | Workstation unseal/restore helper. |
-| `vault/kms/<node-id>/r1` | Random 32-byte node KMS key protecting Talos system-volume unlock payloads under the [two-layer design](helper-implementation.md#vault-kms-two-layers). Node mapping TBD. | Coordinator bootstrap KMS. |
-| `support-vault-backup/dns-api/cloudflare/r1` | DNS API credential for independent KMS DNS-01 renewal. | Coordinator ACME integration. |
-| `support-vault-backup/tls-private-key/kms/r1` | Coordinator KMS TLS private key. | Coordinator TLS service. |
-| `support-vault-backup/acme-account/kms/r1` | ACME account private key and required account secrets. | Coordinator ACME integration. |
+| `trust/openbao-unseal/share-1/r1` | OpenBao-generated unseal share; one share, threshold one under the [unseal policy](openbao-unseal.md). | Workstation unseal/restore helper. |
+| `trust/kms/<node-id>/r1` | Random 32-byte node KMS key protecting Talos system-volume unlock payloads under the [two-layer design](helper-implementation.md#trust-kms-two-layers). Node mapping TBD. | Coordinator bootstrap KMS. |
+| `support-trust-backup/dns-api/cloudflare/r1` | DNS API credential for independent KMS DNS-01 renewal. | Coordinator ACME integration. |
+| `support-trust-backup/tls-private-key/kms/r1` | Coordinator KMS TLS private key. | Coordinator TLS service. |
+| `support-trust-backup/acme-account/kms/r1` | ACME account private key and required account secrets. | Coordinator ACME integration. |
 | `recovery/r2/openbao-restore/r1` | Independently recoverable R2 download credentials. | Snapshot restore helper. |
 | `recovery/backup-decryption/openbao/r1` | Additional snapshot-decryption material, **if additional encryption is selected**. | Snapshot restore helper. |
-| `vault/talos/bootstrap/r1` | Secret-bearing Talos bootstrap material; bundle boundaries TBD. | Vault bootstrap/rebuild helper. |
-| `vault/talos/administration/r1` | Talos administration credentials. | Operator tooling. |
-| `vault/kubernetes/administration/r1` | Kubernetes administration credentials. | Operator tooling. |
+| `trust/talos/bootstrap/r1` | Secret-bearing Talos bootstrap material; bundle boundaries TBD. | Trust bootstrap/rebuild helper. |
+| `trust/talos/administration/r1` | Talos administration credentials. | Operator tooling. |
+| `trust/kubernetes/administration/r1` | Kubernetes administration credentials. | Operator tooling. |
 
 KMS authority and coordinator credentials are supplied from the workstation over SSH under the [session policy](coordinator-sessions.md): KMS expires after one hour; DNS, TLS, and ACME plaintext lasts for the coordinator process lifetime.
 
@@ -104,7 +104,7 @@ homelab/v1/<scope>/zfs/<node-id>/<pool>/<root-id>/r1
 
 | Scope / node | Pool | Lookup suffix |
 | --- | --- | --- |
-| Vault / node ID TBD | Pool name TBD | `vault/zfs/<node-id>/<pool>/<root-id>/r1` |
+| Trust / node ID TBD | Pool name TBD | `trust/zfs/<node-id>/<pool>/<root-id>/r1` |
 | Backup / node ID TBD | Pool name TBD | `backup/zfs/<node-id>/<pool>/<root-id>/r1` |
 | Metal / worker1 | `immich` | `metal/zfs/worker1/immich/<root-id>/r1` |
 | Metal / worker1 | `photos` | `metal/zfs/worker1/photos/<root-id>/r1` |
@@ -136,7 +136,7 @@ OpenBao mount names, secret paths, transit-key names, and authentication mapping
 
 Specify storage, delivery, and any direct lookup identifiers for:
 
-- Vault cert-manager DNS/ACME credentials.
+- Trust cert-manager DNS/ACME credentials.
 - R2 upload and OpenBao snapshot-job credentials.
 - KMS adapter authentication and TLS bootstrap material.
 - OpenBao recovery administration access.
@@ -144,7 +144,7 @@ Specify storage, delivery, and any direct lookup identifiers for:
 - UPS service/shutdown credentials (local administrator passwords are covered above).
 - YubiKey programming access codes are deferred to [future improvements](../future.md).
 
-Vault bootstrap material must remain accessible without its own OpenBao instance.
+Trust bootstrap material must remain accessible without its own OpenBao instance.
 
 ## Record and maintenance requirements
 

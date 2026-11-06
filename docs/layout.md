@@ -35,12 +35,12 @@ Keep details in their owning document and link from other documents. The recover
 | `/secrets/manifest.json` | Public credential catalogue; no secrets or checksums. |
 | `/tools/homelab-hsm/` | `homelab-hsm` code submodule: shared Python library/CLI, dependency pins, bundles, and tests. |
 | `/secrets/wrapped/` | Private `homelab-secrets` Git submodule containing authenticated encrypted records only; [storage policy](security/encrypted-record-storage.md). |
-| `/clusters/{vault,backup,pi,metal}/` | Independent cluster configuration and operational pins. |
+| `/clusters/{trust,backup,pi,metal}/` | Independent cluster configuration and operational pins. |
 | `/make/` | Shared Make implementation, without global cluster-version defaults. |
 | `/scripts/` | Python helpers and small Bash scripts. |
 | `/charts/` | Repository-owned Helm source where useful. |
 | `/tofu/modules/` | Reusable modules; live roots/state stay with their scopes. |
-| `/support/ups/` | Shutdown-coordinator management and Vault bootstrap KMS configuration. |
+| `/support/ups/` | Shutdown-coordinator management and Trust bootstrap KMS configuration. |
 | `/support/hsm/` | Offline HSM environment for parent application helpers; token setup CLI belongs to homelab-hsm. |
 | `/runbooks/` | Reusable supporting-host setup, ongoing operation, maintenance, and recovery procedures. |
 
@@ -82,7 +82,7 @@ Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered co
 | `/make/helm.mk` | Render/deploy selected releases. |
 | `/make/tofu.mk` | Operate the selected root/state. |
 | `/make/storage.mk` | Validate disks, coordinate assigned Piraeus preparation, inspect manual pools. |
-| `/scripts/homelab/` | Application consumers; shared wrapping/token access is imported from `tools/homelab-hsm/homelab_secrets`. Workstation unseal, [Talos KMS adapter](security/security.md#talos-kms-adapter), and [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms) remain planned. |
+| `/scripts/homelab/` | Application consumers; shared wrapping/token access is imported from `tools/homelab-hsm/homelab_secrets`. Workstation unseal, [Talos KMS adapter](security/security.md#talos-kms-adapter), and [Trust bootstrap KMS](security/security.md#trust-bootstrap-kms) remain planned. |
 | `/scripts/bash/` | Small shell helpers. |
 | `/charts/<chart>/` | Chart definition, values, templates, dependency locks. |
 | `/tofu/modules/<module>/` | Shared definitions without credentials or ownership of other scopes' state. |
@@ -103,9 +103,9 @@ Illustrative targets, not yet implemented:
 
 ```sh
 make help
-make CLUSTER=vault tools
-make CLUSTER=vault bootstrap
-make -C clusters/vault status
+make CLUSTER=trust tools
+make CLUSTER=trust bootstrap
+make -C clusters/trust status
 make -C clusters/pi node-bootstrap NODE='<node-id>'
 make -C clusters/metal upgrade
 ```
@@ -127,13 +127,13 @@ Aim for unattended, repeatable provisioning once prerequisites, identities, disk
 
 Use stable disk identities and validate mappings, especially through USB adapters or replacement. Never select by size, apparent emptiness, or `/dev/sdX` alone. Distinguish new provisioning from rebuilds; existing signatures require review, not automatic wiping.
 
-The inventory identifies protected storage: Vault/Backup data mirrors, Metal's non-`piraeus` ZFS pools, old NAS storage, and worker3's separate `ethereum` XFS filesystem.
+The inventory identifies protected storage: Trust/Backup data mirrors, Metal's non-`piraeus` ZFS pools, old NAS storage, and worker3's separate `ethereum` XFS filesystem.
 
 Manual-pool declarations may drive non-destructive checks/integration. Import, unlock, mounting, or volume provisioning need separately defined automation; missing/unexpected storage is an error, never grounds to recreate a pool. Destructive maintenance belongs in manual runbooks. Encryption requirements belong in [security.md](security/security.md#disk-encryption-and-opentofu).
 
 ## UPS shutdown coordinators
 
-Use one `/support/ups/` scope for Ansible provisioning and ongoing management of all UPS coordinators. Base bootstrap, hardening, and verification are implemented; KMS, NUT, and exporters remain pending. `ups-aux` serves both Vault and Backup. Hardware, power supplies, and UPS mappings belong in the inventory.
+Use one `/support/ups/` scope for Ansible provisioning and ongoing management of all UPS coordinators. Base bootstrap, hardening, and verification are implemented; KMS, NUT, and exporters remain pending. `ups-aux` serves both Trust and Backup. Hardware, power supplies, and UPS mappings belong in the inventory.
 
 | Path under `/support/ups/` | Contents |
 | --- | --- |
@@ -147,7 +147,7 @@ Use one `/support/ups/` scope for Ansible provisioning and ongoing management of
 | `ansible/templates/` | Non-secret service templates. |
 | `ansible/requirements.yml` | Pinned external roles/collections if selected. |
 
-Raspberry Pi OS Lite (64-bit) on microSD is selected. The shared [base setup runbook](../runbooks/ups-coordinator-base-setup.md) covers image preparation from a Linux workstation and Ansible bootstrap for all three coordinators. [01 - Main coordinator](installation/01-main-coordinator.md) adds Vault's bootstrap KMS services. The Vault/Backup coordinator also hosts the planned [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. Deploy its [wrapped credentials](security/encrypted-record-storage.md#coordinator-deployment) to local persistent storage; Ansible copies ciphertext without decrypting it. OpenTofu has no assigned coordinator role. NUT and Prometheus exporter setup will be added to the shared runbook later; shutdown credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security/security.md#secret-handling-boundary).
+Raspberry Pi OS Lite (64-bit) on microSD is selected. The shared [base setup runbook](../runbooks/ups-coordinator-base-setup.md) covers image preparation from a Linux workstation and Ansible bootstrap for all three coordinators. [01 - Main coordinator](installation/01-main-coordinator.md) adds Trust's bootstrap KMS services. The Trust/Backup coordinator also hosts the planned [Trust bootstrap KMS](security/security.md#trust-bootstrap-kms); keep its non-secret configuration in this supporting-host scope. Deploy its [wrapped credentials](security/encrypted-record-storage.md#coordinator-deployment) to local persistent storage; Ansible copies ciphertext without decrypting it. OpenTofu has no assigned coordinator role. NUT and Prometheus exporter setup will be added to the shared runbook later; shutdown credentials, triggers, and sequencing remain TBD; apply the [secret-handling policy](security/security.md#secret-handling-boundary).
 
 ### Power-loss shutdown and manual startup
 
@@ -155,7 +155,7 @@ Raspberry Pi OS Lite (64-bit) on microSD is selected. The shared [base setup run
 
 - Set firmware power restoration to **stay off**; disable Wake-on-LAN and other automatic wake sources where supported. No scheduled or coordinator-driven power-on.
 - Record device support, settings, and verification in the inventory. Check Raspberry Pi boards, coordinators, and UPS outlets separately; unsupported behavior/manual power isolation remain TBD.
-- Bring Vault services up before dependent clusters. Exact node order/readiness checks belong in the startup runbook.
+- Bring Trust services up before dependent clusters. Exact node order/readiness checks belong in the startup runbook.
 - Manual disk unlock and OpenBao unseal are acceptable under the independent-recovery design.
 - This policy permits explicitly requested maintenance reboots and unattended provisioning after deliberate power-on.
 
@@ -165,7 +165,7 @@ These are intended settings, not verified hardware behavior.
 
 Each runbook states scope, prerequisites, secret-source references, expected state, ordered steps, verification, and recovery actions. Link scope-specific inputs rather than copying procedures.
 
-Numbered installation procedures and their implementation progress belong in [docs/installation/](installation/README.md), beginning with YubiKeys, the main coordinator, and Vault. Add dependent-cluster installation steps there as work progresses. Shared supporting-host setup lives in `/runbooks/` and is linked from numbered installation steps. The operating runbooks below should reuse those procedures where applicable.
+Numbered installation procedures and their implementation progress belong in [docs/installation/](installation/README.md), beginning with YubiKeys, the main coordinator, and Trust. Add dependent-cluster installation steps there as work progresses. Shared supporting-host setup lives in `/runbooks/` and is linked from numbered installation steps. The operating runbooks below should reuse those procedures where applicable.
 
 | Proposed path under `/runbooks/` | Procedure |
 | --- | --- |
@@ -180,7 +180,7 @@ Numbered installation procedures and their implementation progress belong in [do
 | `recover-encryption-access.md` | Recover/rotate unlock access under [security.md](security/security.md). |
 | `unseal-openbao.md` | Workstation/YubiKey unseal with memory-only secret handling. |
 | `operate-talos-kms.md` | Deploy/verify the adapter, rotate transit keys, and recover dependent-node unlock. |
-| `operate-vault-bootstrap-kms.md` | Operate/recover the coordinator KMS, touch-authorized sessions, DNS-01 renewal, time readiness, and network hardening; initial setup belongs in [01 - Main coordinator](installation/01-main-coordinator.md). |
+| `operate-trust-bootstrap-kms.md` | Operate/recover the coordinator KMS, touch-authorized sessions, DNS-01 renewal, time readiness, and network hardening; initial setup belongs in [01 - Main coordinator](installation/01-main-coordinator.md). |
 | `restore-openbao.md` | Implement/test [snapshot recovery to a replacement Pi 4 or memory-backed workstation container](backup-and-restore.md#required-recovery-targets). |
 | `ups-shutdown-and-startup.md` | Verify shutdown, stay-off behavior, manual dependency-ordered startup. |
 

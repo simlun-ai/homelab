@@ -59,9 +59,9 @@ the record and checks the public/private match before streaming to `ssh-add`;
 `ssh-add -T` checks agent signing. No private-key export command is provided.
 The [runbook](../../runbooks/coordinator-ssh-key.md) owns operations and recovery.
 
-## Vault KMS: two layers
+## Trust KMS: two layers
 
-Generate a random 32-byte KMS key per Vault node. Protect it as a normal
+Generate a random 32-byte KMS key per Trust node. Protect it as a normal
 `homelab-wrap-v1` record using the YubiKey foundation.
 
 The workstation unwraps that key and sends it over SSH to the coordinator.

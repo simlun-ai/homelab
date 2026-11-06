@@ -1,6 +1,6 @@
 # UPS coordinator management
 
-Shared base setup for `ups-aux` (Vault/Backup), `ups-pi`, and `ups-metal`.
+Shared base setup for `ups-aux` (Trust/Backup), `ups-pi`, and `ups-metal`.
 Use the [runbook](../../runbooks/ups-coordinator-base-setup.md) for imaging,
 SSH host identity, installation order, and recovery.
 

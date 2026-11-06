@@ -4,7 +4,7 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 
 ## Infrastructure
 
-| Component | Latest version | Vault | Backup | Pi | Metal |
+| Component | Latest version | Trust | Backup | Pi | Metal |
 | --- | --- | --- | --- | --- | --- |
 | Talos | v1.14.2 | v1.14.2 | v1.14.2 | v1.14.2 | v1.14.2 |
 | Piraeus Operator | v2.12.0 |  |  | v2.12.0 | v2.12.0 |
@@ -27,7 +27,7 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 
 ## Workloads
 
-| Component | Latest version | Vault | Backup | Pi | Metal |
+| Component | Latest version | Trust | Backup | Pi | Metal |
 | --- | --- | --- | --- | --- | --- |
 | Zigbee2MQTT | v2.14.2 |  |  |  |  |
 | Home Assistant | 2026.10.0 |  |  |  |  |
@@ -50,8 +50,8 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 | YubiKey Manager Python SDK | Selected for [step 00](installation/00-yubikey-setup.md); version pinned in [the code project’s pyproject.toml](../tools/homelab-hsm/homelab_secrets/pyproject.toml), physical-device verification passed on all four tokens on 2026-11-04. |
 | kubectl, talosctl, Helm, OpenBao CLI (`bao`) | TBD per scope; talosctl must be compatible with Talos. |
 | OpenTofu CLI (`tofu`) | Independently pinned per scope; catalog version above. |
-| [pftf/RPi4 EDK2 UEFI firmware](https://github.com/pftf/RPi4) | v1.53 selected only for the [Vault Pi 4 installation experiment](installation/02-vault.md#first-installation-experiment-pi-4-uefi); unverified. |
+| [pftf/RPi4 EDK2 UEFI firmware](https://github.com/pftf/RPi4) | v1.53 selected only for the [Trust Pi 4 installation experiment](installation/02-trust.md#first-installation-experiment-pi-4-uefi); unverified. |
 | Raspberry Pi OS Lite | 64-bit; exact image release TBD. Selected for all UPS coordinators on microSD; [base setup](../runbooks/ups-coordinator-base-setup.md). |
 | Ansible | ansible-core and dependencies pinned in [requirements.txt](../support/ups/requirements.txt); base bootstrap implemented, hardware verification pending. |
 | nftables, unattended-upgrades | Raspberry Pi OS repository versions; [shared hardening](security/coordinator-hardening.md) implemented, hardware verification pending. |
-| [Vault bootstrap KMS](security/security.md#vault-bootstrap-kms) (repository-owned Python gRPC service), ACME client | TBD; planned on the Vault/Backup coordinator, independently of cluster services. |
+| [Trust bootstrap KMS](security/security.md#trust-bootstrap-kms) (repository-owned Python gRPC service), ACME client | TBD; planned on the Trust/Backup coordinator, independently of cluster services. |

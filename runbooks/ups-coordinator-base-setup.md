@@ -50,7 +50,7 @@ In Imager:
 
 1. Select **Raspberry Pi 3** and **Raspberry Pi OS Lite (64-bit)**. Use the same image for all three and record its release/date.
 2. Select the microSD card.
-3. Set hostname to `ups-aux` (Vault/Backup), `ups-pi`, or `ups-metal`, and username to **`administrator`**. Set timezone and keyboard layout.
+3. Set hostname to `ups-aux` (Trust/Backup), `ups-pi`, or `ups-metal`, and username to **`administrator`**. Set timezone and keyboard layout.
 4. Enable SSH with **public-key authentication only**, using `support/ups/coordinator_ed25519.pub`. Leave Wi-Fi and Raspberry Pi Connect unconfigured.
 5. Review, write, verify, and eject.
 

@@ -4,29 +4,29 @@
 
 See the [network overview](network.md) for VLANs, IP allocations, and the CNI and load balancer plan. See [inventory.md](inventory.md) for hardware and disk assignments, [layout.md](layout.md) for tool scopes and provisioning, and [security.md](security/security.md) for secret handling and encryption.
 
-## Vault
+## Trust
 
 Independent, single-node foundation. All other clusters depend on its services. Its own secrets are supplied manually so bootstrap, disk unlock, and recovery do not depend on its OpenBao instance or another cluster.
 
 | Function | Components |
 | --- | --- |
 | Ingress | Traefik. |
-| Storage | Local persistent volumes via ZFS LocalPV on the [Vault data mirror](inventory.md#vault), separate from the OS mirror. |
+| Storage | Local persistent volumes via ZFS LocalPV on the [Trust data mirror](inventory.md#trust), separate from the OS mirror. |
 | Observability | kube-prometheus-stack (Prometheus, Grafana, Alertmanager), with Telegram notifications; Headlamp for cluster visibility. |
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
 | Certificates | cert-manager with Let's Encrypt and Cloudflare DNS-01; External Secrets Operator PushSecret publishes certificates to OpenBao, and dependent clusters pull them through External Secrets Operator. |
 
-Backup, Pi, and Metal depend on Vault's unsealed OpenBao and KMS adapter for [Talos system-volume unlock](security/security.md#talos-kms-adapter). Vault's own system-volume unlock uses the independent [YubiKey-backed coordinator KMS](security/security.md#vault-bootstrap-kms).
+Backup, Pi, and Metal depend on Trust's unsealed OpenBao and KMS adapter for [Talos system-volume unlock](security/security.md#talos-kms-adapter). Trust's own system-volume unlock uses the independent [YubiKey-backed coordinator KMS](security/security.md#trust-bootstrap-kms).
 
 OpenBao storage, backups, and recovery are specified in [backup-and-restore.md](backup-and-restore.md#openbao-online-backups).
 
 ## Backup
 
-Single-node cluster on the [Lenovo ThinkCentre M93p Tiny](inventory.md#backup), using its manually prepared ZFS mirror. Depends on Vault. Garage is planned for backup storage. Backup clients, retention, and storage integration remain TBD in the [backup design](backup-and-restore.md#other-backup-coverage).
+Single-node cluster on the [Lenovo ThinkCentre M93p Tiny](inventory.md#backup), using its manually prepared ZFS mirror. Depends on Trust. Garage is planned for backup storage. Backup clients, retention, and storage integration remain TBD in the [backup design](backup-and-restore.md#other-backup-coverage).
 
 ## Shared infrastructure
 
-Vault and Backup share the [UPS and shutdown coordinator](inventory.md#shared-infrastructure). The coordinator also hosts Vault's planned [bootstrap KMS](security/security.md#vault-bootstrap-kms).
+Trust and Backup share the [UPS and shutdown coordinator](inventory.md#shared-infrastructure). The coordinator also hosts Trust's planned [bootstrap KMS](security/security.md#trust-bootstrap-kms).
 
 ## Pi
 

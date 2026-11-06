@@ -10,7 +10,7 @@ Wrap the OpenBao-generated share using the
 under:
 
 ```text
-homelab/v1/vault/openbao-unseal/share-1/r1
+homelab/v1/trust/openbao-unseal/share-1/r1
 ```
 
 Keep the encrypted record in the private records repository under the [storage policy](encrypted-record-storage.md). Any one
