@@ -19,7 +19,7 @@ class TrustSecretsTests(unittest.TestCase):
             root = Path(directory)
             versions = root / "clusters/trust/versions.yaml"
             versions.parent.mkdir(parents=True)
-            versions.write_text("talos:\\n  version: v2.3.4\\n", encoding="utf-8")
+            versions.write_text("talos:\n  version: v2.3.4\n", encoding="utf-8")
             with patch.object(module, "ROOT", root):
                 self.assertEqual(module.talos_version(), "v2.3.4")
 
