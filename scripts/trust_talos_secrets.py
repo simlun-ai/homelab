@@ -14,7 +14,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 RECORD = ROOT / "secrets/wrapped/trust-talos-bootstrap.json"
 KEY_ID = "homelab/v1/trust/talos/bootstrap/r1"
 ROOT_KEY = "golden-1"

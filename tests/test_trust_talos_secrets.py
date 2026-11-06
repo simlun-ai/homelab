@@ -1,12 +1,9 @@
 """Safe unit tests: Talos and HSM subprocesses are mocked, no keys created."""
 
 import importlib.util
-import stat
-import tempfile
 import unittest
 from pathlib import Path
-from types import ModuleType
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/trust_talos_secrets.py"
 spec = importlib.util.spec_from_file_location("trust_talos_secrets", SCRIPT)
