@@ -114,7 +114,7 @@ closing the old session. Repeat one coordinator at a time for `ups-pi` and
   only if the record authenticates. Preserve/inspect incomplete files before
   removing them. Interrupted loading may have succeeded; check or unload the
   agent identity before retrying.
-- Lost workstation: recover the checkout plus token independently of Vault or
+- Lost workstation: recover the checkout plus token independently of Trust or
   OpenBao, verify coordinator host keys, and load the same wrapped SSH key.
 
 Automatic rotation is not implemented. Replacing this shared key requires
