@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Agree on the Trust provisioning layout, the minimal cluster-scope tooling/version pins, and how configuration and secret material will be generated and handled. Do not install onto disks yet.
+- **Current next step:** Select and verify the concrete Talos/Kubernetes/kubectl versions, then settle provisioning layout and secret handling. Do not install onto disks yet.
 
 ### Milestone tracker
 
@@ -35,12 +35,23 @@
 | --- | --- |
 | Cluster and node identity | `trust` / `trust-cp1` agreed; stable Kubernetes API DNS name and endpoint choice TBD |
 | Networking | VLAN 10, `10.10.0.10/24`, gateway `10.10.0.1`; current proposed pod/service CIDRs and Flannel are in [network.md](../network.md). Pre-`STATE` DNS and NTP details TBD |
-| Provisioning | Prefer reproducible, scoped `clusters/trust/` Make/toolchain/configuration, per [layout.md](../layout.md); concrete node schema, pin values and generation workflow TBD |
+| Provisioning | Prefer reproducible, scoped `clusters/trust/` Make/toolchain/configuration, per [layout.md](../layout.md); concrete node schema, exact pin values and generation workflow TBD |
+| Versioning and upgrades | Agreed: explicit Talos, Kubernetes and kubectl version pins, with Kubernetes selected from the target Talos release's recommended/default Kubernetes version and kubectl chosen to match. `talosctl` matches Talos. Upgrade Talos first, verify health, then upgrade Kubernetes separately; check compatibility and supported upgrade paths before either action. Exact pins TBD |
 | Boot | First experiment is SD-first EDK2/UEFI plus generic ARM64 Talos installer; supported behavior and firmware boot dependency must be verified |
 | Storage | Two explicitly assigned OS SSDs are intended for MD RAID1; confirm stable identities, Talos compatibility, metadata format, degraded boot and replacement before any destructive installation. Separate encrypted ZFS data disks are **out of scope and protected** |
 | Encryption | KMS-backed `STATE` and `EPHEMERAL` on the **initial** installation. Talos bootloader/kernel still require readable boot components; no claim of fully encrypted boot media |
 | KMS | Dedicated coordinator service on `ups-aux`, independent of Trust and OpenBao; YubiKey-authorized one-hour key window, TLS and encrypted wrapped records per [security policy](../security/security.md#trust-bootstrap-kms). Precise service and recovery contract TBD |
 | Secret handling | Never write plaintext Talos machine secrets, talosconfig, kubeconfig, KMS keys or unsealed material to workstation disk. Final generation/transport/bootstrap workflow TBD |
+
+### Version-selection and upgrade policy (agreed)
+
+- The Talos release **drives** selection of the Kubernetes version for a cluster. Review the selected Talos release's default/recommended Kubernetes version and supported Kubernetes range; record the chosen compatible Kubernetes version explicitly rather than deriving it automatically at runtime.
+- Record **explicit pins** for Talos, Kubernetes and `kubectl` in the Trust cluster scope. Keep `talosctl` at the selected Talos version and `kubectl` at the selected Kubernetes version (or an explicitly reviewed compatible patch release). The exact file schema and acquisition/checksum implementation are part of provisioning design.
+- Do not update pins automatically when upstream releases appear. Changing a version in Git does not itself upgrade any running node or Kubernetes components.
+- Normally perform the Talos and Kubernetes upgrades in the **same planned maintenance session**, as two separately verified operations: preflight supported version/upgrade paths and encryption/KMS recovery, upgrade Talos, verify node/Talos API and Kubernetes health, then run the supported Kubernetes upgrade procedure and verify final health. If the old Kubernetes version is incompatible with the target Talos version, plan an intermediate supported path rather than applying that order blindly.
+- Treat Trust as a single-node cluster with expected workload/API downtime during reboot or control-plane maintenance. Record actual upgraded versions, health checks and recovery steps. Do not conflate `kubectl` client pinning with upgrading the Kubernetes control plane.
+
+**Version selection remains open:** `docs/components.md` currently catalogs Talos `v1.14.2` as planned, but no Trust-specific Kubernetes/`kubectl` release pair has yet been chosen and verified. Do not introduce a placeholder `versions.yaml` that appears deployable.
 
 ### Step-by-step working rules
 
@@ -55,6 +66,7 @@
 | Date | Milestone | Evidence / decision | Next action |
 | --- | --- | --- | --- |
 | 2026-11-06 | 0 — baseline | Started `feat/trust-bootstrap` after the Trust rename; accepted `trust-cp1` and `10.10.0.10`. `ups-aux` base setup previously verified. No Trust disk or KMS tests performed | Review provisioning layout and pinning strategy |
+| 2026-11-06 | 1 — version policy | Agreed explicit Talos, Kubernetes and kubectl pins, with Talos driving Kubernetes selection; same-session Talos-first, Kubernetes-second upgrade policy with intermediate health checks. No versions selected or deployed by this decision | Verify exact release pair and finalize pin format |
 
 ---
 
