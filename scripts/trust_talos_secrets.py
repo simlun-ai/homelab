@@ -18,8 +18,19 @@ ROOT = Path(__file__).resolve().parents[1]
 RECORD = ROOT / "secrets/wrapped/trust-talos-bootstrap.json"
 KEY_ID = "homelab/v1/trust/talos/bootstrap/r1"
 ROOT_KEY = "golden-1"
-TALOS_VERSION = "v1.14.5"
 MAX_SECRETS = 1024 * 1024
+
+
+def talos_version() -> str:
+    """Read the authoritative Talos pin without a second version constant."""
+    content = (ROOT / "clusters/trust/versions.yaml").read_text(encoding="utf-8")
+    match = re.search(
+        r"(?m)^talos:[ \\t]*\\n[ \\t]+version:[ \\t]*(v[0-9]+\\.[0-9]+\\.[0-9]+)[ \\t]*$",
+        content,
+    )
+    if match is None:
+        raise ValueError("Missing or invalid Trust Talos version pin")
+    return match.group(1)
 
 
 def harden() -> None:
@@ -56,8 +67,9 @@ def check_version(talosctl: str) -> None:
         check=True,
         timeout=15,
     )
-    if re.search(rb"v1[.]14[.]5(?![0-9])", response.stdout) is None:
-        raise ValueError("Talos CLI version does not match v1.14.5")
+    pin = talos_version().encode("ascii")
+    if re.search(rb"(?<![a-zA-Z0-9.])" + re.escape(pin) + rb"(?![a-zA-Z0-9.])", response.stdout) is None:
+        raise ValueError("Talos CLI version does not match the cluster pin")
 
 
 def generate(talosctl: str) -> bytes:
@@ -67,7 +79,7 @@ def generate(talosctl: str) -> bytes:
             "gen",
             "secrets",
             "--talos-version",
-            TALOS_VERSION,
+            talos_version(),
             "--output-file",
             "-",
         ],
