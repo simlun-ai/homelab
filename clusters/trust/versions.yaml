@@ -1,0 +1,8 @@
+# Selected Trust versions; deployment and tooling not yet implemented.
+# Kubernetes follows the default shipped by the selected Talos release.
+talos:
+  version: v1.14.5
+kubernetes:
+  version: v1.37.1
+kubectl:
+  version: v1.37.1
