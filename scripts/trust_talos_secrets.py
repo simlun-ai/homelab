@@ -62,8 +62,15 @@ def check_version(talosctl: str) -> None:
 
 def generate(talosctl: str) -> bytes:
     response = subprocess.run(
-        [talosctl, "gen", "secrets", "--talos-version", TALOS_VERSION,
-         "--output-file", "-"],
+        [
+            talosctl,
+            "gen",
+            "secrets",
+            "--talos-version",
+            TALOS_VERSION,
+            "--output-file",
+            "-",
+        ],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
         check=True,
@@ -81,8 +88,16 @@ def initialize(talosctl: str, wrap_cli: str) -> None:
     plaintext = generate(talosctl)
     # homelab-wrap verifies the AEAD record and creates ciphertext exclusively.
     subprocess.run(
-        [wrap_cli, "--key-id", KEY_ID, "--root-key", ROOT_KEY,
-         "--stdin", "--output", str(RECORD)],
+        [
+            wrap_cli,
+            "--key-id",
+            KEY_ID,
+            "--root-key",
+            ROOT_KEY,
+            "--stdin",
+            "--output",
+            str(RECORD),
+        ],
         input=plaintext,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -103,8 +118,16 @@ def recover(unwrap_cli: str) -> None:
     if not RECORD.is_file() or RECORD.is_symlink():
         raise FileNotFoundError("Talos bootstrap record missing")
     process = subprocess.Popen(
-        [unwrap_cli, "--key-id", KEY_ID, "--root-key", ROOT_KEY,
-         "--input", str(RECORD), "--stdout"],
+        [
+            unwrap_cli,
+            "--key-id",
+            KEY_ID,
+            "--root-key",
+            ROOT_KEY,
+            "--input",
+            str(RECORD),
+            "--stdout",
+        ],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
     )
@@ -140,7 +163,11 @@ def main() -> int:
                 raise ValueError("init requires --talosctl and --wrap only")
             initialize(executable(args.talosctl), executable(args.wrap))
         else:
-            if args.unwrap is None or args.talosctl is not None or args.wrap is not None:
+            if (
+                args.unwrap is None
+                or args.talosctl is not None
+                or args.wrap is not None
+            ):
                 raise ValueError("recover requires --unwrap only")
             recover(executable(args.unwrap))
     except (Exception, KeyboardInterrupt):

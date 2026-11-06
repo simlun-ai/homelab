@@ -22,7 +22,9 @@ class TrustSecretsTests(unittest.TestCase):
     def test_generation_uses_stdout_not_file(self) -> None:
         with patch.object(module.subprocess, "run") as run:
             run.return_value.stdout = b"fake disposable bundle"
-            self.assertEqual(module.generate("/abs/talosctl"), b"fake disposable bundle")
+            self.assertEqual(
+                module.generate("/abs/talosctl"), b"fake disposable bundle"
+            )
             argv = run.call_args.args[0]
             self.assertEqual(argv[-2:], ["--output-file", "-"])
 
