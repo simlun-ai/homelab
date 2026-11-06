@@ -4,9 +4,11 @@ Shared base setup for `ups-aux` (Vault/Backup), `ups-pi`, and `ups-metal`.
 Use the [runbook](../../runbooks/ups-coordinator-base-setup.md) for imaging,
 SSH host identity, installation order, and recovery.
 
-- `inventory.yaml`: hostnames and `administrator` SSH account. Names must resolve
-  through DNS or existing SSH configuration; add verified `ansible_host` addresses
-  here if needed. No private keys or passwords.
+- `inventory.yaml`: coordinator selectors, connection names, and the
+  `administrator` SSH account. `ups-aux` connects to
+  `ups-aux.k8s-aux.lundmark.internal`. Connection names must resolve through
+  DNS or existing SSH configuration. Keep private keys and passwords out of
+  the inventory.
 - `requirements.txt`: exact workstation dependency pins. `make tools` installs
   them into the ignored `.venv/`; all Ansible targets verify those pins.
 - `ansible.cfg`: strict host-key checking, non-interactive SSH, memory-only facts.

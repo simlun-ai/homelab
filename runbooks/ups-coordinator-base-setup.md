@@ -89,7 +89,12 @@ getent ahostsv4 deb.debian.org
 Use DHCP reservations for `ups-pi` and `ups-metal` during base setup. Their final
 addresses are TBD.
 
-The [Ansible inventory](../support/ups/inventory.yaml) and the coordinator credential helpers use the three approved hostnames. Make `ups-aux` resolve to `10.10.0.5` through workstation DNS or SSH configuration, and set up the other names once their addresses are known. An `ansible_host` override affects Ansible only.
+The [Ansible inventory](../support/ups/inventory.yaml) and the password helper
+connect to `ups-aux.k8s-aux.lundmark.internal`. From the workstation, verify
+that it resolves to `10.10.0.5` with `getent ahostsv4 ups-aux.k8s-aux.lundmark.internal`.
+Keep `HOST=ups-aux` for Make commands. Set up name resolution for `ups-pi` and
+`ups-metal` once their addresses are known. An `ansible_host` override affects
+Ansible only.
 
 Verify the SSH host-key fingerprint from a trusted local source. On the Pi's local console:
 
@@ -102,7 +107,7 @@ Alternatively, inspect that public-key file from its card after a clean shutdown
 Load the shared key into your local agent as described in the [SSH key runbook](coordinator-ssh-key.md#load-before-management-operations). Connect from the workstation, compare the fingerprint, and accept it only if it matches:
 
 ```sh
-ssh -o IdentitiesOnly=yes -i support/ups/coordinator_ed25519.pub administrator@ups-aux
+ssh -o IdentitiesOnly=yes -i support/ups/coordinator_ed25519.pub administrator@ups-aux.k8s-aux.lundmark.internal
 ```
 
 Use the actual connection address if overriding `ansible_host`; repeat this trust step for each Pi. Confirm that the account can administer the Pi, then exit back to the workstation. Ansible will require an already trusted host key.
@@ -143,7 +148,7 @@ The [shared role](../support/ups/ansible/roles/coordinator_hardening/README.md) 
 After the first run or swap/radio changes, **reboot manually**, reconnect, and verify before supplying KMS secrets:
 
 ```sh
-ssh -o IdentitiesOnly=yes -i support/ups/coordinator_ed25519.pub administrator@ups-aux sudo systemctl reboot
+ssh -o IdentitiesOnly=yes -i support/ups/coordinator_ed25519.pub administrator@ups-aux.k8s-aux.lundmark.internal sudo systemctl reboot
 make -C support/ups verify-hardening HOST=ups-aux
 ```
 

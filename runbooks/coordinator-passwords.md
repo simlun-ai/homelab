@@ -76,9 +76,10 @@ into the local agent, then run from the management subnet:
 make -C support/ups password-apply HOST=ups-aux
 ```
 
-Repeat for `ups-pi` and `ups-metal`. The hostname must resolve in workstation
-DNS or SSH config, even if Ansible uses an `ansible_host` override. Verify its SSH
-host key first. The helper unwraps in memory and streams the password through
+Repeat for `ups-pi` and `ups-metal`. For `ups-aux`, the helper connects to
+`ups-aux.k8s-aux.lundmark.internal`. The connection name must resolve in
+workstation DNS or SSH config. The helper uses its own connection name when
+Ansible has an `ansible_host` override. Verify the SSH host key first. The helper unwraps in memory and streams the password through
 key-authenticated SSH to `sudo -n /usr/sbin/chpasswd`. SSH allocates no terminal;
 remote output is suppressed. Do not enable sudo/PAM input logging for this
 operation. [chpasswd](https://manpages.debian.org/trixie/passwd/chpasswd.8.en.html)

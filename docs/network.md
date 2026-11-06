@@ -4,11 +4,11 @@ The UniFi Cloud Gateway Ultra provides the three VLANs, DHCP, inter-VLAN routing
 
 ## VLANs and DHCP
 
-| VLAN | UniFi network | Subnet | Gateway | DHCP start | DHCP end | Purpose |
-| --- | --- | --- | --- | --- | --- | --- |
-| 10 | `k8s-aux` | `10.10.0.0/24` | `10.10.0.1` | `10.10.0.241` | `10.10.0.254` | Vault (OpenBao), Backup (Garage), and their shared UPS coordinator |
-| 11 | `k8s-pi` | `10.11.0.0/24` | `10.11.0.1` | `10.11.0.241` | `10.11.0.254` | Pi cluster |
-| 12 | `k8s-metal` | `10.12.0.0/24` | `10.12.0.1` | `10.12.0.241` | `10.12.0.254` | Metal cluster |
+| VLAN | UniFi network | DNS domain | Subnet | Gateway | DHCP start | DHCP end | Purpose |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 10 | `k8s-aux` | `k8s-aux.lundmark.internal` | `10.10.0.0/24` | `10.10.0.1` | `10.10.0.241` | `10.10.0.254` | Vault (OpenBao), Backup (Garage), and their shared UPS coordinator |
+| 11 | `k8s-pi` | `k8s-pi.lundmark.internal` | `10.11.0.0/24` | `10.11.0.1` | `10.11.0.241` | `10.11.0.254` | Pi cluster |
+| 12 | `k8s-metal` | `k8s-metal.lundmark.internal` | `10.12.0.0/24` | `10.12.0.1` | `10.12.0.241` | `10.12.0.254` | Metal cluster |
 
 In UniFi, use subnet mask `255.255.255.0` on all three networks. Each DHCP pool has 14 addresses.
 
@@ -38,7 +38,7 @@ The last octet has the same meaning on all three VLANs.
 
 | Host | Address |
 | --- | --- |
-| `ups-aux` (Raspberry Pi 3) | `10.10.0.5` |
+| `ups-aux.k8s-aux.lundmark.internal` (`ups-aux`, Raspberry Pi 3) | `10.10.0.5` |
 | Vault Talos node | `10.10.0.10` |
 | Backup Talos node | `10.10.0.15` |
 

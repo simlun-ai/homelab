@@ -60,12 +60,13 @@ class PasswordTests(unittest.TestCase):
             patch.object(passwords.coordinator_ssh, "check"),
             patch.object(passwords.subprocess, "run") as run,
         ):
-            passwords.apply("ups-pi", dummy)
+            passwords.apply("ups-aux", dummy)
             args, kwargs = run.call_args
             self.assertNotIn(dummy.decode(), " ".join(args[0]))
             self.assertEqual(kwargs["input"], b"administrator:" + dummy + b"\n")
             self.assertIn("StrictHostKeyChecking=yes", args[0])
             self.assertIn("-T", args[0])
+            self.assertIn("administrator@ups-aux.k8s-aux.lundmark.internal", args[0])
             with self.assertRaises(ValueError):
                 passwords.apply("ups-pi", b"bad\nroot:injection")
             self.assertEqual(run.call_count, 1)
