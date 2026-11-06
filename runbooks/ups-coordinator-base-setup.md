@@ -60,7 +60,9 @@ Never copy private keys onto the card or put credentials in the inventory or sav
 
 Insert the card and connect Ethernet. For `ups-aux`, use an access port on
 `k8s-aux` (VLAN 10). Power on using the UPS-backed adapter, wait for first-boot
-setup, and find the initial address in the UniFi DHCP leases.
+setup, and find the initial address in the UniFi DHCP leases. On the Pi, run
+`ip link show` and match the wired interface's `link/ether` address to the lease.
+Record that MAC address for `ups-aux` in the [hardware inventory](../docs/inventory.md#shared-infrastructure).
 
 Set a static address on `ups-aux` so it can reach the Talos nodes without a DHCP
 lease. Use the Pi's local console because reactivating Ethernet can interrupt
