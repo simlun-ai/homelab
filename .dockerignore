@@ -1,6 +1,10 @@
 # Include validation files only, even with an initialized private submodule.
 **
 !pyproject.toml
+!clusters/trust/Makefile
+!clusters/trust/render.py
+!clusters/trust/talos/patches/**/*.yaml
+!clusters/trust/talos/rendered/*.yaml
 !scripts/**/*.py
 !scripts/**/*.sh
 !tests/**/*.py

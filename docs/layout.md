@@ -55,9 +55,9 @@ Every cluster follows this contract; optional directories appear only where need
 | `toolchain.yaml` | Exact CLI/runtime versions, sources, checksums, supported operator platforms. |
 | `bin/` | Ignored, reproducible tools and generated launchers. |
 | `versions.yaml` | Talos, Kubernetes, extensions/images; schema TBD. |
-| `cluster.yaml` | Non-secret settings, endpoint references, dependencies. |
-| `nodes/` | Per-node role, hardware reference, addresses, explicit disk assignments. |
-| `talos/patches/` | Non-secret cluster, role, and node patches. |
+| `cluster.yaml` | Optional only where needed for non-secret settings not expressed through native Talos patches. |
+| `nodes/` | Optional per-node metadata not already expressed by native Talos patches; Trust uses no custom node schema. |
+| `talos/patches/` | Authoritative, native Talos cluster, role and node configuration documents. |\n| `talos/rendered/` | Committed, deterministic, non-secret per-node patch bundles; CI checks exact regeneration. These are not complete machine configs. |
 | `talos/image/` | Image Factory schematics or equivalent definitions/extensions. |
 | `network/` | Interface assignments and network settings. |
 | `storage/piraeus/` | Pool assignments, replica placement, StorageClasses where applicable. |
@@ -70,7 +70,7 @@ Every cluster follows this contract; optional directories appear only where need
 
 Keep machine-readable node assignments synchronized with the inventory. A declaration does not authorize disk initialization.
 
-Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, rendered configuration, tokens, and keys have no workstation-disk location. Wrapped credential records are permitted in `/secrets/wrapped/`. The required runtime workspace remains TBD under [security.md](security/security.md#secret-handling-boundary).
+Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, **complete secret-bearing rendered configurations**, tokens, and keys have no workstation-disk location. Public committed per-node patch bundles under `talos/rendered/` contain non-secret configuration only and must never include credentials. Wrapped credential records are permitted in `/secrets/wrapped/`. The required runtime workspace remains TBD under [security.md](security/security.md#secret-handling-boundary).
 
 ## Shared implementation
 

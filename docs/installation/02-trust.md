@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Settle provisioning layout, machine identity configuration and secret handling using the selected version pins. Do not install onto disks yet.
+- **Current next step:** Design generation and memory-only delivery of the full secret-bearing machine configuration (Point 3); also verify the actual Pi interface and Talos early-boot networking before installing onto disks.
 
 ### Milestone tracker
 
@@ -35,7 +35,7 @@
 | --- | --- |
 | Cluster and node identity | `trust` / `trust-cp1` agreed; stable Kubernetes API DNS name and endpoint choice TBD |
 | Networking | VLAN 10, `10.10.0.10/24`, gateway `10.10.0.1`; current proposed pod/service CIDRs and Flannel are in [network.md](../network.md). Pre-`STATE` DNS and NTP details TBD |
-| Provisioning | Prefer reproducible, scoped `clusters/trust/` Make/toolchain/configuration, per [layout.md](../layout.md); concrete node schema, exact pin values and generation workflow TBD |
+| Provisioning | **Decided:** native single-document Talos patches organized by cluster/role/node are authoritative; commit a deterministic public multi-document per-node render and enforce regeneration through CI. No custom node schema. Full Talos generation + secret handling TBD |
 | Versioning and upgrades | Agreed: explicit Talos, Kubernetes and kubectl version pins, with Kubernetes selected from the target Talos release's recommended/default Kubernetes version and kubectl chosen to match. `talosctl` matches Talos. Upgrade Talos first, verify health, then upgrade Kubernetes separately; check compatibility and supported upgrade paths before either action. Selected: Talos `v1.14.5`, Kubernetes `v1.37.1`, kubectl `v1.37.1`; talosctl follows Talos. Scoped tool acquisition and checksums TBD |
 | Boot | First experiment is SD-first EDK2/UEFI plus generic ARM64 Talos installer; supported behavior and firmware boot dependency must be verified |
 | Storage | Two explicitly assigned OS SSDs are intended for MD RAID1; confirm stable identities, Talos compatibility, metadata format, degraded boot and replacement before any destructive installation. Separate encrypted ZFS data disks are **out of scope and protected** |
@@ -53,6 +53,14 @@
 
 **Initial version selection:** Talos `v1.14.5`, Kubernetes `v1.37.1` (Talos 1.14.5 default), kubectl `v1.37.1`; talosctl follows `v1.14.5`. The committed `clusters/trust/versions.yaml` is a declaration, not proof of provisioned tooling or a deployed cluster. See [Talos v1.14.5 release](https://github.com/siderolabs/talos/releases/tag/v1.14.5) and [release constants](https://github.com/siderolabs/talos/blob/v1.14.5/pkg/machinery/constants/constants.go).
 
+### Native configuration sources and committed render (Point 2)
+
+**Decided:** `clusters/trust/talos/patches/` holds native Talos typed-document fragments, ordered cluster-wide → control-plane → node-specific. Each fragment owns a separate Talos document (no duplicate `apiVersion`/`kind`/`name`). The renderer deliberately assembles documents instead of reimplementing Talos strategic merge semantics. Add new fragments only when a supported Talos configuration field is needed.
+
+`clusters/trust/talos/rendered/trust-cp1.yaml` is committed for inspection and historical review. It is generated, never hand-edited. `make -C clusters/trust render` updates it; `make -C clusters/trust check-rendered` verifies exact content in CI. The current output is a **partial non-secret patch bundle**, not a deployable MachineConfig: defaults, cluster PKI, KMS, disk configuration and other security-sensitive material will only be included when a complete config is produced in memory during the later secret-handling work. The two pipelines must use the **same source patches and order**. CI freshness/heuristic secret checks are not an attestation that an arbitrary YAML file contains no sensitive values.
+
+Current authored documents specify pod/service CIDRs, hostname, and provisional static networking. Network interface identity and validity against pinned Talos still require live hardware and Talos-specific validation. See [Trust cluster README](../../clusters/trust/README.md).
+
 ### Step-by-step working rules
 
 1. Choose **one** pending decision or test; document any preconditions before implementation.
@@ -67,7 +75,7 @@
 | --- | --- | --- | --- |
 | 2026-11-06 | 0 — baseline | Started `feat/trust-bootstrap` after the Trust rename; accepted `trust-cp1` and `10.10.0.10`. `ups-aux` base setup previously verified. No Trust disk or KMS tests performed | Review provisioning layout and pinning strategy |
 | 2026-11-06 | 1 — version policy | Agreed explicit Talos, Kubernetes and kubectl pins, with Talos driving Kubernetes selection; same-session Talos-first, Kubernetes-second upgrade policy with intermediate health checks | Select and record exact release pair |
-| 2026-11-06 | 1 — initial pins | Selected Talos `v1.14.5` and its default Kubernetes `v1.37.1`, matched kubectl `v1.37.1`; declared versions, not installed or verified on Trust hardware | Design scoped tool acquisition and provisioning |
+| 2026-11-06 | 1 — initial pins | Selected Talos `v1.14.5` and its default Kubernetes `v1.37.1`, matched kubectl `v1.37.1`; declared versions, not installed or verified on Trust hardware | Design scoped tool acquisition and provisioning |\n| 2026-11-06 | Point 2 — native patch design | Native layered Talos documents, committed public per-node bundle, CI reproducibility check; no installation or secret-bearing config generation | Point 3: secure generation and transport |
 
 ---
 

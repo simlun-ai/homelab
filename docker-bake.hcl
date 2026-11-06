@@ -1,5 +1,5 @@
 group "default" {
-  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax"]
+  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax", "trust-render"]
 }
 
 group "ci" {
@@ -54,4 +54,10 @@ target "ansible-lint" {
   inherits = ["_common"]
   target = "ansible-lint"
   no-cache-filter = ["ansible-lint"]
+}
+
+target "trust-render" {
+  inherits = ["_common"]
+  target = "trust-render"
+  no-cache-filter = ["trust-render"]
 }

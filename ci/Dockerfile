@@ -85,3 +85,7 @@ COPY --link support/ups/ansible/ ./support/ups/ansible/
 ENV ANSIBLE_CONFIG="/project/support/ups/ansible.cfg" \
     ANSIBLE_LOCAL_TEMP="/project/support/ups/.ansible/tmp"
 RUN --network=none cd support/ups && ansible-lint --offline ansible inventory.yaml
+
+FROM base AS trust-render
+COPY --link clusters/trust/ ./clusters/trust/
+RUN --network=none make -C clusters/trust check-rendered
