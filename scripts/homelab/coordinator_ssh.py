@@ -1,11 +1,14 @@
 """One repository-owned Ed25519 identity, wrapped at rest and loaded via stdin."""
 
+from __future__ import annotations
+
 import argparse
 import hmac
 import os
 import subprocess
 from functools import partial
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
@@ -19,9 +22,11 @@ from cryptography.hazmat.primitives.serialization import (
     load_ssh_private_key,
     load_ssh_public_key,
 )
-from homelab_secrets import wrapping
 
 from .record_store import require_store
+
+if TYPE_CHECKING:
+    from homelab_secrets.wrapping import Responder
 
 REPO = Path(__file__).resolve().parents[2]
 KEY_ID = "homelab/v1/ups-coordinators/ssh-private-key/administrator/r1"
@@ -52,7 +57,9 @@ def write_new(path: Path, data: bytes) -> None:
         os.fsync(target.fileno())
 
 
-def recover(respond: wrapping.Responder, repo: Path = REPO) -> tuple[bytes, bytes]:
+def recover(respond: Responder, repo: Path = REPO) -> tuple[bytes, bytes]:
+    from homelab_secrets import wrapping
+
     require_store(repo)
     with (repo / RECORD).open("rb") as source:
         encoded = source.read(wrapping.MAX_RECORD + 1)
@@ -63,7 +70,9 @@ def recover(respond: wrapping.Responder, repo: Path = REPO) -> tuple[bytes, byte
     return private, public_bytes(key.public_key())
 
 
-def create(respond: wrapping.Responder, repo: Path = REPO) -> None:
+def create(respond: Responder, repo: Path = REPO) -> None:
+    from homelab_secrets import wrapping
+
     require_store(repo)
     if (repo / RECORD).exists() or (repo / PUBLIC).exists():
         raise FileExistsError("Reuse existing key; creation never overwrites")
@@ -79,7 +88,7 @@ def create(respond: wrapping.Responder, repo: Path = REPO) -> None:
     write_new(repo / PUBLIC, public + b" homelab-coordinators\n")
 
 
-def restore_public(respond: wrapping.Responder, repo: Path = REPO) -> None:
+def restore_public(respond: Responder, repo: Path = REPO) -> None:
     _, public = recover(respond, repo)
     write_new(repo / PUBLIC, public + b" homelab-coordinators\n")
 
@@ -102,7 +111,7 @@ def check(repo: Path = REPO) -> None:
     agent("-T", str(repo / PUBLIC))
 
 
-def load(respond: wrapping.Responder, repo: Path = REPO) -> None:
+def load(respond: Responder, repo: Path = REPO) -> None:
     expected = read_public(repo)
     private, public = recover(respond, repo)
     if not hmac.compare_digest(expected, public):

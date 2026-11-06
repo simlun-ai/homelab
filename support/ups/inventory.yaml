@@ -1,5 +1,5 @@
-# Names must resolve through workstation DNS or existing SSH configuration.
-# If needed, set ansible_host to each verified management address.
+# Connection names must resolve through workstation DNS or SSH configuration.
+# Use ansible_host when the connection name differs from the inventory name.
 all:
   children:
     ups_coordinators:
@@ -11,5 +11,6 @@ all:
         ansible_python_interpreter: /usr/bin/python3
       hosts:
         ups-aux:
+          ansible_host: ups-aux.k8s-aux.lundmark.internal
         ups-pi:
         ups-metal:

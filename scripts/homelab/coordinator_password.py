@@ -15,6 +15,7 @@ from . import coordinator_ssh
 from .record_store import require_store
 
 HOSTS = ("ups-aux", "ups-pi", "ups-metal")
+SSH_DESTINATIONS = {"ups-aux": "ups-aux.k8s-aux.lundmark.internal"}
 ROOT_KEY = "golden-1"
 REPO = Path(__file__).resolve().parents[2]
 
@@ -78,7 +79,7 @@ def apply(host: str, password: bytes) -> None:
             "IdentitiesOnly=yes",
             "-i",
             str(coordinator_ssh.REPO / coordinator_ssh.PUBLIC),
-            f"administrator@{host}",
+            f"administrator@{SSH_DESTINATIONS.get(host, host)}",
             "sudo -n /usr/sbin/chpasswd",
         ],
         input=b"administrator:" + password + b"\n",

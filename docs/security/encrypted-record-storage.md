@@ -1,6 +1,6 @@
 # Encrypted-record storage
 
-**Private submodule and coordinator credential workflows implemented; production shared SSH key and all three coordinator passwords generated and committed. Credential application and service deployment pending.**
+**Private submodule and coordinator credential workflows implemented; production shared SSH key and all three coordinator passwords generated and committed. Service deployment pending.**
 
 ## Authoritative records
 

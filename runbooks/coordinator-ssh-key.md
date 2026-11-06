@@ -1,6 +1,6 @@
 # Shared coordinator SSH key
 
-**Production key generated, wrapped, verified and committed; Pi verification pending.**
+**Production key generated, wrapped, verified and committed. SSH access verified on `ups-aux`.**
 All three coordinators use one repository-owned, randomly generated Ed25519
 identity for `administrator`. Its OpenSSH private key has no passphrase;
 YubiKey wrapping protects its persisted copy. Only the public key is installed
@@ -84,7 +84,7 @@ For an already installed Pi, load the new key, then use your still-working old
 SSH access to append the public key:
 
 ```sh
-ssh-copy-id -i support/ups/coordinator_ed25519.pub administrator@ups-aux
+ssh-copy-id -i support/ups/coordinator_ed25519.pub administrator@ups-aux.k8s-aux.lundmark.internal
 ```
 
 Keep the old administrative session open. Test a **new** connection using only
@@ -93,11 +93,11 @@ the new identity and the independently verified host key:
 ```sh
 ssh -F /dev/null -o StrictHostKeyChecking=yes -o BatchMode=yes \
   -o IdentitiesOnly=yes -o ForwardAgent=no \
-  -i support/ups/coordinator_ed25519.pub administrator@ups-aux true
+  -i support/ups/coordinator_ed25519.pub administrator@ups-aux.k8s-aux.lundmark.internal true
 ```
 
 That test ignores workstation SSH aliases; substitute the verified address if
-DNS does not resolve the hostname, and trust its host key first. Only after this
+DNS does not resolve the FQDN, and trust its host key first. Only after this
 succeeds, run `make -C support/ups bootstrap HOST=ups-aux`: it replaces the old
 authorized keys with the repository key. Test another new connection before
 closing the old session. Repeat one coordinator at a time for `ups-pi` and

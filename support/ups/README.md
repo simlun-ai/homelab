@@ -4,9 +4,11 @@ Shared base setup for `ups-aux` (Vault/Backup), `ups-pi`, and `ups-metal`.
 Use the [runbook](../../runbooks/ups-coordinator-base-setup.md) for imaging,
 SSH host identity, installation order, and recovery.
 
-- `inventory.yaml`: hostnames and `administrator` SSH account. Names must resolve
-  through DNS or existing SSH configuration; add verified `ansible_host` addresses
-  here if needed. No private keys or passwords.
+- `inventory.yaml`: coordinator selectors, connection names, and the
+  `administrator` SSH account. `ups-aux` connects to
+  `ups-aux.k8s-aux.lundmark.internal`. Connection names must resolve through
+  DNS or existing SSH configuration. Keep private keys and passwords out of
+  the inventory.
 - `requirements.txt`: exact workstation dependency pins. `make tools` installs
   them into the ignored `.venv/`; all Ansible targets verify those pins.
 - `ansible.cfg`: strict host-key checking, non-interactive SSH, memory-only facts.
@@ -28,6 +30,22 @@ Dependency selection: [ansible-core release](https://pypi.org/project/ansible-co
 [Python compatibility](https://docs.ansible.com/projects/ansible/latest/reference_appendices/release_and_maintenance.html).
 Ubuntu 22.04 or newer is the workstation target, with Python 3.13–3.14 selected
 through pyenv as described in the runbook. Hardware installation remains unverified.
+
+## Preview and apply configuration
+
+For an existing coordinator with trusted SSH and working passwordless sudo:
+
+```sh
+make -C support/ups diff HOST=ups-aux
+make -C support/ups apply HOST=ups-aux
+```
+
+Both run bootstrap and hardening in order. `diff` uses Ansible check mode and
+shows diffs where modules support them. It expects an already provisioned
+host because the preview cannot install prerequisites. `apply` runs the same
+plays with diffs and checks access after applying changes. Follow the
+[manual reboot and verification procedure](../../runbooks/ups-coordinator-base-setup.md#5-apply-shared-hardening)
+when required.
 
 ## Static checks
 
