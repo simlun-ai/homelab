@@ -22,4 +22,5 @@ tools:
 
 test:
 	@"$(PYTHON)" -I -B "$(ROOT)/scripts/test_helpers.py"
-	@"$(PYTHON)" -I -B "$(ROOT)/tests/test_trust_talos_secrets.py"\n\t@cd "$(HSM_REPO)/homelab_secrets" && "$(PYTHON)" -I -B -m unittest discover -s tests -v
+	@"$(PYTHON)" -I -B "$(ROOT)/tests/test_trust_talos_secrets.py"
+	@cd "$(HSM_REPO)/homelab_secrets" && "$(PYTHON)" -I -B -m unittest discover -s tests -v
