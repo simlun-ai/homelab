@@ -157,6 +157,7 @@ Record the repository revision, Imager/image versions, workstation/Pi Python ver
 
 - **No SSH:** check power, Ethernet, DHCP, name resolution, and first-boot completion.
 - **Host-key mismatch after rebuilding:** verify the replacement fingerprint independently before removing the old known-hosts entry.
+- **SSH key preflight fails:** from the repository root, run `ssh-add -T support/ups/coordinator_ed25519.pub` to check whether the current agent can sign with the key. If it fails, check the agent and run `make -C support/ups ssh-key-load` again.
 - **Ansible failure:** confirm SSH and administrative access, then Python compatibility and package access. Recreate the virtualenv with `make tools` if dependency verification fails.
 - **Failed initial image:** rewrite the identified card and repeat. Preserve configuration and wrapped records before rebuilding an existing coordinator; base setup alone does not restore KMS or future UPS services.
 
