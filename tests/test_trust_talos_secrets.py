@@ -2,8 +2,8 @@
 
 import importlib.util
 import unittest
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/trust_talos_secrets.py"
