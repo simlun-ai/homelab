@@ -1,6 +1,6 @@
 # UPS coordinator base setup
 
-**Base automation and hardening implemented; not yet tried on the Pis.** Repeat for each coordinator. This installs Raspberry Pi OS Lite on microSD and bootstraps Ansible management. NUT and a Prometheus exporter will be added later; only `ups-aux` continues to [step 01's additional Talos KMS setup](../docs/installation/01-main-coordinator.md).
+**`ups-aux` passed bootstrap and hardening verification on 2026-11-06. Wrapped password application and console login verification are pending.** Repeat for each coordinator. This installs Raspberry Pi OS Lite on microSD and bootstraps Ansible management. NUT and a Prometheus exporter will be added later; only `ups-aux` continues to [step 01's additional Talos KMS setup](../docs/installation/01-main-coordinator.md).
 
 Hardware/power assignments belong in the [inventory](../docs/inventory.md). Executable configuration and dependency pins live in [`support/ups/`](../support/ups/README.md).
 
@@ -158,7 +158,7 @@ After hardening verification, [apply the preserved wrapped password](coordinator
 
 ## 6. Record completion and recover from problems
 
-Record the repository revision, Imager/image versions, workstation/Pi Python versions, Ansible version, host identity/address, and verification results. All three hosts remain **unverified** until tested.
+Record the repository revision, Imager/image versions, workstation/Pi Python versions, Ansible version, host identity/address, and verification results.
 
 - **No SSH:** check power, Ethernet, DHCP, name resolution, and first-boot completion.
 - **Host-key mismatch after rebuilding:** verify the replacement fingerprint independently before removing the old known-hosts entry.
