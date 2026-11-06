@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Implement and test safe Talos secret generation/recovery (Point 3) before a secret-bearing apply target. Verify Pi networking and early-boot behavior before installing onto disks.
+- **Current next step:** Test the initial Talos secret streaming helper with pinned tools and disposable credentials, establish admin credential recovery, then tackle scoped Make/toolchain operations (Point 4). Verify Pi networking and early-boot behavior before installing onto disks.
 
 ### Milestone tracker
 
@@ -113,9 +113,7 @@ disposable secret material. If any safety prerequisite cannot be established,
 fail closed. The later provisioning helper must verify no plaintext survives
 outside process memory/RAM-backed storage on success or failure.
 
-These decisions document the safe boundary **only**. No production secrets,
-secret-generation helper, unwrap workflow, Talos installation or apply
-command are implemented or tested by this commit. See
+**Implemented initial helper:** `scripts/trust_talos_secrets.py` provides explicit `init` and pipe-only `recover` actions. It uses native `talosctl gen secrets --output-file -` and existing `homelab-wrap`/`homelab-unwrap` CLIs, requires exact absolute executable paths, rejects existing records and swap, hardens the process, and never writes plaintext files. It has mocked unit tests; actual pinned-tool/YubiKey and recovery tests are pending. No admin credential generation, full machine configuration, Talos installation, or apply command is implemented. The direct-to-pipe flow means no memory-backed filesystem is required for *this helper*, but future native `gen config` consumption must still satisfy the memory-only workspace constraints. See
 [security policy](../security/security.md#secret-handling-boundary),
 [helper implementation](../security/helper-implementation.md), and
 [wrapped-record storage](../security/encrypted-record-storage.md).
@@ -136,6 +134,7 @@ command are implemented or tested by this commit. See
 | 2026-11-06 | 1 — version policy | Agreed explicit Talos, Kubernetes and kubectl pins, with Talos driving Kubernetes selection; same-session Talos-first, Kubernetes-second upgrade policy with intermediate health checks | Select and record exact release pair |
 | 2026-11-06 | 1 — initial pins | Selected Talos `v1.14.5` and its default Kubernetes `v1.37.1`, matched kubectl `v1.37.1`; declared versions, not installed or verified on Trust hardware | Design scoped tool acquisition and provisioning |\n| 2026-11-06 | Point 2 — native patch design | Native layered Talos documents, committed public per-node bundle, CI reproducibility check; no installation or secret-bearing config generation | Point 3: secure generation and transport |
 | 2026-11-06 | Point 3 — secret lifecycle design | Generate-once Talos identity with authenticated wrapped-record recovery; full machine config/admin clients remain memory-only. Implementation and testing pending | Implement the helper and recovery tests before operational apply |
+| 2026-11-07 | Point 3 — bootstrap helper | Added guarded generate-once and pipe-only recovery helper plus mocked unit tests; no production secrets generated or hardware test executed | Test with disposable keys and pinned toolchain; implement protected config generation/admin access |
 
 ---
 

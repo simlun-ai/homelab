@@ -33,3 +33,41 @@ The [Talos secret lifecycle](../../docs/installation/02-trust.md#talos-secrets-l
 
 The Raspberry Pi `eth0` interface name and UEFI behavior remain unverified.
 Do not apply this partial public bundle to a node.
+
+## Experimental bootstrap-secret CLI (Point 3)
+
+`scripts/trust_talos_secrets.py` implements two explicit operations. This
+script is **not** wired into production Make targets and does not apply Talos
+configurations. The operator must provide full paths to the matching
+`talosctl v1.14.5` binary and installed `homelab-wrap` or `homelab-unwrap`
+from the pinned HSM environment. No ambient PATH fallback is accepted.
+
+The private `secrets/wrapped/` submodule must be initialized and swap disabled.
+The script disables core dumps/ptrace and suppresses subprocess error output.
+Initialize **once**, on a workstation with a YubiKey and already verified
+tooling (commands shown with illustrative executable locations):
+
+```sh
+python3 -I -B scripts/trust_talos_secrets.py init \\
+  --talosctl /absolute/pinned/talosctl \\
+  --wrap /absolute/hsm/bin/homelab-wrap
+```
+
+It uses native `talosctl gen secrets --output-file -`, pipes plaintext
+directly to `homelab-wrap --stdin`, and exclusively creates the ciphertext
+record `secrets/wrapped/trust-talos-bootstrap.json`. The wrapper verifies the
+encrypted record. Commit **only the encrypted record** to the private
+submodule, and register its public metadata in `secrets/manifest.json`
+after local generation/verification. The script refuses an existing record.
+
+Recovery requires a downstream pipe/socket; **never use tee, redirection to
+a regular file, command substitution, logging, or terminal output**.
+A future provisioning consumer will take this stream directly into a
+protected native Talos generation workflow. The current helper deliberately
+does not offer an apply target.
+
+Security limitations: ordinary workstation process memory is not physically
+zeroizable through Python, and swap checks alone do not prove absence of all
+OS dump mechanisms or instrumentation. Do not treat this as independently
+audited protection. Initial generation/recovery must be exercised using
+disposable secrets before the first real credential is created.
