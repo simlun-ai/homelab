@@ -1,6 +1,6 @@
 # Coordinator administrator passwords
 
-**All three production passwords generated, wrapped, verified and committed; application and Pi verification pending.** Each Pi has
+**All three production passwords are wrapped and committed. The `ups-aux` password was applied and verified at the local console on 2026-11-06.** Each Pi has
 its own randomly generated 43-character password (32 random bytes encoded as
 URL-safe Base64). The repository owns the YubiKey-wrapped records. SSH continues
 to use the [repository-owned shared SSH key](coordinator-ssh-key.md),

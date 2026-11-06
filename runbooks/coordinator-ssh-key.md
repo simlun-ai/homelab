@@ -1,6 +1,6 @@
 # Shared coordinator SSH key
 
-**Production key generated, wrapped, verified and committed; Pi verification pending.**
+**Production key generated, wrapped, verified and committed. SSH access verified on `ups-aux`.**
 All three coordinators use one repository-owned, randomly generated Ed25519
 identity for `administrator`. Its OpenSSH private key has no passphrase;
 YubiKey wrapping protects its persisted copy. Only the public key is installed

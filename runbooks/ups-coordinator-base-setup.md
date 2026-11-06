@@ -1,6 +1,6 @@
 # UPS coordinator base setup
 
-**`ups-aux` passed bootstrap and hardening verification on 2026-11-06. Wrapped password application and console login verification are pending.** Repeat for each coordinator. This installs Raspberry Pi OS Lite on microSD and bootstraps Ansible management. NUT and a Prometheus exporter will be added later; only `ups-aux` continues to [step 01's additional Talos KMS setup](../docs/installation/01-main-coordinator.md).
+**`ups-aux` base setup verified on 2026-11-06. Bootstrap, hardening, and local console login with the wrapped administrator password all passed.** Repeat for each coordinator. This installs Raspberry Pi OS Lite on microSD and bootstraps Ansible management. NUT and a Prometheus exporter will be added later; only `ups-aux` continues to [step 01's additional Talos KMS setup](../docs/installation/01-main-coordinator.md).
 
 Hardware/power assignments belong in the [inventory](../docs/inventory.md). Executable configuration and dependency pins live in [`support/ups/`](../support/ups/README.md).
 
