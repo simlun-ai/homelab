@@ -19,7 +19,7 @@ All UPS shutdown coordinators will use Raspberry Pi 3 Model B computers with 1 G
 
 Per-device power-return support, settings, and verification remain TBD, including Pis, coordinators, and UPS outlets.
 
-## Vault
+## Trust
 
 - **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
@@ -27,8 +27,8 @@ Per-device power-return support, settings, and verification remain TBD, includin
 - **OS drives:** 2 × 128 GB Intenso USB SSDs in MD RAID1 (128 GB nominal usable).
 - **Storage:** ZFS mirror (RAID 1) using the other 2 × 128 GB Intenso USB SSDs.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
-- **Network:** 1 Gbit Ethernet on `k8s-aux` (VLAN 10), static `10.10.0.10`.
-- **Boot configuration:** Latest EEPROM firmware, with USB boot given priority. The [draft UEFI installation experiment](installation/02-vault.md#first-installation-experiment-pi-4-uefi) will try SD-first EEPROM boot with pftf/EDK2 on a dedicated microSD card; not yet verified or adopted. Card model/capacity is TBD and excluded from disk totals as unlisted boot media.
+- **Network:** 1 Gbit Ethernet on `k8s-aux` (VLAN 10), static `10.10.0.10`; planned node hostname `trust-cp1.k8s-aux.lundmark.internal`.
+- **Boot configuration:** Latest EEPROM firmware, with USB boot given priority. The [draft UEFI installation experiment](installation/02-trust.md#first-installation-experiment-pi-4-uefi) will try SD-first EEPROM boot with pftf/EDK2 on a dedicated microSD card; not yet verified or adopted. Card model/capacity is TBD and excluded from disk totals as unlisted boot media.
 
 ## Backup
 
@@ -40,10 +40,10 @@ Per-device power-return support, settings, and verification remain TBD, includin
 
 ## Shared infrastructure
 
-Shared exclusively by the **Vault and Backup clusters**:
+Shared exclusively by the **Trust and Backup clusters**:
 
 - **UPS:** 1 × Eaton 3S700 supplying power to both clusters.
-- **Shutdown coordinator:** `ups-aux`, 1 × Raspberry Pi 3 Model B with 1 GB RAM and static `10.10.0.5` on `k8s-aux` (VLAN 10). **Wired Ethernet MAC address:** `b8:27:eb:58:e9:8f`. It connects to the UPS via USB for monitoring and safe shutdown of both clusters and is the planned host for [Vault's bootstrap KMS](security/security.md#vault-bootstrap-kms).
+- **Shutdown coordinator:** `ups-aux`, 1 × Raspberry Pi 3 Model B with 1 GB RAM and static `10.10.0.5` on `k8s-aux` (VLAN 10). **Wired Ethernet MAC address:** `b8:27:eb:58:e9:8f`. It connects to the UPS via USB for monitoring and safe shutdown of both clusters and is the planned host for [Trust's bootstrap KMS](security/security.md#trust-bootstrap-kms).
 
 ## Pi
 

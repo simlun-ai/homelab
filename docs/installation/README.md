@@ -8,13 +8,13 @@ Main TODO list for installing the homelab and implementing its helpers and repos
 | --- | --- | --- | --- |
 | [00 - YubiKey setup](00-yubikey-setup.md) | Verified procedure | Offline setup helpers, shared wrapping library/CLI and external virtualenv | PASS 2026-11-04: all four tokens, cross-token/software unwrap and independent replica retrieval |
 | [01 - Main coordinator](01-main-coordinator.md) | Shared base setup linked; additional KMS TODO | Base inventory, scoped tools, bootstrap/hardening/verification, wrapped administrator password and shared SSH key workflows; KMS TODO | `ups-aux` base setup verified on 2026-11-06. KMS pending. |
-| [02 - Vault](02-vault.md) | Draft Pi 4 UEFI firmware-card experiment; installation TODO | TODO | Not tried |
+| [02 - Trust](02-trust.md) | Draft Pi 4 UEFI firmware-card experiment; installation TODO | TODO | Not tried |
 
 Keep detailed TODOs and verification results in the owning runbook. Update this table as work progresses; written instructions or configuration alone do not establish a verified installation.
 
 Later milestones; split and number their runbooks when the next step is concrete:
 
-- [ ] Prepare Vault's OpenBao-backed KMS service for dependent clusters.
+- [ ] Prepare Trust's OpenBao-backed KMS service for dependent clusters.
 - [ ] Install Backup and its services.
 - [ ] Install Pi, its coordinator, and home automation workloads.
 - [ ] Install Metal, its coordinator, and heavier workloads.
@@ -39,6 +39,6 @@ Create each part when a runbook first needs it, following [layout.md](../layout.
 | `secrets/manifest.json` | Public credential catalogue. |
 | `secrets/wrapped/` | Private `homelab-secrets` submodule containing authenticated encrypted records only. |
 | `tools/homelab-hsm/` | Separate code submodule containing the shared `homelab_secrets/` Python project, CLI, dependencies, and tests. |
-| `clusters/vault/`, `make/` | Vault configuration, version pins, and shared Make implementation. |
+| `clusters/trust/`, `make/` | Trust configuration, version pins, and shared Make implementation. |
 
 Installation runbooks own executable procedures, with shared coordinator OS/Ansible setup in [the reusable base runbook](../../runbooks/ups-coordinator-base-setup.md). Keep architecture, security policy, and backup design in their [existing owning documents](../layout.md#document-ownership), linking to them here. Keep related documentation synchronized as decisions and verified behavior change.

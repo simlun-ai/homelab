@@ -2,16 +2,16 @@
 
 **Draft; KMS implementation and hardware verification pending.**
 
-First complete the shared [UPS coordinator base setup](../../runbooks/ups-coordinator-base-setup.md) for `ups-aux` at `10.10.0.5`, the Vault/Backup host. That runbook owns Raspberry Pi OS Lite installation, SSH access, and Ansible bootstrap for all three coordinators.
+First complete the shared [UPS coordinator base setup](../../runbooks/ups-coordinator-base-setup.md) for `ups-aux` at `10.10.0.5`, the Trust/Backup host. That runbook owns Raspberry Pi OS Lite installation, SSH access, and Ansible bootstrap for all three coordinators.
 
-This step adds only Vault's independent Talos bootstrap KMS and its supporting TLS/ACME services. Complete [YubiKey setup](00-yubikey-setup.md) before authorizing KMS credentials.
+This step adds only Trust's independent Talos bootstrap KMS and its supporting TLS/ACME services. Complete [YubiKey setup](00-yubikey-setup.md) before authorizing KMS credentials.
 
 ## Additional KMS setup — TODO
 
-- [ ] Configure independent DNS/time readiness for the coordinator and Vault under the [bootstrap KMS design](../security/security.md#vault-bootstrap-kms).
+- [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
 - [ ] Implement the Python helpers and Ansible configuration for KMS, TLS/ACME, and local wrapped-record deployment.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).
-- [ ] Verify startup without Vault/OpenBao, the one-hour KMS window, expiry/lock/restart behaviour, and certificate renewal.
+- [ ] Verify startup without Trust/OpenBao, the one-hour KMS window, expiry/lock/restart behaviour, and certificate renewal.
 
 Detailed commands will be added as this setup is implemented. NUT and Prometheus exporter setup will extend the shared base runbook later.
 
