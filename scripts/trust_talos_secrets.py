@@ -25,7 +25,7 @@ def talos_version() -> str:
     """Read the authoritative Talos pin without a second version constant."""
     content = (ROOT / "clusters/trust/versions.yaml").read_text(encoding="utf-8")
     match = re.search(
-        r"(?m)^talos:[ \\t]*\\n[ \\t]+version:[ \\t]*(v[0-9]+\\.[0-9]+\\.[0-9]+)[ \\t]*$",
+        r"(?m)^talos:[ \t]*\n[ \t]+version:[ \t]*(v[0-9]+\.[0-9]+\.[0-9]+)[ \t]*$",
         content,
     )
     if match is None:
