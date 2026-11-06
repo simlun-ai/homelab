@@ -2,6 +2,7 @@
 **
 !pyproject.toml
 !clusters/trust/Makefile
+!clusters/trust/versions.yaml
 !clusters/trust/render.py
 !clusters/trust/talos/patches/**/*.yaml
 !clusters/trust/talos/rendered/*.yaml

@@ -17,6 +17,7 @@ RUN --network=none make -C support/hsm tools
 FROM helper-tools AS helpers
 COPY --link scripts/ ./scripts/
 COPY --link tests/ ./tests/
+COPY --link clusters/trust/versions.yaml ./clusters/trust/versions.yaml
 COPY --link secrets/manifest.json ./secrets/manifest.json
 COPY --link tools/homelab-hsm/homelab_secrets/scripts/ ./tools/homelab-hsm/homelab_secrets/scripts/
 COPY --link tools/homelab-hsm/homelab_secrets/tests/ ./tools/homelab-hsm/homelab_secrets/tests/

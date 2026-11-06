@@ -2,6 +2,7 @@
 
 import importlib.util
 import unittest
+from tempfile import TemporaryDirectory
 from pathlib import Path
 from unittest.mock import patch
 
@@ -14,7 +15,13 @@ spec.loader.exec_module(module)
 
 class TrustSecretsTests(unittest.TestCase):
     def test_reads_version_from_cluster_scope(self) -> None:
-        self.assertEqual(module.talos_version(), "v1.14.5")
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            versions = root / "clusters/trust/versions.yaml"
+            versions.parent.mkdir(parents=True)
+            versions.write_text("talos:\\n  version: v2.3.4\\n", encoding="utf-8")
+            with patch.object(module, "ROOT", root):
+                self.assertEqual(module.talos_version(), "v2.3.4")
 
     def test_generation_uses_stdout_not_file(self) -> None:
         with patch.object(module.subprocess, "run") as run:
