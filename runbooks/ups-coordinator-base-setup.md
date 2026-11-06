@@ -58,9 +58,34 @@ Never copy private keys onto the card or put credentials in the inventory or sav
 
 ## 3. First boot and trusted SSH access
 
-Insert the card, connect Ethernet, and deliberately power on using its UPS-backed adapter. Wait for first-boot setup and find the initial address in DHCP leases.
+Insert the card and connect Ethernet. For `ups-aux`, use an access port on
+`k8s-aux` (VLAN 10). Power on using the UPS-backed adapter, wait for first-boot
+setup, and find the initial address in the UniFi DHCP leases.
 
-Connect `ups-aux` to `k8s-aux` (VLAN 10). From its local console, configure wired Ethernet with the static address `10.10.0.5/24` and gateway `10.10.0.1` so the host can reach the Talos nodes without a DHCP lease. Use a DHCP reservation for `ups-pi` and `ups-metal` during base setup. Their final addresses are TBD. See the [network overview](../docs/network.md) for allocations.
+Set a static address on `ups-aux` so it can reach the Talos nodes without a DHCP
+lease. Use the Pi's local console because reactivating Ethernet can interrupt
+remote access. See the [network overview](../docs/network.md) for allocations.
+
+1. Run `nmcli device show` and note the IPv4 DNS servers (`IP4.DNS`) for the
+   wired interface.
+2. Run `sudo nmtui`. Select **Edit a connection**, open the active wired
+   profile, and set **IPv4 CONFIGURATION** to **Manual**. Expand **Show**,
+   set **Addresses** to `10.10.0.5/24` and **Gateway** to `10.10.0.1`, and enter
+   the DNS servers from step 1. Enable **Automatically connect** and save.
+3. Select **Activate a connection**. Deactivate the wired profile and activate
+   it again to apply the new settings. Exit `nmtui`.
+
+On the Pi, check for `10.10.0.5/24` on Ethernet, a default route via
+`10.10.0.1`, and an IPv4 result from DNS.
+
+```sh
+ip -4 addr show
+ip -4 route show default
+getent ahostsv4 deb.debian.org
+```
+
+Use DHCP reservations for `ups-pi` and `ups-metal` during base setup. Their final
+addresses are TBD.
 
 The [Ansible inventory](../support/ups/inventory.yaml) and the coordinator credential helpers use the three approved hostnames. Make `ups-aux` resolve to `10.10.0.5` through workstation DNS or SSH configuration, and set up the other names once their addresses are known. An `ansible_host` override affects Ansible only.
 
