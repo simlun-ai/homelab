@@ -29,5 +29,7 @@ tooling will build the complete native machine config using the same patches
 and independently recoverable secrets **in memory only**, and validate before
 applying. Never commit or persist that complete config on workstation disk.
 
+The [Talos secret lifecycle](../../docs/installation/02-trust.md#talos-secrets-lifecycle-point-3) requires one-time native Talos generation, authenticated YubiKey wrapping and stable recovery of the same cluster identity. This is a design only: no production secret helper or deploy command is implemented yet.
+
 The Raspberry Pi `eth0` interface name and UEFI behavior remain unverified.
 Do not apply this partial public bundle to a node.

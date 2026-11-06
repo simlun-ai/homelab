@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Design generation and memory-only delivery of the full secret-bearing machine configuration (Point 3); also verify the actual Pi interface and Talos early-boot networking before installing onto disks.
+- **Current next step:** Implement and test safe Talos secret generation/recovery (Point 3) before a secret-bearing apply target. Verify Pi networking and early-boot behavior before installing onto disks.
 
 ### Milestone tracker
 
@@ -61,6 +61,65 @@
 
 Current authored documents specify pod/service CIDRs, hostname, and provisional static networking. Network interface identity and validity against pinned Talos still require live hardware and Talos-specific validation. See [Trust cluster README](../../clusters/trust/README.md).
 
+### Talos secrets lifecycle (Point 3)
+
+**Decision: generate once, recover consistently.** Trust's Talos machine
+identity and cluster PKI are generated once using the pinned native
+`talosctl gen secrets` command. Authenticate and wrap the result under
+`homelab-wrap-v1` using the existing YubiKey-based library; persist only
+the encrypted record in the private records submodule. Every subsequent
+installation, repair, configuration render or rebuild must recover the
+**same** bootstrap secret bundle. Missing, corrupt or mismatched records
+are fatal: never silently generate replacement cluster credentials.
+
+The proposed record identities are recorded in
+[the YubiKey catalogue](../security/yubikey.md):
+`homelab/v1/trust/talos/bootstrap/r1` for bootstrap material,
+`homelab/v1/trust/talos/administration/r1` for operator Talos credentials,
+and `homelab/v1/trust/kubernetes/administration/r1` for Kubernetes admin
+credentials. None is provisioned yet. Decide which operator credentials can
+be safely derived/reissued from bootstrap material and avoid duplicating
+secret authority in separate records unnecessarily. Only add finalized,
+actually generated records to the public manifest. The Trust node's
+independent `trust/kms/<node-id>/r1` coordinator key is a separate secret
+and must never be conflated with Talos machine secrets.
+
+**Configuration and delivery:**
+1. Explicit one-time initialization, with operator intent and YubiKey touch,
+   generates Talos secrets in a protected memory-only execution workspace,
+   verifies authenticated wrapping, and creates ciphertext exclusively.
+   Existing records must cause an error rather than being overwritten.
+2. For every deployment, unwrap that same record after YubiKey authorization.
+   Use pinned Talos config-generation and validation with the exact same
+   native source patches used by the committed public render.
+3. The committed public YAML stays a non-secret inspection bundle, not an
+   apply-ready MachineConfig. The complete secret-bearing configuration,
+   talosconfig and kubeconfig live only in the protected memory workspace.
+4. Use explicit node targets and Talos-supported apply mechanisms to supply
+   the complete configuration. Do not pass the public render directly to
+   `talosctl apply-config`; never place plaintext in shell arguments,
+   environment variables, logs, disk-backed temporary files or Git.
+5. Rebuilds first verify independently accessible wrapped records, approved
+   Talos version, and KMS recovery. Repeatable configuration generation must
+   not rotate the identity.
+
+**Implementation gates (not yet satisfied):** verify the exact Talos 1.14.5
+secrets/config generation and validation CLI behavior; define the bundle
+format, record filenames and admin credential recovery; establish a
+private, size-limited RAM-backed workspace with checked mount type and
+permissions, no swap exposure, core dumps, insecure subprocess temporary
+files or logging; and test create/recover/apply preparation using only
+disposable secret material. If any safety prerequisite cannot be established,
+fail closed. The later provisioning helper must verify no plaintext survives
+outside process memory/RAM-backed storage on success or failure.
+
+These decisions document the safe boundary **only**. No production secrets,
+secret-generation helper, unwrap workflow, Talos installation or apply
+command are implemented or tested by this commit. See
+[security policy](../security/security.md#secret-handling-boundary),
+[helper implementation](../security/helper-implementation.md), and
+[wrapped-record storage](../security/encrypted-record-storage.md).
+
 ### Step-by-step working rules
 
 1. Choose **one** pending decision or test; document any preconditions before implementation.
@@ -76,6 +135,7 @@ Current authored documents specify pod/service CIDRs, hostname, and provisional 
 | 2026-11-06 | 0 — baseline | Started `feat/trust-bootstrap` after the Trust rename; accepted `trust-cp1` and `10.10.0.10`. `ups-aux` base setup previously verified. No Trust disk or KMS tests performed | Review provisioning layout and pinning strategy |
 | 2026-11-06 | 1 — version policy | Agreed explicit Talos, Kubernetes and kubectl pins, with Talos driving Kubernetes selection; same-session Talos-first, Kubernetes-second upgrade policy with intermediate health checks | Select and record exact release pair |
 | 2026-11-06 | 1 — initial pins | Selected Talos `v1.14.5` and its default Kubernetes `v1.37.1`, matched kubectl `v1.37.1`; declared versions, not installed or verified on Trust hardware | Design scoped tool acquisition and provisioning |\n| 2026-11-06 | Point 2 — native patch design | Native layered Talos documents, committed public per-node bundle, CI reproducibility check; no installation or secret-bearing config generation | Point 3: secure generation and transport |
+| 2026-11-06 | Point 3 — secret lifecycle design | Generate-once Talos identity with authenticated wrapped-record recovery; full machine config/admin clients remain memory-only. Implementation and testing pending | Implement the helper and recovery tests before operational apply |
 
 ---
 
