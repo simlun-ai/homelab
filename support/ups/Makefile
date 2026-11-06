@@ -8,7 +8,7 @@ export ANSIBLE_LOCAL_TEMP := $(SCOPE)/.ansible/tmp
 export HOST
 export ASK_BECOME_PASS
 
-.PHONY: help system-dependencies tools check-tools inventory syntax bootstrap verify harden verify-hardening
+.PHONY: help system-dependencies tools check-tools inventory syntax bootstrap verify harden verify-hardening diff apply
 help:
 	@printf '%s\n' \
 	  'Setup: runbooks/ups-coordinator-base-setup.md' \
@@ -23,6 +23,8 @@ help:
 	  'make -C support/ups verify HOST=ups-aux' \
 	  'make -C support/ups harden HOST=ups-aux' \
 	  'make -C support/ups verify-hardening HOST=ups-aux' \
+  'make -C support/ups diff HOST=ups-aux (preview bootstrap and hardening)' \
+  'make -C support/ups apply HOST=ups-aux (apply bootstrap and hardening with diffs)' \
 	  'Password workflow: runbooks/coordinator-passwords.md (password-create/reveal/apply)' \
 	  'HOST must be exactly ups-aux, ups-pi, or ups-metal.' \
 	  'For initial sudo setup only: bootstrap HOST=... ASK_BECOME_PASS=1'
@@ -50,14 +52,19 @@ syntax: check-tools
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/harden.yaml"
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/verify-hardening.yaml"
 
-bootstrap verify harden verify-hardening: check-tools ssh-key-check
+bootstrap verify harden verify-hardening diff apply: check-tools ssh-key-check
 	@case "$$HOST" in ups-aux|ups-pi|ups-metal) ;; \
 	  *) printf '%s\n' 'Set HOST to exactly ups-aux, ups-pi, or ups-metal.' >&2; exit 2;; esac; \
 	case "$$ASK_BECOME_PASS" in ''|0) set -- ;; \
 	  1) test "$@" = bootstrap || { printf '%s\n' 'ASK_BECOME_PASS is only for bootstrap.' >&2; exit 2; }; set -- --ask-become-pass ;; \
 	  *) printf '%s\n' 'ASK_BECOME_PASS must be 0 or 1.' >&2; exit 2;; esac; \
-	exec "$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" \
-	  --limit "$$HOST" "$$@" "$(SCOPE)/ansible/playbooks/$@.yaml"
+	case "$@" in \
+	  diff|apply) \
+	    set -- "$$@" --diff "$(SCOPE)/ansible/playbooks/bootstrap.yaml" "$(SCOPE)/ansible/playbooks/harden.yaml"; \
+	    if [ "$@" = diff ]; then set -- --check "$$@"; fi ;; \
+	  *) set -- "$$@" "$(SCOPE)/ansible/playbooks/$@.yaml" ;; \
+	esac; \
+	exec "$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --limit "$$HOST" "$$@"
 
 # Reuse the pinned token SDK environment; no secret values enter Make or Ansible.
 .PHONY: password-create password-reveal password-apply

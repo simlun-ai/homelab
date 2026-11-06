@@ -165,6 +165,10 @@ Wait for the host to return before running verification. Repeat one host at a ti
 
 After hardening verification, [apply the preserved wrapped password](coordinator-passwords.md#apply-to-an-existing-coordinator) to each Pi and verify local console login.
 
+For routine updates to an already hardened coordinator, use the
+[preview and apply targets](../support/ups/README.md#preview-and-apply-configuration)
+to review and apply both configuration plays with diffs.
+
 ## 6. Record completion and recover from problems
 
 Record the repository revision, Imager/image versions, workstation/Pi Python versions, Ansible version, host identity/address, and verification results.

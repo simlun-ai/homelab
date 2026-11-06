@@ -77,3 +77,4 @@
 
     - name: Verify the base setup
       ansible.builtin.import_tasks: ../tasks/verify.yaml
+      when: not ansible_check_mode

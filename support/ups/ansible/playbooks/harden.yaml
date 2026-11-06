@@ -25,6 +25,8 @@
     - name: Verify base access after hardening
       ansible.builtin.import_tasks: ../tasks/verify.yaml
       become: false
+      when: not ansible_check_mode
     - name: Report manual reboot requirement
+      when: not ansible_check_mode
       ansible.builtin.debug:
         msg: "After first application or boot/swap changes, reboot manually and run verify-hardening before loading KMS secrets. This role never reboots."

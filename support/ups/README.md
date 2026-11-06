@@ -31,6 +31,22 @@ Dependency selection: [ansible-core release](https://pypi.org/project/ansible-co
 Ubuntu 22.04 or newer is the workstation target, with Python 3.13–3.14 selected
 through pyenv as described in the runbook. Hardware installation remains unverified.
 
+## Preview and apply configuration
+
+For an existing coordinator with trusted SSH and working passwordless sudo:
+
+```sh
+make -C support/ups diff HOST=ups-aux
+make -C support/ups apply HOST=ups-aux
+```
+
+Both run bootstrap and hardening in order. `diff` uses Ansible check mode and
+shows diffs where modules support them. It expects an already provisioned
+host because the preview cannot install prerequisites. `apply` runs the same
+plays with diffs and checks access after applying changes. Follow the
+[manual reboot and verification procedure](../../runbooks/ups-coordinator-base-setup.md#5-apply-shared-hardening)
+when required.
+
 ## Static checks
 
 From the repository root, run `make ansible-lint` for the pinned containerized
