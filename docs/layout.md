@@ -52,7 +52,7 @@ Every cluster follows this contract; optional directories appear only where need
 | --- | --- |
 | `README.md` | Purpose, operational entry points, and links to architecture, inventory, and runbooks. |
 | `Makefile` | Fixed cluster identity; shared rules loaded through absolute repository paths. |
-| `toolchain.yaml` | Exact CLI/runtime versions, sources, checksums, supported operator platforms. |
+| `toolchain.toml` | CLI download sources and reviewed checksums; release pins stay in `versions.yaml`. |
 | `bin/` | Ignored, reproducible tools and generated launchers. |
 | `versions.yaml` | Talos, Kubernetes, extensions/images; schema TBD. |
 | `cluster.yaml` | Optional only where needed for non-secret settings not expressed through native Talos patches. |
@@ -68,6 +68,9 @@ Every cluster follows this contract; optional directories appear only where need
 | `manifests/` | Resources outside Helm releases; secret references only. |
 | `tofu/` | Independent OpenTofu root/state boundary; split further only for distinct lifecycles. |
 | `tofu/.terraform.lock.hcl` | Committed provider lock. |
+
+Trust implements the initial Linux amd64/arm64 `talosctl` and `kubectl` tooling
+and public-bundle validation; see its [operating instructions](../clusters/trust/README.md#scoped-tools-and-validation). Other tool scopes above remain proposed.
 
 Keep machine-readable node assignments synchronized with the inventory. A declaration does not authorize disk initialization.
 
@@ -94,7 +97,7 @@ Reference upstream charts by version rather than copying them. Package repositor
 
 ## Tool versions and command scopes
 
-Each cluster scope owns `toolchain.yaml` and `bin/`. Cluster pins cover `kubectl`, `talosctl`, `helm`, `tofu`, and required clients/runtimes such as `bao` or Python. Select tools for the operator's OS/architecture, independently of node architecture.
+Each cluster scope owns `toolchain.toml`, `versions.yaml`, and `bin/`. Cluster pins cover `kubectl`, `talosctl`, `helm`, `tofu`, and required clients/runtimes such as `bao` or Python. Select tools for the operator's OS/architecture, independently of node architecture.
 
 Make verifies pins, uses absolute executable paths, and prepends the scope's `bin/` to subprocess `PATH`. Missing/mismatched tools fail or trigger pinned installation; never fall back to global tools. Document/check bootstrap Make and helper-runtime prerequisites.
 

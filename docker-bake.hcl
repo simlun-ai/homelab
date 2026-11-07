@@ -1,9 +1,9 @@
 group "default" {
-  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax", "trust-render"]
+  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax", "trust-render", "trust-validate"]
 }
 
 group "ci" {
-  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax", "trust-render"]
+  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax", "trust-render", "trust-validate"]
 }
 
 target "_common" {
@@ -60,4 +60,10 @@ target "trust-render" {
   inherits = ["_common"]
   target = "trust-render"
   no-cache-filter = ["trust-render"]
+}
+
+target "trust-validate" {
+  inherits = ["_common"]
+  target = "trust-validate"
+  no-cache-filter = ["trust-validate"]
 }

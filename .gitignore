@@ -7,3 +7,5 @@ dist/
 /support/ups/.ansible/
 
 .ruff_cache/
+
+/clusters/trust/bin/

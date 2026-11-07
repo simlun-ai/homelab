@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Implement scoped Make/toolchain operations (Point 4), then exercise the initial Talos secret helper with pinned tools and disposable credentials and establish admin credential recovery. Verify Pi networking and early-boot behavior before installing onto disks.
+- **Current next step:** Exercise the initial Talos secret helper with pinned tools and disposable credentials, establish admin credential recovery and complete memory-only machine configuration generation. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
 
 ### Milestone tracker
 
@@ -36,7 +36,7 @@
 | Cluster and node identity | `trust` / `trust-cp1` agreed; stable Kubernetes API DNS name and endpoint choice TBD |
 | Networking | VLAN 10, `10.10.0.10/24`, gateway `10.10.0.1`; current proposed pod/service CIDRs and Flannel are in [network.md](../network.md). Pre-`STATE` DNS and NTP details TBD |
 | Provisioning | **Decided:** native single-document Talos patches organized by cluster/role/node are authoritative; commit a deterministic public multi-document per-node render and enforce regeneration through CI. No custom node schema. Full Talos generation + secret handling TBD |
-| Versioning and upgrades | Agreed: explicit Talos, Kubernetes and kubectl version pins, with Kubernetes selected from the target Talos release's recommended/default Kubernetes version and kubectl chosen to match. `talosctl` matches Talos. Upgrade Talos first, verify health, then upgrade Kubernetes separately; check compatibility and supported upgrade paths before either action. Selected: Talos `v1.14.5`, Kubernetes `v1.37.1`, kubectl `v1.37.1`; talosctl follows Talos. Scoped tool acquisition and checksums TBD |
+| Versioning and upgrades | Agreed: explicit Talos, Kubernetes and kubectl version pins, with Kubernetes selected from the target Talos release's recommended/default Kubernetes version and kubectl chosen to match. `talosctl` matches Talos. Upgrade Talos first, verify health, then upgrade Kubernetes separately; check compatibility and supported upgrade paths before either action. Selected: Talos `v1.14.5`, Kubernetes `v1.37.1`, kubectl `v1.37.1`; talosctl follows Talos. Scoped Linux CLI acquisition, checksums and public-bundle validation implemented; hardware deployment unverified |
 | Boot | First experiment is SD-first EDK2/UEFI plus generic ARM64 Talos installer; supported behavior and firmware boot dependency must be verified |
 | Storage | Two explicitly assigned OS SSDs are intended for MD RAID1; confirm stable identities, Talos compatibility, metadata format, degraded boot and replacement before any destructive installation. Separate encrypted ZFS data disks are **out of scope and protected** |
 | Encryption | KMS-backed `STATE` and `EPHEMERAL` on the **initial** installation. Talos bootloader/kernel still require readable boot components; no claim of fully encrypted boot media |
@@ -118,6 +118,19 @@ outside process memory/RAM-backed storage on success or failure.
 [helper implementation](../security/helper-implementation.md), and
 [wrapped-record storage](../security/encrypted-record-storage.md).
 
+### Scoped tooling and native validation (Point 4)
+
+Implemented `tools`, `check-tools`, and `validate` alongside the existing render
+commands. Release pins remain centralized; downloaded clients are cluster-local
+and verified against reviewed upstream SHA-256 values. CI runs native strict
+validation of the public bundle offline after tool acquisition. See the
+[Trust operating instructions](../../clusters/trust/README.md#scoped-tools-and-validation).
+
+The pinned Linux amd64 clients were acquired and the current public bundle
+passed native Talos validation. Linux arm64 download metadata is provided but
+execution on an arm64 workstation is not yet verified. This does not validate a
+complete secret-bearing machine configuration or any physical installation.
+
 ### Step-by-step working rules
 
 1. Choose **one** pending decision or test; document any preconditions before implementation.
@@ -136,8 +149,9 @@ outside process memory/RAM-backed storage on success or failure.
 | 2026-11-06 | Point 2 — native patch design | Native layered Talos documents, committed public per-node bundle, CI reproducibility check; no installation or secret-bearing config generation | Point 3: secure generation and transport |
 | 2026-11-06 | Point 3 — secret lifecycle design | Generate-once Talos identity with authenticated wrapped-record recovery; full machine config/admin clients remain memory-only. Implementation and testing pending | Implement the helper and recovery tests before operational apply |
 | 2026-11-07 | Point 3 — bootstrap helper | Added guarded generate-once and pipe-only recovery helper plus mocked unit tests; no production secrets generated or hardware test executed | Test with disposable keys and pinned toolchain; implement protected config generation/admin access |
+| 2026-11-07 | Point 4 — scoped tooling | Pinned Linux clients, reviewed hashes and native strict public-bundle validation implemented; amd64 acquisition/validation tested, no hardware changes | Disposable secret-helper tests and protected complete configuration/admin credential workflow |
 
-Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native Talos validation remains Point 4 work.
+Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 
 ---
 

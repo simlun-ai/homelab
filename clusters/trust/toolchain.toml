@@ -1,0 +1,14 @@
+# Versions come from versions.yaml. Review these hashes whenever pins change.
+# Talos hashes: upstream GitHub release asset digests.
+# kubectl hashes: dl.k8s.io/release/<version>/bin/linux/<arch>/kubectl.sha256.
+[talosctl]
+url = "https://github.com/siderolabs/talos/releases/download/{version}/talosctl-linux-{arch}"
+[talosctl.sha256]
+amd64 = "ff432b68986709e6b69c563a08a2ced4232d5196b0dccd6d2e783e9d714d7d7d"
+arm64 = "dfd3aa33c3159810e216fc39afb685d4d120c8f2728e017d8c7f7635d3139382"
+
+[kubectl]
+url = "https://dl.k8s.io/release/{version}/bin/linux/{arch}/kubectl"
+[kubectl.sha256]
+amd64 = "65691ff77eb6fa44c908b77a1082c9f092c3b9733b5cefabec0d1104890e21a8"
+arm64 = "ff749f4b78d9c4f1ec87307df9b50119ed819e2094aa9810cb9acffc3286c8c7"

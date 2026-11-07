@@ -1,4 +1,4 @@
-# Selected Trust versions; deployment and tooling not yet implemented.
+# Selected Trust versions; tooling is implemented, deployment remains unverified.
 # Kubernetes follows the default shipped by the selected Talos release.
 talos:
   version: v1.14.5

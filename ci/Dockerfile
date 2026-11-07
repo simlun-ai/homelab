@@ -93,3 +93,10 @@ RUN --network=none cd support/ups && ansible-lint --offline ansible inventory.ya
 FROM base AS trust-render
 COPY --link clusters/trust/ ./clusters/trust/
 RUN --network=none make -C clusters/trust check-rendered
+
+FROM base AS trust-tools
+COPY --link clusters/trust/ ./clusters/trust/
+RUN make -C clusters/trust tools
+
+FROM trust-tools AS trust-validate
+RUN --network=none make -C clusters/trust validate

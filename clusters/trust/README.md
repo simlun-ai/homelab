@@ -4,6 +4,36 @@ Independent foundational Kubernetes cluster, initially a single control-plane
 node (`trust-cp1`, `10.10.0.10`). See the
 [installation roadmap](../../docs/installation/02-trust.md).
 
+## Scoped tools and validation
+
+Requires Linux amd64 or arm64, GNU Make, Python 3.13–3.14, CA certificates,
+and HTTPS access to GitHub releases and `dl.k8s.io` for initial acquisition.
+Tools follow the **operator** architecture, independently of the Pi node.
+
+```sh
+make -C clusters/trust tools
+make -C clusters/trust validate
+```
+
+`versions.yaml` owns release pins; `toolchain.toml` owns official download URL
+patterns and reviewed SHA-256 values. The TOML format uses Python's standard
+library, without a bootstrap package installation. When upgrading, deliberately
+update pins and corresponding upstream hashes together; nothing selects latest
+releases automatically. talosctl follows the Talos pin; kubectl follows its own pin.
+
+`tools` verifies existing binaries and replaces missing or changed ones using
+an atomic, checksum-verified download into ignored `bin/`. A failed download
+leaves any previous binary untouched. A source-URL receipt prevents reusing an
+old cached release after a pin change. `check-tools` verifies offline; it never
+falls back to host binaries. `validate` requires verified tools and a fresh
+public render, then runs native `talosctl validate --mode metal --strict`.
+Both clients are hash-checked; no per-helper CLI version probing is required.
+
+CI acquires tools in a preparation stage and runs the same validation without
+network access. This validates only the authored public documents. Complete
+machine configuration validation, KMS, disk selection and physical networking
+remain later gates; passing this check does not make the bundle apply-ready.
+
 ## Native Talos patches and committed public render
 
 Source fragments live in `talos/patches/`: cluster-wide documents, optional
