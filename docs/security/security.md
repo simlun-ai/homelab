@@ -8,7 +8,7 @@ Helpers must never commit plaintext secrets, golden-key material, HMAC responses
 
 **Workstation swap decision (2026-11-07):** Secret-handling processes may use
 swap only when every active area is verified as RAM-only zram without writeback,
-or an active plain dm-crypt mapping matching a root-owned, not group/world-writable
+or an active plain dm-crypt mapping matching a root-owned, writable only by root user/group
 `/etc/crypttab` entry with a random key source (`/dev/urandom` or `/dev/random`).
 This permits encrypted OS paging; it does not permit applications to write
 plaintext files, caches or logs. Unprotected or unverified swap, including swap

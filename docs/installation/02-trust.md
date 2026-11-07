@@ -129,7 +129,7 @@ tests pass; the operator's actual Talos/YubiKey rehearsal remains **pending**.
 **Workstation swap finding (2026-11-07):** On `simlun-x1`, active swap is
 `cryptoswap` on `/dev/nvme0n1p2`, with mapping UUID `CRYPT-PLAIN-cryptoswap` and
 crypttab entry `cryptoswap /dev/nvme0n1p2 /dev/urandom swap,initramfs`.
-The operator's output supports random-key encrypted swap under normal boot
+The operator also verified `/etc/crypttab` as `root:root 664`. Group `root`\n(GID 0) is trusted to write this configuration; non-root ownership, write access\nby other groups, and world write access remain rejected. The guard correction\nis in [HSM PR #10](https://github.com/simlun-ai/homelab-hsm/pull/10); the parent\ncode pin stays on upstream main until that fix is merged.\nThe operator's output supports random-key encrypted swap under normal boot
 activation. Agreed to allow this under the shared
 [workstation policy](../security/security.md#secret-handling-boundary), replacing
 the blanket no-swap guard in Trust. No swap configuration was changed. The
