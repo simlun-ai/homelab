@@ -131,7 +131,8 @@ ciphertext behind. The production record and manifest are never used.
 
 Success requires an exact in-memory round trip, refusal to overwrite the
 existing record, rejection of a one-bit ciphertext mutation, and rejection
-of a missing record. Output contains touch instructions and pass/fail results,
+of a missing record. Output contains public preflight/progress diagnostics,
+touch instructions and pass/fail results,
 never the secret bundle or a digest of it. Unit tests exercise orchestration
 with disposable fixtures; actual pinned-tool/YubiKey verification remains
 pending until the operator runs this command and records the result.

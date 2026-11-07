@@ -151,6 +151,70 @@ class TrustSecretsTests(unittest.TestCase):
         self.assertEqual(module.KEY_ID, "homelab/v1/trust/talos/bootstrap/r1")
         self.assertTrue(module.RECORD.name.endswith(".json"))
 
+    def test_swap_check_reports_a_public_preflight_error(self) -> None:
+        with (
+            patch.object(module.resource, "setrlimit"),
+            patch.object(module.logging, "disable"),
+            patch.object(module.ctypes, "CDLL") as libc,
+            patch.object(Path, "read_text", return_value="Filename\n/dev/zram0\n"),
+        ):
+            libc.return_value.prctl.return_value = 0
+            with self.assertRaisesRegex(module.PreflightError, "Swap is enabled"):
+                module.harden()
+
+    def test_main_reports_missing_executable_without_starting_rehearsal(self) -> None:
+        output = io.StringIO()
+        with (
+            patch.object(module, "harden"),
+            patch.object(
+                module.sys,
+                "argv",
+                [
+                    "trust_talos_secrets.py",
+                    "rehearse",
+                    "--talosctl",
+                    "/definitely-missing/talosctl",
+                    "--wrap",
+                    "/definitely-missing/wrap",
+                    "--unwrap",
+                    "/definitely-missing/unwrap",
+                ],
+            ),
+            patch.object(module.sys, "stderr", output),
+            patch.object(module, "rehearse") as rehearse,
+        ):
+            self.assertEqual(module.main(), 1)
+            rehearse.assert_not_called()
+        self.assertIn("talosctl: an existing absolute executable", output.getvalue())
+
+    def test_main_reports_stage_without_exception_details(self) -> None:
+        output = io.StringIO()
+        with (
+            patch.object(module, "harden"),
+            patch.object(module, "executable", return_value="/abs/tool"),
+            patch.object(
+                module, "rehearse", side_effect=RuntimeError("sensitive-marker")
+            ),
+            patch.object(
+                module.sys,
+                "argv",
+                [
+                    "trust_talos_secrets.py",
+                    "rehearse",
+                    "--talosctl",
+                    "/abs/tool",
+                    "--wrap",
+                    "/abs/tool",
+                    "--unwrap",
+                    "/abs/tool",
+                ],
+            ),
+            patch.object(module.sys, "stderr", output),
+        ):
+            self.assertEqual(module.main(), 1)
+        self.assertIn("during rehearsal", output.getvalue())
+        self.assertNotIn("sensitive-marker", output.getvalue())
+
     def test_rehearsal_is_isolated_and_prints_no_bundle(self) -> None:
         plaintext = b"disposable-test-bundle-do-not-print"
         encoded = b'{"ciphertext": "AQID"}'

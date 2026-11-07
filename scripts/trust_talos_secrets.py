@@ -39,22 +39,30 @@ def talos_version() -> str:
     return match.group(1)
 
 
+class PreflightError(ValueError):
+    """A deliberately public diagnostic containing no subprocess output."""
+
+
 def harden() -> None:
     if sys.platform != "linux":
-        raise RuntimeError("Linux is required")
+        raise PreflightError("Linux is required")
     logging.disable(sys.maxsize)
     sys.dont_write_bytecode = True
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     libc = ctypes.CDLL(None, use_errno=True)
     if libc.prctl(4, 0, 0, 0, 0) != 0:
-        raise RuntimeError("Cannot disable process dumping")
+        raise PreflightError("Cannot disable process dumping")
     if Path("/proc/swaps").read_text(encoding="utf-8").splitlines()[1:]:
-        raise RuntimeError("Swap must be disabled")
+        raise PreflightError(
+            "Swap is enabled; inspect /proc/swaps and disable swap before retrying."
+        )
 
 
-def executable(path: Path) -> str:
+def executable(path: Path, label: str = "tool") -> str:
     if not path.is_absolute() or not path.is_file() or not os.access(path, os.X_OK):
-        raise ValueError("Absolute executable path required")
+        raise PreflightError(
+            f"{label}: an existing absolute executable path is required"
+        )
     return str(path)
 
 
@@ -203,6 +211,7 @@ def recover(unwrap_cli: str) -> None:
 def rehearse(talosctl: str, wrap_cli: str, unwrap_cli: str) -> None:
     """Use only disposable identity material and an isolated ciphertext repository."""
     key_id = "homelab/v1/trust/talos/rehearsal/r1"
+    print("Preparing isolated ciphertext repository.", flush=True)
     with tempfile.TemporaryDirectory(prefix="trust-talos-rehearsal-") as directory:
         root = Path(directory)
         record = root / "secrets/wrapped/disposable.json"
@@ -232,6 +241,7 @@ def rehearse(talosctl: str, wrap_cli: str, unwrap_cli: str) -> None:
             timeout=10,
         )
         require_private_repository(root=root, record=record)
+        print("Generating disposable Talos secrets in memory.", flush=True)
         plaintext = generate(talosctl)
         print(
             "Touch the YubiKey when it flashes for wrapping and verification.",
@@ -289,22 +299,28 @@ def main() -> int:
     parser.add_argument("--wrap", type=Path)
     parser.add_argument("--unwrap", type=Path)
     args = parser.parse_args()
+    stage = "workstation safety checks"
     try:
         harden()
+        stage = "private repository checks"
         if args.action != "rehearse":
             require_private_repository()
+        stage = "executable selection"
         if args.action == "rehearse":
             if args.talosctl is None or args.wrap is None or args.unwrap is None:
                 raise ValueError("rehearse requires --talosctl, --wrap and --unwrap")
-            rehearse(
-                executable(args.talosctl),
-                executable(args.wrap),
-                executable(args.unwrap),
-            )
+            talosctl = executable(args.talosctl, "talosctl")
+            wrap_cli = executable(args.wrap, "homelab-wrap")
+            unwrap_cli = executable(args.unwrap, "homelab-unwrap")
+            stage = "rehearsal (see the last progress message)"
+            rehearse(talosctl, wrap_cli, unwrap_cli)
         elif args.action == "init":
             if args.talosctl is None or args.wrap is None or args.unwrap is not None:
                 raise ValueError("init requires --talosctl and --wrap only")
-            initialize(executable(args.talosctl), executable(args.wrap))
+            talosctl = executable(args.talosctl, "talosctl")
+            wrap_cli = executable(args.wrap, "homelab-wrap")
+            stage = "initialization"
+            initialize(talosctl, wrap_cli)
         else:
             if (
                 args.unwrap is None
@@ -312,12 +328,17 @@ def main() -> int:
                 or args.wrap is not None
             ):
                 raise ValueError("recover requires --unwrap only")
-            recover(executable(args.unwrap))
+            unwrap_cli = executable(args.unwrap, "homelab-unwrap")
+            stage = "recovery"
+            recover(unwrap_cli)
+    except PreflightError as exc:
+        print(f"Talos bootstrap preflight failed: {exc}", file=sys.stderr)
+        return 1
     except (Exception, KeyboardInterrupt):
         # Never expose subprocess stderr: it may contain secret-bearing content.
         print(
-            "Talos bootstrap operation failed; details suppressed. Check the "
-            "private record, swap, output pipe, token and touch.",
+            f"Talos bootstrap operation failed during {stage}; details suppressed. "
+            "Check the private record, swap, output pipe, token and touch.",
             file=sys.stderr,
         )
         return 1
