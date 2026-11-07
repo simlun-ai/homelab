@@ -135,8 +135,8 @@ existing record, rejection of a one-bit ciphertext mutation, and rejection
 of a missing record. Output contains public preflight/progress diagnostics,
 touch instructions and pass/fail results,
 never the secret bundle or a digest of it. Unit tests exercise orchestration
-with disposable fixtures; actual pinned-tool/YubiKey verification remains
-pending until the operator runs this command and records the result.
+with disposable fixtures. The operator verified the pinned-tool/YubiKey rehearsal
+on `simlun-x1` on 2026-11-07; see the [recorded results](../../docs/installation/02-trust.md#talos-secrets-lifecycle-point-3).
 
 After updating the code submodule, reinstall the offline HSM environment with
 `make -C support/hsm tools` before retrying a rehearsal. Both parent and HSM

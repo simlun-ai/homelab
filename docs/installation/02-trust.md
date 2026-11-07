@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Exercise the initial Talos secret helper with pinned tools and disposable credentials, establish admin credential recovery and complete memory-only machine configuration generation. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
+- **Current next step:** Establish admin credential recovery and complete memory-only machine configuration generation, building on the verified disposable secret rehearsal. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
 
 ### Milestone tracker
 
@@ -113,7 +113,7 @@ disposable secret material. If any safety prerequisite cannot be established,
 fail closed. The later provisioning helper must verify no plaintext survives
 outside process memory/RAM-backed storage on success or failure.
 
-**Implemented initial helper:** `scripts/trust_talos_secrets.py` provides explicit `init` and pipe-only `recover` actions. It uses native `talosctl gen secrets --output-file -` and existing `homelab-wrap`/`homelab-unwrap` CLIs, requires exact absolute executable paths, rejects existing records and unprotected/unverified swap, hardens the process, and never writes plaintext files. It has mocked orchestration tests and disposable subprocess/Git regression tests; actual pinned-tool/YubiKey tests are pending. Recovery bounds output and subprocess time and emits only after successful, nonempty unwrapping. The private-record path must be a tracked, initialized Git submodule. No admin credential generation, full machine configuration, Talos installation, or apply command is implemented. The direct-to-pipe flow means no memory-backed filesystem is required for *this helper*, but future native `gen config` consumption must still satisfy the memory-only workspace constraints. See
+**Implemented initial helper:** `scripts/trust_talos_secrets.py` provides explicit `init` and pipe-only `recover` actions. It uses native `talosctl gen secrets --output-file -` and existing `homelab-wrap`/`homelab-unwrap` CLIs, requires exact absolute executable paths, rejects existing records and unprotected/unverified swap, hardens the process, and never writes plaintext files. It has mocked orchestration tests and disposable subprocess/Git regression tests; the disposable pinned-tool/YubiKey rehearsal passed on `simlun-x1` on 2026-11-07. Recovery bounds output and subprocess time and emits only after successful, nonempty unwrapping. The private-record path must be a tracked, initialized Git submodule. No admin credential generation, full machine configuration, Talos installation, or apply command is implemented. The direct-to-pipe flow means no memory-backed filesystem is required for *this helper*, but future native `gen config` consumption must still satisfy the memory-only workspace constraints. See
 [security policy](../security/security.md#secret-handling-boundary),
 [helper implementation](../security/helper-implementation.md), and
 [wrapped-record storage](../security/encrypted-record-storage.md).
@@ -123,8 +123,11 @@ The disposable rehearsal is now implemented as
 [rehearsal instructions](../../clusters/trust/README.md#disposable-secret-rehearsal).
 It uses an isolated ciphertext repository and a distinct wrapping context,
 checks exact in-memory recovery plus overwrite/corruption/missing-record
-failures, and leaves the production identity untouched. Automated orchestration
-tests pass; the operator's actual Talos/YubiKey rehearsal remains **pending**.
+failures, and leaves the production identity untouched. The operator's actual Talos/YubiKey rehearsal **passed** on `simlun-x1`
+(Linux amd64) on 2026-11-07, with the implementation at `d7cf86b` and HSM pin
+`c4430a3`: exact in-memory recovery, overwrite refusal, damaged-ciphertext
+rejection, missing-record rejection and temporary-repository cleanup all passed.
+No production Trust identity was created.
 
 **Workstation swap finding (2026-11-07):** On `simlun-x1`, active swap is
 `cryptoswap` on `/dev/nvme0n1p2`, with mapping UUID `CRYPT-PLAIN-cryptoswap` and
@@ -138,8 +141,7 @@ The operator's output supports random-key encrypted swap under normal boot
 activation. Agreed to allow this under the shared
 [workstation policy](../security/security.md#secret-handling-boundary), replacing
 the blanket no-swap guard in Trust. No swap configuration was changed. The
-updated runtime check and Talos/YubiKey rehearsal on this workstation remain
-**pending operator verification**.
+updated runtime swap check passed during the successful workstation rehearsal.
 
 ### Scoped tooling and native validation (Point 4)
 
@@ -178,6 +180,7 @@ complete secret-bearing machine configuration or any physical installation.
 | 2026-11-07 | Point 3 — bootstrap helper | Added guarded generate-once and pipe-only recovery helper plus mocked unit tests; no production secrets generated or hardware test executed | Test with disposable keys and pinned toolchain; implement protected config generation/admin access |
 | 2026-11-07 | Point 4 — scoped tooling | Pinned Linux clients, reviewed hashes and native strict public-bundle validation implemented; amd64 acquisition/validation tested, no hardware changes | Disposable secret-helper tests and protected complete configuration/admin credential workflow |
 | 2026-11-07 | Point 4 — operator verification | `simlun-x1`, Linux amd64: `make tools` verified talosctl `v1.14.5` and kubectl `v1.37.1`; `make validate` passed render freshness, client verification and native metal-mode validation. Point 4 complete; no node installation performed | Test the secret workflow with disposable material |
+| 2026-11-07 | Point 3 — operator rehearsal | `simlun-x1`: `make secrets-rehearse` passed all checks with the physical YubiKey and approved encrypted swap; disposable repository removed, no production identity created | Complete protected machine configuration generation and admin credential recovery |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 
