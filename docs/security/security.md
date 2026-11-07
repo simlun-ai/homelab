@@ -34,6 +34,13 @@ Public challenges, secret references, and protocol metadata may be committed. HM
 
 Encrypted persistence in cluster services, remote state, and backups is allowed, including protected Talos state, appropriately encrypted Kubernetes secret storage, and OpenBao storage. Transport must not stage decrypted secrets or OpenBao snapshots on workstation disk. The separately held offline golden-key record is encrypted by pass inside level1vault's encrypted workspace, outside these code and wrapped-record repositories.
 
+Trust's offline configuration rehearsal supplies native Talos inputs using
+private anonymous `memfd` descriptors with write/grow/shrink seals and close-on-exec,
+inheriting only the required descriptors into each child. Output stays in bounded
+pipes/process memory. This avoids named plaintext files and a separate mounted
+workspace for that workflow; approved OS paging and existing dump/hibernation
+restrictions still apply. Python memory copies are not guaranteed zeroizable.
+
 ## Core-secret foundation
 
 **Decision:** The **20-byte golden key** held in the four [inventory YubiKeys](../inventory.md#security-keys) is the root of trust for **all homelab secrets**, through **OTP HMAC-SHA1 challenge-response**. Secrets are derived from its responses, wrapped under response-derived keys, or protected by OpenBao, whose unseal material is wrapped under this foundation. Generated or externally issued secrets are not necessarily deterministic derivatives of the golden key.

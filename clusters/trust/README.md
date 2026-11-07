@@ -142,3 +142,40 @@ After updating the code submodule, reinstall the offline HSM environment with
 `make -C support/hsm tools` before retrying a rehearsal. Both parent and HSM
 subprocesses use the shared swap check. No `swapoff` is needed for an accepted
 random-key encrypted mapping; unsupported or unreadable evidence remains an error.
+
+## Offline configuration rehearsal
+
+```sh
+make -C clusters/trust config-rehearse
+```
+
+Requires the scoped clients and installed HSM environment used above, but no
+YubiKey or private records. It generates a disposable Talos secret bundle, builds
+a full control-plane configuration with the committed public patches, and runs
+native strict validation and confirms malformed supplied secrets are rejected.
+It then issues and reissues `os:admin` talosconfigs
+from that same bundle and checks their context, roles and expiry through native
+`talosctl config info` JSON output. This tests local credential preparation,
+not authentication to a running node. Native generation currently issues
+one-year client certificates; the operational lifetime/renewal policy remains
+open. Offline reissuance does not revoke earlier credentials. Kubernetes admin
+access needs a bootstrapped API and is not tested here.
+
+Inputs are private, anonymous Linux `memfd` descriptors sealed against changes;
+outputs are captured through bounded pipes. Descriptors close on success or
+failure, including process termination. No named plaintext files, output
+configurations or credential records are created. Approved OS paging remains
+required. Python does not guarantee zeroization of copies in process memory.
+
+The endpoint `https://trust-rehearsal.invalid:6443` and installation selector
+`/dev/REHEARSAL-DO-NOT-INSTALL` are test-only placeholders. This target has no
+network operation, apply, installation or Kubernetes bootstrap command. It does
+not establish KMS encryption, storage readiness, the production endpoint or
+hardware behavior. Do not use its disposable identity for Trust provisioning.
+
+The hostname patch explicitly sets `auto: off`: otherwise native merging retains
+Talos's generated `auto: stable`, conflicting with the explicit hostname. The
+same public render is used for inspection, native generation and CI.
+
+Native amd64 generation/validation passed during implementation. Operator
+verification of this target is pending in the installation roadmap.

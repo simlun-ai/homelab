@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Establish admin credential recovery and complete memory-only machine configuration generation, building on the verified disposable secret rehearsal. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
+- **Current next step:** Run the offline full-configuration rehearsal on the workstation, then decide the stable Kubernetes API endpoint and operational client credential lifetime/renewal before integrating production secret recovery. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
 
 ### Milestone tracker
 
@@ -158,6 +158,24 @@ checksum verification, the committed render matched its patches, and native
 Talos validation passed for metal mode. Linux arm64 download metadata is provided but
 execution on an arm64 workstation is not yet verified. This does not validate a
 complete secret-bearing machine configuration or any physical installation.
+
+### Full configuration and administration credential rehearsal
+
+Implemented `make -C clusters/trust config-rehearse`, using disposable secrets,
+the committed native patches and sealed anonymous memory descriptors. Native
+Talos generation and strict validation pass on amd64; native client-info checks
+also pass for fresh and reissued administration credentials from the same bundle.
+CI repeats this preparation without network access. See the
+[rehearsal contract](../../clusters/trust/README.md#offline-configuration-rehearsal).
+The hostname patch now disables automatic hostname selection explicitly so it
+can merge with Talos-generated defaults without conflict.
+
+Operator verification is **pending**. This establishes a disposable preparation
+path, not deployable Trust settings or actual node access. Keep production
+identity creation, the stable endpoint, credential lifetime/renewal, KMS/disk
+configuration, Kubernetes credential retrieval and apply operations gated on
+separate decisions and checks. No additional wrapped administration record has
+been created; native client reissuance from bootstrap material is demonstrated.
 
 ### Step-by-step working rules
 

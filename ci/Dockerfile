@@ -100,3 +100,9 @@ RUN make -C clusters/trust tools
 
 FROM trust-tools AS trust-validate
 RUN --network=none make -C clusters/trust validate
+
+FROM helper-tools AS trust-config-rehearsal
+COPY --link scripts/trust_talos_secrets.py scripts/trust_talos_config.py ./scripts/
+COPY --link clusters/trust/ ./clusters/trust/
+COPY --from=trust-tools /project/clusters/trust/bin/ ./clusters/trust/bin/
+RUN --network=none make -C clusters/trust config-rehearse

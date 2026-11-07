@@ -27,16 +27,21 @@ ROOT_KEY = "golden-1"
 MAX_SECRETS = 1024 * 1024
 
 
-def talos_version() -> str:
-    """Read the authoritative Talos pin without a second version constant."""
+def cluster_version(component: str) -> str:
+    """Read an authoritative cluster release pin without another version constant."""
     content = (ROOT / "clusters/trust/versions.yaml").read_text(encoding="utf-8")
     match = re.search(
-        r"(?m)^talos:[ \t]*\n[ \t]+version:[ \t]*(v[0-9]+\.[0-9]+\.[0-9]+)[ \t]*$",
+        rf"(?m)^{re.escape(component)}:[ \t]*\n"
+        r"[ \t]+version:[ \t]*(v[0-9]+\.[0-9]+\.[0-9]+)[ \t]*$",
         content,
     )
     if match is None:
-        raise ValueError("Missing or invalid Trust Talos version pin")
+        raise ValueError("Missing or invalid Trust release pin")
     return match.group(1)
+
+
+def talos_version() -> str:
+    return cluster_version("talos")
 
 
 class PreflightError(ValueError):
@@ -103,10 +108,14 @@ def require_private_repository(
         raise ValueError("Private wrapped-record submodule is not initialized")
 
 
-def capture_bundle(argv: list[str], timeout: float) -> bytes:
+def capture_bundle(
+    argv: list[str], timeout: float, *, pass_fds: tuple[int, ...] = ()
+) -> bytes:
     """Bound output and elapsed time; release no bytes until the child succeeds."""
     deadline = time.monotonic() + timeout
-    process = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    process = subprocess.Popen(
+        argv, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, pass_fds=pass_fds
+    )
     try:
         assert process.stdout is not None
         with process.stdout, selectors.DefaultSelector() as selector:
