@@ -126,8 +126,11 @@ and verified against reviewed upstream SHA-256 values. CI runs native strict
 validation of the public bundle offline after tool acquisition. See the
 [Trust operating instructions](../../clusters/trust/README.md#scoped-tools-and-validation).
 
-The pinned Linux amd64 clients were acquired and the current public bundle
-passed native Talos validation. Linux arm64 download metadata is provided but
+On 2026-11-07, the operator verified `make -C clusters/trust tools` and
+`make -C clusters/trust validate` on `simlun-x1` (Linux amd64), using the
+Point 4 implementation from commit `ff42ab0`. Both pinned clients passed
+checksum verification, the committed render matched its patches, and native
+Talos validation passed for metal mode. Linux arm64 download metadata is provided but
 execution on an arm64 workstation is not yet verified. This does not validate a
 complete secret-bearing machine configuration or any physical installation.
 
@@ -138,6 +141,7 @@ complete secret-bearing machine configuration or any physical installation.
 3. Record the relevant commit/revision, selected versions, host/disk identities, real observations and failure/recovery notes **without secret output**.
 4. Check a milestone only when its exit criteria have been verified; leave unsuccessful experiments and revised decisions visible.
 5. Before running any destructive storage operation, positively identify targets and explicitly exclude the separate Trust data mirror. Never infer a safe disk from `/dev/sdX`, size or apparent emptiness alone.
+6. After the operator validates a step, ask whether this roadmap should be updated to record the result.
 
 ### Progress log
 
@@ -150,6 +154,7 @@ complete secret-bearing machine configuration or any physical installation.
 | 2026-11-06 | Point 3 — secret lifecycle design | Generate-once Talos identity with authenticated wrapped-record recovery; full machine config/admin clients remain memory-only. Implementation and testing pending | Implement the helper and recovery tests before operational apply |
 | 2026-11-07 | Point 3 — bootstrap helper | Added guarded generate-once and pipe-only recovery helper plus mocked unit tests; no production secrets generated or hardware test executed | Test with disposable keys and pinned toolchain; implement protected config generation/admin access |
 | 2026-11-07 | Point 4 — scoped tooling | Pinned Linux clients, reviewed hashes and native strict public-bundle validation implemented; amd64 acquisition/validation tested, no hardware changes | Disposable secret-helper tests and protected complete configuration/admin credential workflow |
+| 2026-11-07 | Point 4 — operator verification | `simlun-x1`, Linux amd64: `make tools` verified talosctl `v1.14.5` and kubectl `v1.37.1`; `make validate` passed render freshness, client verification and native metal-mode validation. Point 4 complete; no node installation performed | Test the secret workflow with disposable material |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 
