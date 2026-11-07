@@ -118,6 +118,14 @@ outside process memory/RAM-backed storage on success or failure.
 [helper implementation](../security/helper-implementation.md), and
 [wrapped-record storage](../security/encrypted-record-storage.md).
 
+The disposable rehearsal is now implemented as
+`make -C clusters/trust secrets-rehearse`; see the
+[rehearsal instructions](../../clusters/trust/README.md#disposable-secret-rehearsal).
+It uses an isolated ciphertext repository and a distinct wrapping context,
+checks exact in-memory recovery plus overwrite/corruption/missing-record
+failures, and leaves the production identity untouched. Automated orchestration
+tests pass; the operator's actual Talos/YubiKey rehearsal remains **pending**.
+
 ### Scoped tooling and native validation (Point 4)
 
 Implemented `tools`, `check-tools`, and `validate` alongside the existing render

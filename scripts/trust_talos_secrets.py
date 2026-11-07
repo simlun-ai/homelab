@@ -4,7 +4,10 @@ No secret-bearing machine configuration or apply functionality is provided here.
 """
 
 import argparse
+import base64
 import ctypes
+import hmac
+import json
 import logging
 import os
 import re
@@ -13,6 +16,7 @@ import selectors
 import stat
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -54,17 +58,21 @@ def executable(path: Path) -> str:
     return str(path)
 
 
-def require_private_repository() -> None:
-    directory = ROOT / "secrets/wrapped"
+def require_private_repository(
+    *, root: Path | None = None, record: Path | None = None
+) -> None:
+    root = ROOT if root is None else root
+    record = RECORD if record is None else record
+    directory = root / "secrets/wrapped"
     if (
-        RECORD.parent != directory
+        record.parent != directory
         or directory.is_symlink()
         or directory.parent.is_symlink()
         or not directory.is_dir()
     ):
         raise ValueError("Private wrapped-record submodule is not initialized")
     tracked = subprocess.run(
-        ["git", "-C", str(ROOT), "ls-files", "--stage", "--", "secrets/wrapped"],
+        ["git", "-C", str(root), "ls-files", "--stage", "--", "secrets/wrapped"],
         capture_output=True,
         check=True,
         timeout=10,
@@ -134,17 +142,24 @@ def initialize(talosctl: str, wrap_cli: str) -> None:
     if os.path.lexists(RECORD):
         raise FileExistsError("Talos bootstrap record already exists")
     plaintext = generate(talosctl)
+    wrap_bundle(plaintext, wrap_cli, record=RECORD, key_id=KEY_ID)
+    print("Verified encrypted Trust bootstrap record created.", file=sys.stderr)
+
+
+def wrap_bundle(plaintext: bytes, wrap_cli: str, *, record: Path, key_id: str) -> None:
+    if os.path.lexists(record):
+        raise FileExistsError("Talos bootstrap record already exists")
     # homelab-wrap verifies the AEAD record and creates ciphertext exclusively.
     subprocess.run(
         [
             wrap_cli,
             "--key-id",
-            KEY_ID,
+            key_id,
             "--root-key",
             ROOT_KEY,
             "--stdin",
             "--output",
-            str(RECORD),
+            str(record),
         ],
         input=plaintext,
         stdout=subprocess.DEVNULL,
@@ -152,7 +167,6 @@ def initialize(talosctl: str, wrap_cli: str) -> None:
         check=True,
         timeout=180,
     )
-    print("Verified encrypted Trust bootstrap record created.", file=sys.stderr)
 
 
 def require_pipe() -> None:
@@ -161,38 +175,133 @@ def require_pipe() -> None:
         raise ValueError("Plaintext recovery requires a pipe or socket")
 
 
-def recover(unwrap_cli: str) -> None:
-    require_pipe()
-    if not RECORD.is_file() or RECORD.is_symlink():
+def recover_bundle(unwrap_cli: str, *, record: Path, key_id: str) -> bytes:
+    if not record.is_file() or record.is_symlink():
         raise FileNotFoundError("Talos bootstrap record missing")
-    plaintext = capture_bundle(
+    return capture_bundle(
         [
             unwrap_cli,
             "--key-id",
-            KEY_ID,
+            key_id,
             "--root-key",
             ROOT_KEY,
             "--input",
-            str(RECORD),
+            str(record),
             "--stdout",
         ],
         timeout=180,
     )
+
+
+def recover(unwrap_cli: str) -> None:
+    require_pipe()
+    plaintext = recover_bundle(unwrap_cli, record=RECORD, key_id=KEY_ID)
     sys.stdout.buffer.write(plaintext)
     sys.stdout.buffer.flush()
 
 
+def rehearse(talosctl: str, wrap_cli: str, unwrap_cli: str) -> None:
+    """Use only disposable identity material and an isolated ciphertext repository."""
+    key_id = "homelab/v1/trust/talos/rehearsal/r1"
+    with tempfile.TemporaryDirectory(prefix="trust-talos-rehearsal-") as directory:
+        root = Path(directory)
+        record = root / "secrets/wrapped/disposable.json"
+        record.parent.mkdir(parents=True)
+        for repository in (root, record.parent):
+            subprocess.run(
+                ["git", "init", "--quiet", str(repository)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=True,
+                timeout=10,
+            )
+        # An index-only gitlink fixture; no commits, remotes or real records.
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(root),
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "160000," + "1" * 40 + ",secrets/wrapped",
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=True,
+            timeout=10,
+        )
+        require_private_repository(root=root, record=record)
+        plaintext = generate(talosctl)
+        print(
+            "Touch the YubiKey when it flashes for wrapping and verification.",
+            flush=True,
+        )
+        wrap_bundle(plaintext, wrap_cli, record=record, key_id=key_id)
+        encoded = record.read_bytes()
+        print("Touch the YubiKey when it flashes for recovery.", flush=True)
+        recovered = recover_bundle(unwrap_cli, record=record, key_id=key_id)
+        if not hmac.compare_digest(plaintext, recovered):
+            raise ValueError("Rehearsal round trip did not match")
+        print("PASS: generated, wrapped and recovered identical disposable secrets.")
+        try:
+            wrap_bundle(plaintext, wrap_cli, record=record, key_id=key_id)
+        except FileExistsError:
+            pass
+        else:
+            raise ValueError("Rehearsal allowed an overwrite")
+        if record.read_bytes() != encoded:
+            raise ValueError("Rehearsal changed an existing record")
+        print("PASS: existing record cannot be overwritten.")
+        # Flip one ciphertext bit, preserving valid JSON and Base64 so this
+        # exercises authenticated decryption rather than just record parsing.
+        damaged: dict[str, object] = json.loads(encoded)
+        ciphertext = damaged["ciphertext"]
+        if not isinstance(ciphertext, str):
+            raise ValueError("Unexpected rehearsal ciphertext")
+        changed = bytearray(base64.b64decode(ciphertext, validate=True))
+        changed[0] ^= 1
+        damaged["ciphertext"] = base64.b64encode(changed).decode("ascii")
+        record.write_text(json.dumps(damaged), encoding="utf-8")
+        print("Touch the YubiKey when it flashes for the corruption check.", flush=True)
+        try:
+            recover_bundle(unwrap_cli, record=record, key_id=key_id)
+        except RuntimeError:
+            pass
+        else:
+            raise ValueError("Rehearsal accepted damaged ciphertext")
+        print("PASS: damaged ciphertext cannot be recovered.")
+        record.unlink()
+        try:
+            recover_bundle(unwrap_cli, record=record, key_id=key_id)
+        except FileNotFoundError:
+            pass
+        else:
+            raise ValueError("Rehearsal accepted a missing record")
+        print("PASS: missing record is rejected.")
+    print("PASS: rehearsal complete; temporary ciphertext repository removed.")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("init", "recover"))
+    parser.add_argument("action", choices=("init", "recover", "rehearse"))
     parser.add_argument("--talosctl", type=Path)
     parser.add_argument("--wrap", type=Path)
     parser.add_argument("--unwrap", type=Path)
     args = parser.parse_args()
     try:
         harden()
-        require_private_repository()
-        if args.action == "init":
+        if args.action != "rehearse":
+            require_private_repository()
+        if args.action == "rehearse":
+            if args.talosctl is None or args.wrap is None or args.unwrap is None:
+                raise ValueError("rehearse requires --talosctl, --wrap and --unwrap")
+            rehearse(
+                executable(args.talosctl),
+                executable(args.wrap),
+                executable(args.unwrap),
+            )
+        elif args.action == "init":
             if args.talosctl is None or args.wrap is None or args.unwrap is not None:
                 raise ValueError("init requires --talosctl and --wrap only")
             initialize(executable(args.talosctl), executable(args.wrap))

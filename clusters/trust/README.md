@@ -66,7 +66,8 @@ Do not apply this partial public bundle to a node.
 
 ## Experimental bootstrap-secret CLI (Point 3)
 
-`scripts/trust_talos_secrets.py` implements two explicit operations. This
+`scripts/trust_talos_secrets.py` implements production `init`/`recover` and an
+isolated `rehearse` action. This
 script is **not** wired into production Make targets and does not apply Talos
 configurations. The operator must provide absolute paths to `talosctl` and the installed
 `homelab-wrap` or `homelab-unwrap` from the pinned HSM environment.
@@ -106,3 +107,31 @@ zeroizable through Python, and swap checks alone do not prove absence of all
 OS dump mechanisms or instrumentation. Do not treat this as independently
 audited protection. Initial generation/recovery must be exercised using
 disposable secrets before the first real credential is created.
+
+## Disposable secret rehearsal
+
+After installing the [HSM helper environment](../../support/hsm/Makefile) and
+scoped clients, run on a Linux workstation with swap disabled and a YubiKey:
+
+```sh
+make -C clusters/trust secrets-rehearse
+```
+
+If needed, set `HSM_VENV` to the absolute path of the existing HSM environment.
+The target verifies scoped clients and uses that environment's Python,
+`homelab-wrap`, and `homelab-unwrap`. Follow the touch instructions; wrapping,
+verification, recovery and the corruption check can require multiple touches.
+
+The rehearsal generates disposable native Talos secrets and uses the shared
+wrapping/recovery functions under `homelab/v1/trust/talos/rehearsal/r1`.
+Plaintext stays in memory and pipes. Only ciphertext and Git fixture metadata
+are written to a temporary isolated repository, removed on normal completion
+or handled failure. An interrupted/killed process may leave disposable
+ciphertext behind. The production record and manifest are never used.
+
+Success requires an exact in-memory round trip, refusal to overwrite the
+existing record, rejection of a one-bit ciphertext mutation, and rejection
+of a missing record. Output contains touch instructions and pass/fail results,
+never the secret bundle or a digest of it. Unit tests exercise orchestration
+with disposable fixtures; actual pinned-tool/YubiKey verification remains
+pending until the operator runs this command and records the result.

@@ -2,6 +2,7 @@
 
 import importlib.util
 import io
+import json
 import subprocess
 import sys
 import unittest
@@ -149,6 +150,64 @@ class TrustSecretsTests(unittest.TestCase):
     def test_record_does_not_contain_private_keys(self) -> None:
         self.assertEqual(module.KEY_ID, "homelab/v1/trust/talos/bootstrap/r1")
         self.assertTrue(module.RECORD.name.endswith(".json"))
+
+    def test_rehearsal_is_isolated_and_prints_no_bundle(self) -> None:
+        plaintext = b"disposable-test-bundle-do-not-print"
+        encoded = b'{"ciphertext": "AQID"}'
+        created: list[Path] = []
+
+        def wrap_bundle(data: bytes, _cli: str, *, record: Path, key_id: str) -> None:
+            self.assertEqual(data, plaintext)
+            self.assertEqual(key_id, "homelab/v1/trust/talos/rehearsal/r1")
+            self.assertNotEqual(record, module.RECORD)
+            if record.exists():
+                raise FileExistsError
+            record.write_bytes(encoded)
+            created.append(record)
+
+        def recover_bundle(_cli: str, *, record: Path, key_id: str) -> bytes:
+            self.assertEqual(key_id, "homelab/v1/trust/talos/rehearsal/r1")
+            data = record.read_bytes()
+            if data != encoded:
+                # The corruption fixture remains parseable JSON/Base64.
+                self.assertIsInstance(json.loads(data)["ciphertext"], str)
+                raise RuntimeError
+            return plaintext
+
+        output = io.StringIO()
+        with (
+            patch.object(module, "generate", return_value=plaintext),
+            patch.object(module, "wrap_bundle", side_effect=wrap_bundle) as wrap,
+            patch.object(
+                module, "recover_bundle", side_effect=recover_bundle
+            ) as unwrap,
+            patch.object(module.sys, "stdout", output),
+        ):
+            module.rehearse("/abs/talosctl", "/abs/wrap", "/abs/unwrap")
+        self.assertEqual(wrap.call_count, 2)
+        self.assertEqual(unwrap.call_count, 3)
+        self.assertNotIn(plaintext.decode(), output.getvalue())
+        self.assertIn("PASS: rehearsal complete", output.getvalue())
+        self.assertEqual(len(created), 1)
+        self.assertFalse(created[0].parents[2].exists())
+
+    def test_rehearsal_mismatch_fails_and_cleans_up(self) -> None:
+        records: list[Path] = []
+
+        def wrap_bundle(_data: bytes, _cli: str, *, record: Path, key_id: str) -> None:
+            self.assertIn("rehearsal", key_id)
+            record.write_bytes(b"ciphertext-only")
+            records.append(record)
+
+        with (
+            patch.object(module, "generate", return_value=b"disposable"),
+            patch.object(module, "wrap_bundle", side_effect=wrap_bundle),
+            patch.object(module, "recover_bundle", return_value=b"mismatch"),
+            patch.object(module.sys, "stdout", io.StringIO()),
+        ):
+            with self.assertRaisesRegex(ValueError, "did not match"):
+                module.rehearse("/abs/talosctl", "/abs/wrap", "/abs/unwrap")
+        self.assertFalse(records[0].parents[2].exists())
 
 
 if __name__ == "__main__":
