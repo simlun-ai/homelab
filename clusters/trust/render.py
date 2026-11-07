@@ -31,7 +31,7 @@ def render() -> bytes:
                 continue  # No role-specific patches yet.
             raise ValueError(f"Missing patch directory: {directory}")
         for path in sorted(directory.glob("*.yaml")):
-            source = path.read_text(encoding="utf-8")
+            source = path.read_bytes().decode("utf-8")
             if not source.strip() or "\r" in source or not source.endswith("\n"):
                 raise ValueError(f"Expected nonempty LF-terminated patch: {path}")
             if re.search(r"(?m)^---(?:[ \t]|$)|^\.\.\.(?:[ \t]|$)", source):
@@ -63,7 +63,10 @@ def main() -> int:
         expected = render()
         if action == "check":
             if not RENDERED.is_file() or RENDERED.read_bytes() != expected:
-                print("Rendered Trust YAML is stale; run make -C clusters/trust render", file=sys.stderr)
+                print(
+                    "Rendered Trust YAML is stale; run make -C clusters/trust render",
+                    file=sys.stderr,
+                )
                 return 1
             print("Trust rendered YAML matches the patches.")
         else:

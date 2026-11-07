@@ -17,7 +17,7 @@ RUN --network=none make -C support/hsm tools
 FROM helper-tools AS helpers
 COPY --link scripts/ ./scripts/
 COPY --link tests/ ./tests/
-COPY --link clusters/trust/versions.yaml ./clusters/trust/versions.yaml
+COPY --link clusters/trust/ ./clusters/trust/
 COPY --link secrets/manifest.json ./secrets/manifest.json
 COPY --link tools/homelab-hsm/homelab_secrets/scripts/ ./tools/homelab-hsm/homelab_secrets/scripts/
 COPY --link tools/homelab-hsm/homelab_secrets/tests/ ./tools/homelab-hsm/homelab_secrets/tests/
@@ -40,6 +40,7 @@ COPY --link scripts/ ./scripts/
 COPY --link tests/ ./tests/
 COPY --link support/ ./support/
 COPY --link ci/check-syntax.py ./ci/check-syntax.py
+COPY --link clusters/trust/ ./clusters/trust/
 RUN --network=none python3 -I -B ci/check-syntax.py
 
 FROM base AS lint-tools
@@ -53,8 +54,9 @@ COPY --link scripts/ ./scripts/
 COPY --link tests/ ./tests/
 COPY --link support/ ./support/
 COPY --link ci/check-syntax.py ./ci/check-syntax.py
-RUN --network=none ruff check --no-cache scripts tests support ci && \
-    ruff format --check --no-cache scripts tests support ci
+COPY --link clusters/trust/ ./clusters/trust/
+RUN --network=none ruff check --no-cache scripts tests support ci clusters && \
+    ruff format --check --no-cache scripts tests support ci clusters
 
 # Match the component's pinned checker and JavaScript runtime.
 FROM node:24.19.0-bookworm-slim AS pyright-node
@@ -68,6 +70,7 @@ COPY --link scripts/ ./scripts/
 COPY --link tests/ ./tests/
 COPY --link support/ ./support/
 COPY --link ci/check-syntax.py ./ci/check-syntax.py
+COPY --link clusters/trust/ ./clusters/trust/
 RUN --network=none node /opt/pyright/index.js --pythonpath /opt/homelab-hsm/bin/python
 
 FROM base AS ansible-lint-tools

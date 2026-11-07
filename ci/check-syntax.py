@@ -17,7 +17,7 @@ def check_file(path: Path) -> None:
 
 def main() -> None:
     checked = 0
-    for directory in ("scripts", "tests", "support", "ci"):
+    for directory in ("scripts", "tests", "support", "ci", "clusters"):
         root = ROOT / directory
         if not root.is_dir():
             raise RuntimeError(f"Missing syntax-check input: {directory}")

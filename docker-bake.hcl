@@ -3,7 +3,7 @@ group "default" {
 }
 
 group "ci" {
-  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax"]
+  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax", "trust-render"]
 }
 
 target "_common" {

@@ -29,7 +29,7 @@ tooling will build the complete native machine config using the same patches
 and independently recoverable secrets **in memory only**, and validate before
 applying. Never commit or persist that complete config on workstation disk.
 
-The [Talos secret lifecycle](../../docs/installation/02-trust.md#talos-secrets-lifecycle-point-3) requires one-time native Talos generation, authenticated YubiKey wrapping and stable recovery of the same cluster identity. This is a design only: no production secret helper or deploy command is implemented yet.
+The [Talos secret lifecycle](../../docs/installation/02-trust.md#talos-secrets-lifecycle-point-3) requires one-time native Talos generation, authenticated YubiKey wrapping and stable recovery of the same cluster identity. An experimental bootstrap-secret helper exists below; administration credential recovery and deployment remain unimplemented.
 
 The Raspberry Pi `eth0` interface name and UEFI behavior remain unverified.
 Do not apply this partial public bundle to a node.
@@ -43,14 +43,16 @@ configurations. The operator must provide absolute paths to `talosctl` and the i
 The requested Talos target version comes from `clusters/trust/versions.yaml`;
 the helper does not check the CLI version (the scoped toolchain owns that). No ambient PATH fallback is accepted.
 
-The private `secrets/wrapped/` submodule must be initialized and swap disabled.
-The script disables core dumps/ptrace and suppresses subprocess error output.
+The private `secrets/wrapped/` path must be a tracked, initialized Git submodule
+(symlinked paths are rejected), and swap must be disabled.
+The helper disables core dumps, makes its own process non-dumpable, and
+suppresses subprocess error output.
 Initialize **once**, on a workstation with a YubiKey and already verified
 tooling (commands shown with illustrative executable locations):
 
 ```sh
-python3 -I -B scripts/trust_talos_secrets.py init \\
-  --talosctl /absolute/pinned/talosctl \\
+python3 -I -B scripts/trust_talos_secrets.py init \
+  --talosctl /absolute/pinned/talosctl \
   --wrap /absolute/hsm/bin/homelab-wrap
 ```
 
@@ -63,8 +65,10 @@ after local generation/verification. The script refuses an existing record.
 
 Recovery requires a downstream pipe/socket; **never use tee, redirection to
 a regular file, command substitution, logging, or terminal output**.
-A future provisioning consumer will take this stream directly into a
-protected native Talos generation workflow. The current helper deliberately
+Recovery buffers at most 1 MiB in memory and emits only after a successful,
+nonempty unwrap, with a 180-second subprocess deadline. A future provisioning
+consumer will take this stream directly into a protected native Talos generation
+workflow. The current helper deliberately
 does not offer an apply target.
 
 Security limitations: ordinary workstation process memory is not physically
