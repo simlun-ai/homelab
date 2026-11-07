@@ -9,9 +9,11 @@ import logging
 import os
 import re
 import resource
+import selectors
 import stat
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,14 +55,68 @@ def executable(path: Path) -> str:
 
 
 def require_private_repository() -> None:
-    if not RECORD.parent.is_dir() or RECORD.parent.is_symlink():
+    directory = ROOT / "secrets/wrapped"
+    if (
+        RECORD.parent != directory
+        or directory.is_symlink()
+        or directory.parent.is_symlink()
+        or not directory.is_dir()
+    ):
         raise ValueError("Private wrapped-record submodule is not initialized")
-    if RECORD.parent.resolve() != (ROOT / "secrets/wrapped").resolve():
-        raise ValueError("Unexpected record directory")
+    tracked = subprocess.run(
+        ["git", "-C", str(ROOT), "ls-files", "--stage", "--", "secrets/wrapped"],
+        capture_output=True,
+        check=True,
+        timeout=10,
+    ).stdout.splitlines()
+    if len(tracked) != 1 or not tracked[0].startswith(b"160000 "):
+        raise ValueError("Wrapped-record path must be a tracked submodule")
+    toplevel = (
+        subprocess.run(
+            ["git", "-C", str(directory), "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            check=True,
+            timeout=10,
+        )
+        .stdout.decode()
+        .strip()
+    )
+    if Path(toplevel).resolve() != directory.resolve():
+        raise ValueError("Private wrapped-record submodule is not initialized")
+
+
+def capture_bundle(argv: list[str], timeout: float) -> bytes:
+    """Bound output and elapsed time; release no bytes until the child succeeds."""
+    deadline = time.monotonic() + timeout
+    process = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    try:
+        assert process.stdout is not None
+        with process.stdout, selectors.DefaultSelector() as selector:
+            selector.register(process.stdout, selectors.EVENT_READ)
+            output = bytearray()
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0 or not selector.select(remaining):
+                    raise TimeoutError("Secret subprocess timed out")
+                chunk = os.read(process.stdout.fileno(), 65536)
+                if not chunk:
+                    break
+                if len(output) + len(chunk) > MAX_SECRETS:
+                    raise ValueError("Secret bundle too large")
+                output.extend(chunk)
+            if process.wait(timeout=max(0, deadline - time.monotonic())):
+                raise RuntimeError("Secret subprocess failed")
+            if not output:
+                raise ValueError("Empty secret bundle")
+            return bytes(output)
+    finally:
+        if process.poll() is None:
+            process.kill()
+        process.wait()
 
 
 def generate(talosctl: str) -> bytes:
-    response = subprocess.run(
+    return capture_bundle(
         [
             talosctl,
             "gen",
@@ -70,14 +126,8 @@ def generate(talosctl: str) -> bytes:
             "--output-file",
             "-",
         ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        check=True,
         timeout=60,
     )
-    if not 0 < len(response.stdout) <= MAX_SECRETS:
-        raise ValueError("Invalid Talos secret bundle size")
-    return response.stdout
 
 
 def initialize(talosctl: str, wrap_cli: str) -> None:
@@ -115,7 +165,7 @@ def recover(unwrap_cli: str) -> None:
     require_pipe()
     if not RECORD.is_file() or RECORD.is_symlink():
         raise FileNotFoundError("Talos bootstrap record missing")
-    process = subprocess.Popen(
+    plaintext = capture_bundle(
         [
             unwrap_cli,
             "--key-id",
@@ -126,24 +176,10 @@ def recover(unwrap_cli: str) -> None:
             str(RECORD),
             "--stdout",
         ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
+        timeout=180,
     )
-    try:
-        assert process.stdout is not None
-        total = 0
-        while chunk := process.stdout.read(65536):
-            total += len(chunk)
-            if total > MAX_SECRETS:
-                raise ValueError("Recovered bundle too large")
-            sys.stdout.buffer.write(chunk)
-        sys.stdout.buffer.flush()
-        if process.wait(timeout=180):
-            raise RuntimeError("Unwrap unsuccessful")
-    finally:
-        if process.poll() is None:
-            process.kill()
-            process.wait()
+    sys.stdout.buffer.write(plaintext)
+    sys.stdout.buffer.flush()
 
 
 def main() -> int:

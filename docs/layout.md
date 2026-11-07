@@ -57,7 +57,8 @@ Every cluster follows this contract; optional directories appear only where need
 | `versions.yaml` | Talos, Kubernetes, extensions/images; schema TBD. |
 | `cluster.yaml` | Optional only where needed for non-secret settings not expressed through native Talos patches. |
 | `nodes/` | Optional per-node metadata not already expressed by native Talos patches; Trust uses no custom node schema. |
-| `talos/patches/` | Authoritative, native Talos cluster, role and node configuration documents. |\n| `talos/rendered/` | Committed, deterministic, non-secret per-node patch bundles; CI checks exact regeneration. These are not complete machine configs. |
+| `talos/patches/` | Authoritative, native Talos cluster, role and node configuration documents. |
+| `talos/rendered/` | Committed, deterministic, non-secret per-node patch bundles; CI checks exact regeneration. These are not complete machine configs. |
 | `talos/image/` | Image Factory schematics or equivalent definitions/extensions. |
 | `network/` | Interface assignments and network settings. |
 | `storage/piraeus/` | Pool assignments, replica placement, StorageClasses where applicable. |

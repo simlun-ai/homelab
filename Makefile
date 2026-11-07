@@ -24,7 +24,7 @@ format:
 	docker run --rm --network none --user "$$(id -u):$$(id -g)" \
 	  --mount "type=bind,src=$(ROOT),dst=/project" \
 	  homelab-ruff:local sh -c \
-	  'ruff check --fix --no-cache scripts tests support ci && ruff format --no-cache scripts tests support ci'
+	  'ruff check --fix --no-cache scripts tests support ci clusters && ruff format --no-cache scripts tests support ci clusters'
 
 typecheck:
 	@test -f "$(ROOT)/tools/homelab-hsm/homelab_secrets/pyproject.toml" || { printf '%s\n' 'Initialize public code: git submodule update --init --recursive -- tools/homelab-hsm' >&2; exit 2; }

@@ -17,12 +17,13 @@ and Python dependencies during preparation.
 
 | Target | Checks |
 | --- | --- |
-| `lint` | Pinned Ruff lint and formatting checks across parent Python in `scripts/`, `tests/`, `support/`, and `ci/`. |
+| `lint` | Pinned Ruff lint and formatting checks across parent Python in `scripts/`, `tests/`, `support/`, `ci/`, and `clusters/`. |
 | `typecheck` | Pinned strict Pyright across all parent Python, targeting Python 3.13 on Linux and resolving the pinned HSM library source. |
 | `ansible-lint` | Pinned Ansible lint with the `safety` profile across UPS playbooks, tasks, role, and inventory. |
 | `helpers` | Offline hashed-wheel installation into `/opt/homelab-hsm`; `pip check`; parent unit/integration tests and component unit tests through `make -C support/hsm test`. |
 | `ups` | Pinned Ansible environment, exact tool-version checks, inventory parsing, and all playbook syntax checks through the UPS Makefile. |
-| `trust-render` | Reproduces the committed public Trust node YAML from native patches and fails on drift, duplicate document identities, or obvious secret fields; does not validate a complete Talos machine configuration. |\n| `syntax` | Parent Python compilation and `bash -n`, including standalone support scripts. Checked scripts are not executed. |
+| `trust-render` | Reproduces the committed public Trust node YAML from native patches and fails on drift, duplicate document identities, or obvious secret fields; does not validate a complete Talos machine configuration. |
+| `syntax` | Parent Python compilation and `bash -n`, including standalone support scripts. Checked scripts are not executed. |
 
 Run one target with `docker buildx bake --file docker-bake.hcl --progress=plain helpers`
 (substitute `ups` or `syntax`). OS/dependency preparation is cached; Bake always
@@ -60,7 +61,7 @@ It is not installed into either operational environment.
 Run `make typecheck` for the same strict Pyright check used by `make ci`.
 Like the helper tests, this needs the public code submodule initialized, but
 no private records or hardware. `pyproject.toml` covers `scripts/`, `tests/`,
-`support/`, and `ci/`, targeting the minimum Python 3.13 on Linux even though
+`support/`, `ci/`, and `clusters/`, targeting the minimum Python 3.13 on Linux even though
 the check runs in Ubuntu 26.04's Python environment. Extra import paths expose
 the pinned HSM source's annotations to check the parent/library boundary;
 the component retains its own checking policy and CI.
