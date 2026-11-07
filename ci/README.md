@@ -39,7 +39,9 @@ SSH agent, or coordinator connections. Ansible is parsed and syntax checked;
 provisioning, hardware behavior, and deployment verification remain manual.
 
 GitHub Actions initializes only the pinned code submodule, configures Buildx,
-and runs `make ci`. A separate Ubuntu 22.04 job installs workstation packages,
+disables unprotected swap on the disposable hosted runner, and runs `make ci`.
+Local secret-handling tests require the shared approved swap policy; container
+isolation alone does not establish safe host paging. A separate Ubuntu 22.04 job installs workstation packages,
 creates the UPS virtualenv with Python 3.13, and checks inventory/playbook syntax.
 It selects Python through `actions/setup-python`; the workstation runbook uses
 pyenv. No additional credentials or repository secrets are needed.
