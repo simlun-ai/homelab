@@ -107,13 +107,13 @@ and must never be conflated with Talos machine secrets.
 secrets/config generation and validation CLI behavior; define the bundle
 format, record filenames and admin credential recovery; establish a
 private, size-limited RAM-backed workspace with checked mount type and
-permissions, no swap exposure, core dumps, insecure subprocess temporary
+permissions, approved OS swap protection, no core dumps or insecure subprocess temporary
 files or logging; and test create/recover/apply preparation using only
 disposable secret material. If any safety prerequisite cannot be established,
 fail closed. The later provisioning helper must verify no plaintext survives
 outside process memory/RAM-backed storage on success or failure.
 
-**Implemented initial helper:** `scripts/trust_talos_secrets.py` provides explicit `init` and pipe-only `recover` actions. It uses native `talosctl gen secrets --output-file -` and existing `homelab-wrap`/`homelab-unwrap` CLIs, requires exact absolute executable paths, rejects existing records and swap, hardens the process, and never writes plaintext files. It has mocked orchestration tests and disposable subprocess/Git regression tests; actual pinned-tool/YubiKey tests are pending. Recovery bounds output and subprocess time and emits only after successful, nonempty unwrapping. The private-record path must be a tracked, initialized Git submodule. No admin credential generation, full machine configuration, Talos installation, or apply command is implemented. The direct-to-pipe flow means no memory-backed filesystem is required for *this helper*, but future native `gen config` consumption must still satisfy the memory-only workspace constraints. See
+**Implemented initial helper:** `scripts/trust_talos_secrets.py` provides explicit `init` and pipe-only `recover` actions. It uses native `talosctl gen secrets --output-file -` and existing `homelab-wrap`/`homelab-unwrap` CLIs, requires exact absolute executable paths, rejects existing records and unprotected/unverified swap, hardens the process, and never writes plaintext files. It has mocked orchestration tests and disposable subprocess/Git regression tests; actual pinned-tool/YubiKey tests are pending. Recovery bounds output and subprocess time and emits only after successful, nonempty unwrapping. The private-record path must be a tracked, initialized Git submodule. No admin credential generation, full machine configuration, Talos installation, or apply command is implemented. The direct-to-pipe flow means no memory-backed filesystem is required for *this helper*, but future native `gen config` consumption must still satisfy the memory-only workspace constraints. See
 [security policy](../security/security.md#secret-handling-boundary),
 [helper implementation](../security/helper-implementation.md), and
 [wrapped-record storage](../security/encrypted-record-storage.md).
@@ -125,6 +125,16 @@ It uses an isolated ciphertext repository and a distinct wrapping context,
 checks exact in-memory recovery plus overwrite/corruption/missing-record
 failures, and leaves the production identity untouched. Automated orchestration
 tests pass; the operator's actual Talos/YubiKey rehearsal remains **pending**.
+
+**Workstation swap finding (2026-11-07):** On `simlun-x1`, active swap is
+`cryptoswap` on `/dev/nvme0n1p2`, with mapping UUID `CRYPT-PLAIN-cryptoswap` and
+crypttab entry `cryptoswap /dev/nvme0n1p2 /dev/urandom swap,initramfs`.
+The operator's output supports random-key encrypted swap under normal boot
+activation. Agreed to allow this under the shared
+[workstation policy](../security/security.md#secret-handling-boundary), replacing
+the blanket no-swap guard in Trust. No swap configuration was changed. The
+updated runtime check and Talos/YubiKey rehearsal on this workstation remain
+**pending operator verification**.
 
 ### Scoped tooling and native validation (Point 4)
 

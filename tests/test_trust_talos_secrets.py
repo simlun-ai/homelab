@@ -10,6 +10,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
+from homelab_secrets.swap import UnsafeSwapError
+
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/trust_talos_secrets.py"
 spec = importlib.util.spec_from_file_location("trust_talos_secrets", SCRIPT)
 assert spec is not None and spec.loader is not None
@@ -156,10 +158,13 @@ class TrustSecretsTests(unittest.TestCase):
             patch.object(module.resource, "setrlimit"),
             patch.object(module.logging, "disable"),
             patch.object(module.ctypes, "CDLL") as libc,
-            patch.object(Path, "read_text", return_value="Filename\n/dev/zram0\n"),
+            patch(
+                "homelab_secrets.swap.require_safe_swap",
+                side_effect=UnsafeSwapError("Unverified swap"),
+            ),
         ):
             libc.return_value.prctl.return_value = 0
-            with self.assertRaisesRegex(module.PreflightError, "Swap is enabled"):
+            with self.assertRaisesRegex(module.PreflightError, "Unverified swap"):
                 module.harden()
 
     def test_main_reports_missing_executable_without_starting_rehearsal(self) -> None:

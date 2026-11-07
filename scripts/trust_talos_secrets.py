@@ -52,10 +52,12 @@ def harden() -> None:
     libc = ctypes.CDLL(None, use_errno=True)
     if libc.prctl(4, 0, 0, 0, 0) != 0:
         raise PreflightError("Cannot disable process dumping")
-    if Path("/proc/swaps").read_text(encoding="utf-8").splitlines()[1:]:
-        raise PreflightError(
-            "Swap is enabled; inspect /proc/swaps and disable swap before retrying."
-        )
+    from homelab_secrets.swap import UnsafeSwapError, require_safe_swap
+
+    try:
+        require_safe_swap()
+    except UnsafeSwapError as exc:
+        raise PreflightError(str(exc)) from None
 
 
 def executable(path: Path, label: str = "tool") -> str:

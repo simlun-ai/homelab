@@ -23,7 +23,7 @@ make -C support/hsm tools
 Follow the [memory-only policy](../docs/security/security.md#secret-handling-boundary).
 Do not use terminal/session recording, clipboard history, shell tracing or saved
 Imager credentials. Do not suspend/hibernate while secrets are in memory; ensure
-this workstation's swap cannot persist secrets. Step 00 instead runs inside level1vault and follows its live-OS policy. The helper disables its core dumps and
+this workstation's active swap satisfies the linked protection policy. Step 00 instead runs inside level1vault and follows its live-OS policy. The helper disables its core dumps and
 process dumping, requires a terminal, suppresses SDK logs and exception details,
 and never explicitly writes plaintext to disk. It does not configure the OS or
 guarantee Python memory zeroization.

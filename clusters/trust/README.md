@@ -75,7 +75,8 @@ The requested Talos target version comes from `clusters/trust/versions.yaml`;
 the helper does not check the CLI version (the scoped toolchain owns that). No ambient PATH fallback is accepted.
 
 The private `secrets/wrapped/` path must be a tracked, initialized Git submodule
-(symlinked paths are rejected), and swap must be disabled.
+(symlinked paths are rejected). Every active swap area must satisfy the
+[workstation swap policy](../../docs/security/security.md#secret-handling-boundary).
 The helper disables core dumps, makes its own process non-dumpable, and
 suppresses subprocess error output.
 Initialize **once**, on a workstation with a YubiKey and already verified
@@ -111,7 +112,7 @@ disposable secrets before the first real credential is created.
 ## Disposable secret rehearsal
 
 After installing the [HSM helper environment](../../support/hsm/Makefile) and
-scoped clients, run on a Linux workstation with swap disabled and a YubiKey:
+scoped clients, run on a Linux workstation with approved swap protection and a YubiKey:
 
 ```sh
 make -C clusters/trust secrets-rehearse
@@ -136,3 +137,8 @@ touch instructions and pass/fail results,
 never the secret bundle or a digest of it. Unit tests exercise orchestration
 with disposable fixtures; actual pinned-tool/YubiKey verification remains
 pending until the operator runs this command and records the result.
+
+After updating the code submodule, reinstall the offline HSM environment with
+`make -C support/hsm tools` before retrying a rehearsal. Both parent and HSM
+subprocesses use the shared swap check. No `swapoff` is needed for an accepted
+random-key encrypted mapping; unsupported or unreadable evidence remains an error.

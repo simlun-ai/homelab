@@ -6,6 +6,26 @@
 
 Helpers must never commit plaintext secrets, golden-key material, HMAC responses, or derived keys, or explicitly write them to workstation disk, including ignored files, temporary files, caches, shell history, logs, saved plans, local state, and crash dumps. Use process memory or streams; account for subprocesses and failure paths.
 
+**Workstation swap decision (2026-11-07):** Secret-handling processes may use
+swap only when every active area is verified as RAM-only zram without writeback,
+or an active plain dm-crypt mapping matching a root-owned, not group/world-writable
+`/etc/crypttab` entry with a random key source (`/dev/urandom` or `/dev/random`).
+This permits encrypted OS paging; it does not permit applications to write
+plaintext files, caches or logs. Unprotected or unverified swap, including swap
+files and persistent-key configurations not covered by this check, is rejected.
+No swap is also accepted. Never hibernate while secrets are resident.
+
+The shared `homelab_secrets.swap.require_safe_swap()` check runs before secret
+operations in HSM CLI hardening and Trust's helper. It checks `/proc/swaps`,
+active sysfs mapping identity/backing devices and crypttab configuration without
+root execution, key access or `dmsetup table`. It trusts normal activation by
+the root-controlled OS: these checks cannot prove which key was used to open an
+existing mapping, prevent later privileged reconfiguration, or protect against a
+compromised running host. Containers/VMs must expose enough evidence for every
+relevant paging layer; unreadable or incomplete evidence fails closed. Core dump,
+logging and explicit-file restrictions remain in force. Coordinator hosts retain
+their stricter [RAM-only policy](coordinator-hardening.md).
+
 [Step 00](../installation/00-yubikey-setup.md) runs inside the offline level1vault live OS. Its environment policy belongs to level1vault; helpers disable core dumps and keep decrypted keys in memory/streams. Other recovery environments, including the temporary OpenBao container, still require their documented memory-storage checks.
 
 Authenticated `homelab-wrap-v1` credential records may be committed and persisted on workstation disk, and consuming hosts under the [encrypted-record storage policy](encrypted-record-storage.md). Decryption remains memory-only.
