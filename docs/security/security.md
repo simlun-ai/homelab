@@ -189,7 +189,7 @@ decision after bootstrap; the Talos policy does not set Kubernetes lifetimes.
 
 **Decision:** Run a dedicated Python gRPC Talos KMS service on the [Trust/Backup UPS coordinator](../inventory.md#shared-infrastructure), serving Trust only. It must work without OpenBao or a Kubernetes cluster and operate independently of the workstation after [SSH authorization](coordinator-sessions.md). UPS shutdown management remains operational while KMS is locked.
 
-- Wrap a random 32-byte KMS key per Trust node using the [v1 wrapping format](#challenges-derivation-and-wrapped-credentials). The [two-layer KMS design](helper-implementation.md#trust-kms-two-layers) uses that key to protect Talos unlock material in a separate `homelab-kms-v1` envelope retained in LUKS metadata. Exact envelope specification, node mappings, and gRPC integration remain pending.
+- Wrap a random 32-byte KMS key per Trust node using the [v1 wrapping format](#challenges-derivation-and-wrapped-credentials). The [two-layer KMS design](helper-implementation.md#trust-kms-two-layers) uses that key to protect Talos unlock material in a separate `homelab-kms-v1` envelope retained in LUKS metadata. A [draft service contract](trust-bootstrap-kms.md) proposes the envelope, authorization protocol and verification gates; review, node mappings and gRPC implementation remain pending.
 - Authorize a one-hour KMS boot window from the workstation over SSH using the repository-owned shared SSH key loaded into the workstation agent and the `administrator` account. The YubiKey stays in the laptop; delivery, expiry, and operator controls belong in [coordinator sessions](coordinator-sessions.md).
 - Serve TLS with a publicly trusted certificate, renewed through DNS-01 on the coordinator independently of Trust's cert-manager/OpenBao. No private CA or custom Talos build is planned for KMS trust.
 - Persist DNS API, TLS private-key, and ACME account/bootstrap secrets only as authenticated encrypted payloads under separate YubiKey-derived contexts. The workstation unwraps them after touch and supplies plaintext over SSH for coordinator process-memory use under the [session policy](coordinator-sessions.md). ACME integration and renewal/storage behavior require validation.
@@ -198,7 +198,7 @@ decision after bootstrap; the Talos policy does not set Kubernetes lifetimes.
 
 Startup is **coordinator/time readiness → YubiKey-authorized KMS session → Trust system-volume unlock → manual ZFS unlock and workstation/YubiKey OpenBao unseal → transit/KMS readiness → dependent clusters**. Starting hosts remains operator-controlled.
 
-Independent coordinator-loss recovery remains TBD in [backup-and-restore.md](../backup-and-restore.md#independent-recovery-material). The [temporary OpenBao container recovery path](../backup-and-restore.md#required-recovery-targets) bypasses the coordinator to recover OpenBao access; it does not by itself restore Trust's Talos unlock service.
+The [draft contract](trust-bootstrap-kms.md#independent-coordinator-loss-recovery-gate) defines a proposed rebuild path and its verification gate. Independent coordinator-loss recovery remains TBD in [backup-and-restore.md](../backup-and-restore.md#independent-recovery-material). The [temporary OpenBao container recovery path](../backup-and-restore.md#required-recovery-targets) bypasses the coordinator to recover OpenBao access; it does not by itself restore Trust's Talos unlock service.
 
 ## Talos KMS adapter
 
@@ -227,6 +227,7 @@ Approved topic decisions and remaining implementation work:
 - [OpenBao unseal](openbao-unseal.md) — unseal decision approved; implementation, recovery administration, and restore verification pending.
 - [Credential catalogue](yubikey.md#record-and-maintenance-requirements) — catalogue rules approved; production entries and consumer integrations pending.
 - [Coordinator sessions](coordinator-sessions.md) — decision approved; implementation and verification pending.
+- [Trust bootstrap KMS contract](trust-bootstrap-kms.md) — proposed service/envelope/session contract and acceptance criteria; review and implementation pending.
 - [Helper implementation](helper-implementation.md) — initial token/wrapping helpers physically verified; service helpers pending.
 - [Rotation and rollback](rotation-and-rollback.md) — decision approved; procedures and verification pending. Strong rollback enforcement deferred.
 - [Recovery procedures](recovery-procedures.md) — recovery requirements approved; commands and drills pending.
@@ -246,7 +247,7 @@ Existing decisions remain in this document and the [YubiKey catalogue](yubikey.m
 - [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
 - [OpenBao security model](https://openbao.org/docs/internals/security/).
 - [Talos KMS reference implementation](https://github.com/siderolabs/kms-client).
-- [Talos v1.14.2 KMS client and TLS behavior](https://github.com/siderolabs/talos/blob/v1.14.2/internal/pkg/encryption/keys/kms.go).
+- [Talos v1.14.5 KMS client and TLS behavior](https://github.com/siderolabs/talos/blob/v1.14.5/internal/pkg/encryption/keys/kms.go).
 - [Talos preboot networking/DNS/NTP kernel parameters](https://github.com/siderolabs/talos/blob/v1.14.2/website/content/v1.14/reference/kernel.md).
 - [OpenBao transit API](https://openbao.org/docs/api/secret/transit/).
 

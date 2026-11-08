@@ -99,7 +99,8 @@ envelope and request context before deriving the same key and decrypting.
 
 This envelope is distinct from `homelab-wrap-v1`, which protects the
 node's KMS key. Exact envelope fields, encodings, HKDF context, and
-validation limits must be specified before implementation.
+validation limits are proposed in the [draft KMS contract](trust-bootstrap-kms.md#proposed-homelab-kms-v1-envelope)
+and must be reviewed before implementation.
 
 ## Keys: where and when
 
@@ -135,7 +136,7 @@ a new random key cannot decrypt existing payloads.
 
 ## Remaining implementation work
 
-- Specify the KMS envelope and SSH delivery protocol.
+- Review the [draft KMS envelope and authorization contract](trust-bootstrap-kms.md), resolve its open choices, then implement disposable protocol/session tests.
 - Extend dependency pins and offline recovery packaging for the service helpers.
 - Implement memory handling, consumer delivery, and failure cleanup.
 - Test malformed/tampered records, identifier and node substitution,
@@ -146,6 +147,6 @@ verify process isolation and cleanup against the memory-only policy.
 
 ## References
 
-- [Talos KMS protocol](https://github.com/siderolabs/kms-client/blob/main/api/kms/kms.proto).
+- [Talos KMS protocol](https://github.com/siderolabs/kms-client/blob/v0.2.0/api/kms/kms.proto).
 - [Wrapped-record storage](encrypted-record-storage.md).
 - [YubiKey setup](yubikey-setup.md).

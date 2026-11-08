@@ -60,7 +60,7 @@ Run isolated restore drills without the original Trust/coordinator or other clus
 
 ## Trust restore outline
 
-Recover/verify the [coordinator bootstrap KMS](security/security.md#trust-bootstrap-kms) before Trust system-volume unlock. Router/network, DNS, and public NTP must work independently; Internet is an accepted cold-start dependency. Coordinator-loss recovery and expired-certificate renewal must be tested without OpenBao or workstation-disk plaintext secrets.
+Recover/verify the [coordinator bootstrap KMS](security/security.md#trust-bootstrap-kms) before Trust system-volume unlock. Router/network, DNS, and public NTP must work independently; Internet is an accepted cold-start dependency. Coordinator-loss recovery and expired-certificate renewal must be tested without OpenBao or workstation-disk plaintext secrets. The [draft KMS recovery gate](security/trust-bootstrap-kms.md#independent-coordinator-loss-recovery-gate) proposes rebuilding from preserved wrapped node-key generations and lists the still-unresolved recovery copies, locations, UUID-change and LUKS-header requirements; it does not establish a working restore procedure.
 
 Coordinate [Trust installation](installation/02-trust.md), `/runbooks/operate-trust-bootstrap-kms.md`, and `/runbooks/restore-openbao.md` with the [Emergency Recovery Guide's restore outline](emergency-recovery-guide.md#restore-trust-and-openbao).
 

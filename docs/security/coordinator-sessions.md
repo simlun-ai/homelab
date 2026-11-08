@@ -58,13 +58,16 @@ DNS/TLS/ACME operation and UPS management available.
 
 ## Remaining implementation work
 
-Define the SSH payload, command, socket permissions, daemon validation,
-failure handling, and memory cleanup. Verify disconnect, expiry, lock,
+Review the [proposed authorization protocol and process boundary](trust-bootstrap-kms.md#proposed-local-authorization-protocol-and-process-boundary),
+including framing, atomic activation, acknowledgments, deadline races and worker
+termination. Command/socket paths, service identities, TLS-secret delivery and
+implementation remain pending. Verify disconnect, expiry, lock,
 restart, and certificate-renewal behavior.
 
 The [two-layer KMS design](helper-implementation.md#trust-kms-two-layers)
 uses YubiKey-wrapped node KMS keys to support fresh Seal payloads and
 existing Unseal payloads. Exact envelope and delivery specifications
-remain pending; do not give the coordinator raw HMAC responses or
+are proposed in the [draft contract](trust-bootstrap-kms.md), pending review;
+do not give the coordinator raw HMAC responses or
 indefinite KMS authority.
 

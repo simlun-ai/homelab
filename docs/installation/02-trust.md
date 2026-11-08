@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Review the remaining installation prerequisites and choose the next implementation slice. Point 5 separates explicit identity initialization, node installation and routine administration; local administration inspection is now verified with a disposable authority and the physical YubiKey. Production identity creation, live command delivery and node authentication remain pending. KMS readiness, Pi networking and early-boot behavior must be verified before installing onto disks.
+- **Current next step:** Review the [draft coordinator KMS contract](../security/trust-bootstrap-kms.md), settle its open endpoint/UUID/time/admission/recovery choices, then implement disposable protocol/session tests. Point 5 separates explicit identity initialization, node installation and routine administration; local administration inspection is now verified with a disposable authority and the physical YubiKey. Production identity creation, live command delivery and node authentication remain pending. KMS readiness, Pi networking and early-boot behavior must be verified before installing onto disks.
 
 ### Milestone tracker
 
@@ -19,7 +19,7 @@
 | --- | --- | --- | --- |
 | 0 | Identity and working baseline | Names/IP/roles and owning files agree; branch and roadmap established | In progress — baseline recorded; branch created |
 | 1 | Provisioning contract and scoped tools | Agree on declarative node/disk schema, `clusters/trust/` layout, version pins, `make` entry points and safe secret-handling approach; implement the minimum needed | Pending |
-| 2 | KMS protocol and recovery decisions | Specify per-node wrapped key context, seal/unseal envelope, TLS endpoint and certificate handling, session authorization, early boot DNS/NTP, admission restrictions, and independent loss recovery | Pending |
+| 2 | KMS protocol and recovery decisions | Specify per-node wrapped key context, seal/unseal envelope, TLS endpoint and certificate handling, session authorization, early boot DNS/NTP, admission restrictions, and independent loss recovery | Draft contract written; review/open choices pending |
 | 3 | `ups-aux` KMS implementation | Service and Ansible configuration deployed; authorized `Seal`/`Unseal`, expiry, restart and fail-closed checks verified independently of Kubernetes/OpenBao | Pending |
 | 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | Pending |
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
@@ -40,7 +40,7 @@
 | Boot | First experiment is SD-first EDK2/UEFI plus generic ARM64 Talos installer; supported behavior and firmware boot dependency must be verified |
 | Storage | Two explicitly assigned OS SSDs are intended for MD RAID1; confirm stable identities, Talos compatibility, metadata format, degraded boot and replacement before any destructive installation. Separate encrypted ZFS data disks are **out of scope and protected** |
 | Encryption | KMS-backed `STATE` and `EPHEMERAL` on the **initial** installation. Talos bootloader/kernel still require readable boot components; no claim of fully encrypted boot media |
-| KMS | Dedicated coordinator service on `ups-aux`, independent of Trust and OpenBao; YubiKey-authorized one-hour key window, TLS and encrypted wrapped records per [security policy](../security/security.md#trust-bootstrap-kms). Precise service and recovery contract TBD |
+| KMS | Dedicated coordinator service on `ups-aux`, independent of Trust and OpenBao; YubiKey-authorized one-hour key window, TLS and encrypted wrapped records per [security policy](../security/security.md#trust-bootstrap-kms). See the [draft service contract](../security/trust-bootstrap-kms.md); review and independent recovery details pending |
 | Secret handling | Never write plaintext Talos machine secrets, talosconfig, kubeconfig, KMS keys or unsealed material to workstation disk. Final generation/transport/bootstrap workflow TBD |
 
 ### Version-selection and upgrade policy (agreed)
@@ -267,6 +267,20 @@ checks succeeded; local inspection reported context `trust`, endpoint and node
 confirmed removal of protected workspaces and disposable ciphertext. No
 production record was created or used, and no node was contacted.
 
+### Coordinator KMS contract draft
+
+The [draft contract](../security/trust-bootstrap-kms.md) distinguishes existing
+approved decisions from proposed wire formats, authorization/session behavior,
+TLS/admission rules and independent recovery gates. Source inspection against
+Talos `v1.14.5` and `kms-client v0.2.0` confirms the RPC shape, 32-byte unlock
+input, ten-second operation timeout and explicit TLS endpoint requirement.
+It does not verify stock-image boot behavior, Pi UUID stability, networking,
+clock synchronization or recovery. Review the proposed envelope, local protocol and process model; require fixed
+public cryptographic vectors as part of the disposable test harness.
+No production keys, manifest entries, endpoint configuration or service were
+created. Acceptance criteria are recorded; all service/hardware checks remain
+pending.
+
 ### Step-by-step working rules
 
 1. Choose **one** pending decision or test; document any preconditions before implementation.
@@ -294,6 +308,7 @@ production record was created or used, and no node was contacted.
 | 2026-11-08 | Credentials — operator rehearsal | `simlun-x1`, commit `bd1e759`: `make credentials-rehearse` passed native 24-hour issuance, certificate policy, talosconfig assembly/inspection and cleanup on `/dev/shm`; disposable CA only, no node operations | Integrate wrapped bootstrap recovery with protected generation and client issuance |
 | 2026-11-08 | Wrapped recovery — operator rehearsal | `simlun-x1`: `make recovery-rehearse` passed with the physical YubiKey and `/dev/shm`; both recovered bundles produced validated machine configurations and fresh 24-hour clients under the same authority; temporary ciphertext and RAM workspaces removed | Settle initial-installation versus ongoing-operation entry points (Point 5) |
 | 2026-11-08 | Administration — operator rehearsal | `simlun-x1`: `make admin-rehearse` passed with the physical YubiKey and `/dev/shm`; native 24-hour client issuance, context/target/role inspection and cleanup verified; disposable identity only | Review remaining installation prerequisites and select the next slice |
+| 2026-11-08 | KMS contract — documentation draft | Pinned Talos/proto source inspected; proposed envelope, authorization, failure/recovery behavior and test gates documented; no implementation or deployment | Review contract and resolve open choices before disposable service tests |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 

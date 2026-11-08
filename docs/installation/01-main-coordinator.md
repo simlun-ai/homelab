@@ -8,6 +8,11 @@ This step adds only Trust's independent Talos bootstrap KMS and its supporting T
 
 ## Additional KMS setup — TODO
 
+The [draft Trust KMS contract](../security/trust-bootstrap-kms.md) records the
+pinned Talos interface, proposed envelope/session protocol, open choices and
+acceptance criteria. It is documentation, not a deployed or verified service.
+
+- [ ] Review the draft contract; settle UUID mapping, public TLS hostname/port, early-boot NTP/networking, admission rules and independent recovery inputs.
 - [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
 - [ ] Implement the Python helpers and Ansible configuration for KMS, TLS/ACME, and local wrapped-record deployment.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).

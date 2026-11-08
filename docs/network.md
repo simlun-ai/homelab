@@ -96,3 +96,14 @@ On the shared VLAN, reserve `10.10.0.200`–`10.10.0.209` for Trust's MetalLB po
 Trust and Backup share a UPS. The plan is for `ups-aux` to run `talosctl` against their static node addresses. This path can work during a gateway outage while the switch path remains powered and VLAN 10 stays intact. Inter-VLAN traffic requires the gateway. The [Trust cold-start procedure](security/security.md#trust-bootstrap-kms) still depends on working DNS and public NTP.
 
 Temporary OpenBao and Garage outages are acceptable. Running clusters can continue using Kubernetes Secrets already synchronized by External Secrets Operator while OpenBao is unavailable. New and refreshed values require OpenBao to be reachable. Garage is intended for periodic backups, with schedules and retention covered by the [backup design](backup-and-restore.md).
+
+## Trust KMS endpoint readiness
+
+The coordinator KMS endpoint is separate from the Kubernetes API and direct
+Talos administration address. Its public-certificate hostname and listener port
+are not yet selected. The hostname must resolve internally to `ups-aux` at
+`10.10.0.5`; add its exact record to the required DNS entries table only once
+selected. Independent public NTP endpoints and pre-STATE network/DNS/time
+configuration also remain pending. See the [draft KMS contract](security/trust-bootstrap-kms.md#proposed-readiness-tls-and-admission-behavior).
+Same-VLAN Trust/coordinator traffic requires host/switch admission consideration;
+inter-VLAN gateway rules alone do not isolate VLAN 10 peers.
