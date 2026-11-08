@@ -169,6 +169,8 @@ class CredentialTests(unittest.TestCase):
     def test_certificate_role_key_and_ttl(self) -> None:
         ca, crt, key, now = fixtures()
         module.verify_client(ca, crt, key, now, now)
+        native_key = key.replace(b"PRIVATE KEY", b"ED25519 PRIVATE KEY")
+        module.verify_client(ca, crt, native_key, now, now)
         for hours, role in ((25, "os:admin"), (24, "os:reader")):
             ca, crt, key, now = fixtures(hours, role)
             with self.assertRaises(ValueError):

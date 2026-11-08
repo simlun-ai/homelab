@@ -164,6 +164,11 @@ def verify_client(
 ) -> None:
     ca = x509.load_pem_x509_certificate(ca_pem)
     crt = x509.load_pem_x509_certificate(crt_pem)
+    # Talos labels PKCS#8 Ed25519 keys with a legacy PEM armor name.
+    # Normalize only that armor for the standard parser, keeping DER unchanged.
+    key_pem = key_pem.replace(
+        b"-----BEGIN ED25519 PRIVATE KEY-----", b"-----BEGIN PRIVATE KEY-----"
+    ).replace(b"-----END ED25519 PRIVATE KEY-----", b"-----END PRIVATE KEY-----")
     key = serialization.load_pem_private_key(key_pem, password=None)
     crt.verify_directly_issued_by(ca)
     if not ca.extensions.get_extension_for_class(x509.BasicConstraints).value.ca:
