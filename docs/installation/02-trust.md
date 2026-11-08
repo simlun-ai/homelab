@@ -13,12 +13,11 @@
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
 - **Current next step:** Review the tested [KMS software core](../security/trust-bootstrap-kms.md#implemented-software-core-and-its-limits), then proceed with the non-destructive Pi live-boot discovery from the approved walkthrough. Daemon/process/transport integration remains pending. The endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; DNS, certificate and listener deployment remain pending. UUID/time/admission/recovery details remain open. Point 5 separates explicit identity initialization, node installation and routine administration; local administration inspection is now verified with a disposable authority and the physical YubiKey. Production identity creation, live command delivery and node authentication remain pending. KMS readiness, Pi networking and early-boot behavior must be verified before installing onto disks.
 
-The Trust disk allocation has been revised to four 128 GB SATA disks from four
-different brands through USB-to-SATA adapters; see the
-[inventory](../inventory.md#trust). Before live-boot disk discovery, record the
-actual models, serials, adapter identities and OS/data pair assignments. The
-operator reports no need for the former Intenso USB-drive kernel quirks with
-these adapters; pinned Talos behavior is still unverified.
+Trust's four-disk, 128 GB-per-disk allocation is provisional. The upcoming disk
+inventory phase will gather each disk's brand, model, capacity, serial and
+connection/adapter details, then determine final selection and OS/data pair
+assignments. Record those details in [inventory.md](../inventory.md#trust)
+before selecting disks for installation.
 
 ### Milestone tracker
 

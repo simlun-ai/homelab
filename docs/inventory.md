@@ -23,11 +23,10 @@ Per-device power-return support, settings, and verification remain TBD, includin
 
 - **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
-- **Disks (selected replacement):** 4 × 128 GB SATA disks, one from each of four different brands, connected through USB-to-SATA adapters. Exact brands, models, serials and adapter identities are TBD.
-- **OS drives:** Planned MD RAID1 using two of the replacement SATA disks (128 GB nominal usable); exact pair assignment TBD.
-- **Storage:** Planned ZFS mirror (RAID 1) using the other two replacement SATA disks (128 GB nominal usable); exact pair assignment TBD.
-- **Replacement rationale:** Mix brands to reduce exposure to shared model/batch failure modes. The operator reports that the former Intenso USB SSDs required kernel quirks for stable Raspberry Pi operation, while the replacement USB-to-SATA adapters do not. Validation with the pinned Talos live environment remains pending.
-- **Capacity accounting:** This replaces the previous four-disk Trust allocation one-for-one: 512 GB raw and 256 GB nominal usable across the two mirrors, so the documented summary totals are unchanged. The former Intenso disks are no longer assigned to Trust; their subsequent allocation is TBD, and no additional spare allocation is recorded.
+- **Disks (provisional allocation):** 4 × 128 GB disks. Final disk selection, brands, models, serials, connection/adapter details and pair assignments will be determined during the upcoming disk inventory phase and recorded here.
+- **OS drives:** Planned MD RAID1 using two disks (128 GB nominal usable); exact disk assignment TBD.
+- **Storage:** Planned ZFS mirror (RAID 1) using the other two disks (128 GB nominal usable); exact disk assignment TBD.
+- **Capacity accounting:** Summary totals use this provisional allocation: 512 GB raw and 256 GB nominal usable across the two mirrors. Final hardware identities and allocation will be confirmed during the disk inventory phase.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
 - **Network:** 1 Gbit Ethernet on `k8s-aux` (VLAN 10), static `10.10.0.10`; planned node hostname `trust-cp1.k8s-aux.lundmark.internal`.
 - **Boot configuration:** Latest EEPROM firmware, with USB boot given priority. The [draft UEFI installation experiment](installation/02-trust.md#first-installation-experiment-pi-4-uefi) will try SD-first EEPROM boot with pftf/EDK2 on a dedicated microSD card; not yet verified or adopted. Card model/capacity is TBD and excluded from disk totals as unlisted boot media.
