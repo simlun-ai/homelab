@@ -64,11 +64,14 @@ applying. Never commit or persist that complete config on workstation disk.
 
 The [Talos secret lifecycle](../../docs/installation/02-trust.md#talos-secrets-lifecycle-point-3) requires one-time native Talos generation, authenticated YubiKey wrapping and stable recovery of the same cluster identity. An experimental bootstrap-secret helper exists below; disposable administration credential recovery is verified below; production delivery and deployment remain unimplemented.
 
-The Raspberry Pi `eth0` interface name remains unverified. The operator reached
+Live discovery on 2026-11-09 found physical interface `enabcm6e4ei0`, permanent
+MAC `d8:3a:dd:37:d6:39`, linked at 1 Gbit/s/full duplex. The provisional LinkConfig
+still names `eth0`; correct the authored patch and regenerate the public bundle
+before any apply. The current patch was not applied to the live Pi. The operator reached
 UEFI setup on 2026-11-08, confirmed Firmware v1.53 with a repeat cold boot on
 2026-11-09, and then booted Talos into maintenance mode by manually selecting
 the USB installer in UEFI Boot Manager. Automatic USB selection, modified-setting
-persistence and detailed Talos hardware discovery remain unverified.
+persistence, UUID stability and full-memory verification remain unverified.
 Do not apply this partial public bundle to a node.
 
 ## Experimental bootstrap-secret CLI (Point 3)
@@ -323,5 +326,8 @@ UEFI Firmware v1.53 and a repeat cold boot into setup were verified on
 2026-11-09 without settings changes. Manual USB selection in UEFI Boot Manager
 then reached Talos maintenance mode at DHCP `10.10.0.246`. That address is for
 discovery; the planned static node configuration has not been applied. Automatic
-USB selection, modified-setting persistence and read-only hardware/API discovery
-remain pending.
+USB selection and modified-setting persistence remain unverified. Read-only
+queries confirmed Talos v1.14.5 on ARM64, system UUID, Ethernet/MAC, the limited
+memory baseline and synchronized time; see the
+[baseline record](../../docs/installation/02-trust.md#read-only-live-baseline-2026-11-09).
+Full-memory, repeat UUID, DNS and pre-STATE readiness checks remain pending.

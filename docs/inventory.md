@@ -21,14 +21,16 @@ Per-device power-return support, settings, and verification remain TBD, includin
 
 ## Trust
 
-- **Compute:** 1 × Raspberry Pi 4 with 8 GB RAM.
+- **Compute:** 1 × Raspberry Pi 4 Model B with 8 GB RAM (nominal inventory capacity). Live discovery reported SMBIOS version `D03115` and serial `1000000089261F6E` on 2026-11-09.
+- **Hardware UUID (observed):** `00d03115-0000-0000-1000-000089261f6e`. Stability across subsequent cold boots and firmware/settings changes remains to be checked; not yet an operational KMS registration.
+- **Live memory baseline:** `talosctl memory` reported TOTAL `2848` with the initial UEFI RAM limit unchanged; full-memory verification remains pending. This observation does not change nominal RAM totals.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
 - **Disks (provisional allocation):** 4 × 128 GB disks. Final disk selection, brands, models, serials, connection/adapter details and pair assignments will be determined during the upcoming disk inventory phase and recorded here.
 - **OS drives:** Planned MD RAID1 using two disks (128 GB nominal usable); exact disk assignment TBD.
 - **Storage:** Planned ZFS mirror (RAID 1) using the other two disks (128 GB nominal usable); exact disk assignment TBD.
 - **Capacity accounting:** Summary totals use this provisional allocation: 512 GB raw and 256 GB nominal usable across the two mirrors. Final hardware identities and allocation will be confirmed during the disk inventory phase.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
-- **Network:** 1 Gbit Ethernet on `k8s-aux` (VLAN 10); planned static `10.10.0.10` and node hostname `trust-cp1.k8s-aux.lundmark.internal`. The live Talos discovery boot uses DHCP; see the [experiment record](installation/02-trust.md#experiment-record-and-acceptance-checks) for its observed address.
+- **Network:** 1 Gbit Ethernet on `k8s-aux` (VLAN 10); planned static `10.10.0.10` and node hostname `trust-cp1.k8s-aux.lundmark.internal`. Live Talos discovery uses DHCP. Observed physical interface `enabcm6e4ei0`, alternative name `enxd83add37d639`, permanent MAC `d8:3a:dd:37:d6:39`, driver `bcmgenet`, link up at 1000 Mbit/s/full duplex (2026-11-09). The provisional `eth0` patch must be corrected before apply; see the [experiment record](installation/02-trust.md#experiment-record-and-acceptance-checks).
 - **Boot configuration:** Operator completed SD-first EEPROM configuration and reached pftf/EDK2 UEFI setup from the dedicated firmware microSD card on 2026-11-08. UEFI Firmware v1.53 was confirmed on 2026-11-09, with setup reached again after a full power cycle and no settings changes. On the same date the operator manually selected the USB installer in UEFI Boot Manager and reached Talos maintenance mode. Exact EEPROM version and BOOT_ORDER, persistence of modified settings and automatic USB selection remain unverified. See the [UEFI experiment results](installation/02-trust.md#experiment-record-and-acceptance-checks). Exact card model/capacity remains pending inventory; boot media are excluded from disk totals.
 
 ## Backup

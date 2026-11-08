@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. EEPROM version/exact BOOT_ORDER, persistence of deliberately changed settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Run read-only hardware discovery against the Talos maintenance endpoint at its observed DHCP address `10.10.0.246`: UUID, Ethernet/MAC, memory and time state. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. Pi networking/time/UUID, full memory and disk inventory must be verified before installation; check settings persistence when making deliberate UEFI changes.
+- **Current next step:** Disable the UEFI 3 GB RAM limit, cold boot the same live media with candidate disks disconnected, and repeat read-only memory, Ethernet and UUID queries against the DHCP address actually observed after reboot. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. Pi networking/time/UUID, full memory and disk inventory must be verified before installation; check settings persistence when making deliberate UEFI changes.
 
 Trust's four-disk, 128 GB-per-disk allocation is provisional. The upcoming disk
 inventory phase will gather each disk's brand, model, capacity, serial and
@@ -28,7 +28,7 @@ before selecting disks for installation.
 | 1 | Provisioning contract and scoped tools | Agree on declarative node/disk schema, `clusters/trust/` layout, version pins, `make` entry points and safe secret-handling approach; implement the minimum needed | Pending |
 | 2 | KMS protocol and recovery decisions | Specify per-node wrapped key context, seal/unseal envelope, TLS endpoint and certificate handling, session authorization, early boot DNS/NTP, admission restrictions, and independent loss recovery | Payload/session behavior, endpoint and sequence approved; wire details proposed; UUID/time/admission/recovery choices pending |
 | 3 | `ups-aux` KMS implementation | Service and Ansible configuration deployed; authorized `Seal`/`Unseal`, expiry, restart and fail-closed checks verified independently of Kubernetes/OpenBao | Pending |
-| 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | In progress — UEFI v1.53 cold boot and manual USB Talos maintenance boot verified; hardware discovery pending |
+| 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | In progress — UEFI/Talos maintenance boot and read-only baseline verified; full memory, repeated UUID and disk discovery pending |
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
 | 6 | Install encrypted Talos | Deliberately install onto assigned OS disks only; cold boot with the independent KMS authorized; encrypted volume coverage verified | Pending |
 | 7 | Bootstrap Kubernetes | Bootstrap the single control-plane node; verify API, node readiness, system pods, DNS and Flannel networking | Pending |
@@ -353,6 +353,7 @@ YubiKey session authorization, Pi boot or disk-unlock verification.
 | 2026-11-08 | Pi firmware — operator verification | SD-first EEPROM step completed; separate firmware microSD card reached UEFI setup; exact EEPROM/UEFI display versions and BOOT_ORDER not captured | Confirm cold-boot settings persistence, then prepare the separately identified Talos ISO USB medium |
 | 2026-11-09 | Pi UEFI — cold-boot verification | Operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle; settings were unchanged, so modified-setting persistence is not established | Identify and prepare the separate Talos ISO USB medium; keep candidate disks disconnected |
 | 2026-11-09 | Talos live boot — operator verification | Manually selected USB installer in UEFI Boot Manager; reached maintenance mode at DHCP `10.10.0.246`; automatic USB selection and hardware/API inspection not yet verified | Run read-only UUID, network, memory and time discovery; preserve discovery-only scope |
+| 2026-11-09 | Pi live baseline — operator verification | Scoped read-only queries confirmed Talos v1.14.5 ARM64, observed UUID, Ethernet/MAC at 1 Gbit/s, limited RAM and synchronized time; provisional `eth0` mismatch identified | Disable RAM limit and cold boot; repeat UUID/link/memory/time queries; correct network patch before any apply |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 
@@ -544,7 +545,8 @@ Record the repository revision, EEPROM and EDK2 versions/settings, Talos image/s
 - [ ] When deliberately changing UEFI settings, verify those changes survive a cold boot.
 - [x] Generic Talos ARM64 ISO reaches maintenance mode via manual USB selection in UEFI Boot Manager (2026-11-09).
 - [ ] Automatic selection of the intended USB installer boot entry is verified, if needed for this experiment.
-- [ ] Record node UUID and verify stability across cold boots; record Ethernet/MAC, network, DNS and time observations.
+- [x] Record initial node UUID, running Talos version, Ethernet/MAC/link, limited-memory baseline and synchronized-time status (2026-11-09).
+- [ ] Verify UUID stability across cold boots/settings changes; verify full memory, DNS and pre-STATE networking/time separately.
 - [ ] Inventory candidate disks/adapter identities and existing signatures read-only; decide final OS/data assignments in inventory.md.
 - [ ] Generic Talos ARM64 installer sees the selected disks and full RAM after removing the limit.
 - [ ] Firmware card does not confuse Talos EFI/system-disk discovery.
@@ -572,9 +574,47 @@ pinned generic ARM64 ISO procedure, the operator manually selected it in UEFI
 Boot Manager. Talos reached maintenance mode and displayed DHCP address
 `10.10.0.246` on the intended network. This is a temporary discovery address,
 not application of the planned static `10.10.0.10` configuration. Automatic USB
-selection, running-version/API inspection, UUID, interface/MAC, memory and time
-checks remain pending. No machine configuration, disk installation or Kubernetes
+selection was not verified by this boot. The read-only baseline below subsequently
+captured running version, UUID, interface/MAC, memory and time state. No machine configuration, disk installation or Kubernetes
 bootstrap was performed in this step.
+
+### Read-only live baseline (2026-11-09)
+
+The operator queried the maintenance API at DHCP `10.10.0.246` using the scoped
+client. The observations describe the live environment, not applied production
+configuration or installed/encrypted Talos.
+
+| Observation | Reported value |
+| --- | --- |
+| Client/server | Talos `v1.14.5`, SHA `dad8d3ed`; client Linux amd64, server Linux arm64 |
+| Hardware | Raspberry Pi Foundation, Raspberry Pi 4 Model B; SMBIOS version `D03115` |
+| Serial | `1000000089261F6E` |
+| Firmware | `UEFI Firmware v1.53` |
+| Hardware UUID | `00d03115-0000-0000-1000-000089261f6e` |
+| Physical Ethernet | `enabcm6e4ei0`, alternative name `enxd83add37d639`, driver `bcmgenet` |
+| Permanent/current Ethernet MAC | `d8:3a:dd:37:d6:39` |
+| Link | Up, 1000 Mbit/s, full duplex; MTU 1500 |
+| Memory | `talosctl memory`: TOTAL `2848`, AVAILABLE `2483`; initial RAM-limit settings unchanged |
+| Time status | `synced: true`, `syncDisabled: false`, `epoch: 1` |
+
+The memory total is consistent with the initial UEFI 3 GB cap; nominal physical
+inventory remains 8 GB and full-memory operation is not yet verified. Initial
+resource timestamps were `2026-08-31`, while TimeStatus was subsequently updated
+at `2026-11-08T23:20:01Z`. This is consistent with a clock correction after boot;
+it does not establish when time became usable relative to encrypted STATE/TLS.
+
+**Apply blocker:** the committed public LinkConfig still names `eth0`, unlike
+the observed physical link. Correct the authored network fragment and regenerate
+the public render before applying any full configuration. No network patch was
+changed or applied in this documentation step. Bond/dummy/tunnel links in the
+output are not selected as the physical Ethernet interface.
+
+Next, disable the UEFI RAM cap, save that deliberate change and cold boot the
+same live media. Re-query the server UUID, physical link/MAC, memory and time,
+using its current DHCP address. Confirm memory availability, setting persistence
+and UUID continuity before disk discovery or KMS registration. DNS and actual
+pre-STATE network/time readiness need separate verification; production keys,
+disk formatting and installation remain out of scope.
 
 If the firmware card fails, power off and recreate it from the pinned archive; recheck SD-first EEPROM boot. Preserve the previous boot media/settings for rollback. Reverting a Talos disk installation needs its own recovery procedure before destructive installation is attempted.
 
