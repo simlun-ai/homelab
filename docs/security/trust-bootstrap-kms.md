@@ -1,11 +1,39 @@
 # Trust bootstrap KMS contract
 
-**Draft for review — 2026-11-08. No service, keys, endpoint or deployment is
-implemented by this document.** Existing approved policy remains authoritative
+**Design walkthrough approved — 2026-11-08; implementation and verification
+pending. No service, keys or endpoint deployment is implemented by this document.** Existing approved policy remains authoritative
 in [security.md](security.md#trust-bootstrap-kms) and
 [coordinator sessions](coordinator-sessions.md). The wire formats, limits,
 process model and error handling below are proposals, pending review and tests.
 This contract covers Trust only; the OpenBao transit adapter is separate.
+
+## Walkthrough decisions (2026-11-08)
+
+The operator approved the following behavior and implementation sequence. The
+exact wire encodings, resource limits and worker mechanics below remain proposed
+implementation details to validate through the test harness.
+
+1. One wrapped KMS key per node protects independent Talos unlock payloads with
+   fresh randomness and authenticated node/generation binding. Missing keys or
+   damaged/unknown envelopes fail without replacement-key generation. Authorization
+   lasts one hour, independent of SSH disconnection and request traffic. Lock,
+   expiry or restart removes authority; opening a replacement window requires
+   explicit lock and fresh touch. Discard results completing after lock/expiry.
+2. Use `https://kms.k8s-aux.simlun.se:443`, gRPC over TLS on TCP 443, with internal
+   DNS mapping to `10.10.0.5` and a public certificate issued using Cloudflare
+   DNS-01. Selection does not establish DNS, certificate or listener deployment.
+3. Implement software-only envelope/session tests first, using disposable public
+   keys and controlled clocks in CI; test tampering, wrong-node/generation use,
+   expiry, locking, activation retries and interrupted acknowledgments.
+4. Split the non-destructive Pi live-boot experiment into hardware discovery
+   (stable UUID, Ethernet, network/time and disk identities) and KMS connectivity
+   once a test service exists. Live-environment networking alone does not verify
+   pre-STATE readiness. No disk formatting or installation in this experiment.
+5. Deploy the locked service with Ansible, establish TLS, restrict network access,
+   verify YubiKey-authorized lifecycle/failure behavior, then rehearse coordinator
+   replacement against an existing disposable payload. Agree independent recovery
+   copies/locations before production KMS key generation. Encrypted installation
+   follows successful service, Pi connectivity and recovery checks.
 
 ## Existing decisions and dependencies
 
@@ -171,10 +199,12 @@ requirements. UPS processes must not share the KMS worker's lifetime.
 | Lock, expiry, worker/daemon restart, coordinator power loss | Pending operations invalidated; fresh workstation/YubiKey authorization required. Already unlocked volumes keep running. |
 | Trust reboots after expiry | Unlock cannot succeed until a fresh window is authorized with the same retained node key. |
 
-Use a publicly certifiable hostname resolving internally to `10.10.0.5` and a
-matching SAN/full certificate chain. The current `.internal` names are not the
-planned public certificate identity. **Hostname, public DNS zone, port, DNS-01
-scope, ACME client and renewal/key-persistence policy are TBD.** Initial and
+Use `kms.k8s-aux.simlun.se`, resolving internally to `10.10.0.5`, with a matching
+SAN/full certificate chain; serve gRPC over TLS on TCP 443. Cloudflare DNS-01
+is selected for certificate issuance. DNS and certificate deployment are pending;
+see the [required DNS entries](../network.md#required-dns-entries).
+**Exact Cloudflare zone/delegation and credential scope, ACME client and
+renewal/key-persistence policy remain TBD.** Initial and
 expired-certificate recovery must use SSH and independent DNS/ACME access;
 existing KMS TLS cannot be their only prerequisite. A renewed certificate may
 reuse an already protected private key if supported; persisting a new key needs
@@ -222,8 +252,8 @@ before declaring the encrypted installation recoverable.
 | Pi live boot | Recorded stable UUID; actual pre-STATE Ethernet/DNS/NTP; TLS chain trusted by stock Talos; cold-boot unlock, timeout/retry behavior and expired-window rejection. |
 | Independent recovery | Rebuilt coordinator unseals an existing disposable payload using preserved generations without original coordinator/OpenBao; document real recovery locations and prerequisites. |
 
-Next review: approve or revise the proposed envelope, local protocol and process
-model; resolve the endpoint/UUID/time/admission/recovery choices above. Then
-implement a disposable software-only protocol/session test harness before
-Ansible deployment or production key creation. Hardware and destructive install
+Next implementation slice: a disposable software-only envelope/session test
+harness for the approved behavior. Validate the proposed exact wire formats,
+limits and process mechanics during implementation review. Resolve UUID/time,
+admission and recovery choices before deployment or production key creation. Hardware and destructive install
 steps remain gated by the installation roadmap.

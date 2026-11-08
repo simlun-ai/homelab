@@ -56,6 +56,11 @@ Provide status, open-boot-window, and lock-KMS operations. Status reports
 readiness and remaining time without secrets. Locking KMS leaves
 DNS/TLS/ACME operation and UPS management available.
 
+The [2026-11-08 walkthrough](trust-bootstrap-kms.md#walkthrough-decisions-2026-11-08)
+approved explicit lock before replacement authorization and discarding results
+that complete after lock/expiry. The window still does not authenticate network
+clients; the trusted-network boundary remains in effect.
+
 ## Remaining implementation work
 
 Review the [proposed authorization protocol and process boundary](trust-bootstrap-kms.md#proposed-local-authorization-protocol-and-process-boundary),

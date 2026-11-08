@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Review the [draft coordinator KMS contract](../security/trust-bootstrap-kms.md), settle its open endpoint/UUID/time/admission/recovery choices, then implement disposable protocol/session tests. Point 5 separates explicit identity initialization, node installation and routine administration; local administration inspection is now verified with a disposable authority and the physical YubiKey. Production identity creation, live command delivery and node authentication remain pending. KMS readiness, Pi networking and early-boot behavior must be verified before installing onto disks.
+- **Current next step:** Implement disposable software-only envelope/session tests for the [approved KMS walkthrough](../security/trust-bootstrap-kms.md#walkthrough-decisions-2026-11-08), with controlled clocks and public keys. The endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; DNS, certificate and listener deployment remain pending. UUID/time/admission/recovery details remain open. Point 5 separates explicit identity initialization, node installation and routine administration; local administration inspection is now verified with a disposable authority and the physical YubiKey. Production identity creation, live command delivery and node authentication remain pending. KMS readiness, Pi networking and early-boot behavior must be verified before installing onto disks.
 
 ### Milestone tracker
 
@@ -19,7 +19,7 @@
 | --- | --- | --- | --- |
 | 0 | Identity and working baseline | Names/IP/roles and owning files agree; branch and roadmap established | In progress — baseline recorded; branch created |
 | 1 | Provisioning contract and scoped tools | Agree on declarative node/disk schema, `clusters/trust/` layout, version pins, `make` entry points and safe secret-handling approach; implement the minimum needed | Pending |
-| 2 | KMS protocol and recovery decisions | Specify per-node wrapped key context, seal/unseal envelope, TLS endpoint and certificate handling, session authorization, early boot DNS/NTP, admission restrictions, and independent loss recovery | Draft contract written; review/open choices pending |
+| 2 | KMS protocol and recovery decisions | Specify per-node wrapped key context, seal/unseal envelope, TLS endpoint and certificate handling, session authorization, early boot DNS/NTP, admission restrictions, and independent loss recovery | Payload/session behavior, endpoint and sequence approved; wire details proposed; UUID/time/admission/recovery choices pending |
 | 3 | `ups-aux` KMS implementation | Service and Ansible configuration deployed; authorized `Seal`/`Unseal`, expiry, restart and fail-closed checks verified independently of Kubernetes/OpenBao | Pending |
 | 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | Pending |
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
@@ -281,6 +281,19 @@ No production keys, manifest entries, endpoint configuration or service were
 created. Acceptance criteria are recorded; all service/hardware checks remain
 pending.
 
+### KMS walkthrough agreement (2026-11-08)
+
+Approved the five-point [implementation sequence](../security/trust-bootstrap-kms.md#walkthrough-decisions-2026-11-08):
+payload/session behavior, dedicated TLS endpoint, software-only tests,
+non-destructive Pi discovery/connectivity, then staged coordinator deployment
+and replacement recovery. In particular, a replacement authorization window
+requires explicit lock and fresh touch; traffic never extends the hour, and
+late results are discarded. The endpoint selection is recorded in
+[network.md](../network.md#required-dns-entries) as pending configuration.
+No live test, deployment or production key generation is established by this
+agreement. Independent recovery copies/locations must be agreed before
+production KMS key creation.
+
 ### Step-by-step working rules
 
 1. Choose **one** pending decision or test; document any preconditions before implementation.
@@ -318,7 +331,7 @@ Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include clu
 
 Install the independent Trust cluster after the [main coordinator](01-main-coordinator.md) is ready. Firmware-card preparation can be tried separately while the coordinator/KMS work is pending.
 
-Use `10.10.0.10/24` with gateway `10.10.0.1` on `k8s-aux` (VLAN 10) for the installed `trust-cp1` node (`trust-cp1.k8s-aux.lundmark.internal`). Plan for this address to be available before Talos loads encrypted `STATE`, so the node can reach the coordinator's KMS on `10.10.0.5`. The preboot configuration and KMS endpoint are still TBD. See the [network overview](../network.md) for the Trust load balancer pool and proposed Kubernetes CIDRs.
+Use `10.10.0.10/24` with gateway `10.10.0.1` on `k8s-aux` (VLAN 10) for the installed `trust-cp1` node (`trust-cp1.k8s-aux.lundmark.internal`). Plan for this address to be available before Talos loads encrypted `STATE`, so the node can reach the coordinator's KMS on `10.10.0.5`. The KMS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; preboot configuration and endpoint deployment/verification remain pending. See the [network overview](../network.md) for the Trust load balancer pool and proposed Kubernetes CIDRs.
 
 ## First installation experiment: Pi 4 UEFI
 
