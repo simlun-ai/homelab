@@ -266,6 +266,11 @@ independent payloads, explicit generation admission, atomic activation, lost
 acknowledgment/status lookup, expiry/lock/restart and late-result races use only
 public disposable keys and controlled clocks. There are no real-hour sleeps.
 
+The operator also verified `make -C support/hsm test` on `simlun-x1` on
+2026-11-08; the complete target passed, including the final 74-test HSM suite.
+See the [workstation verification record](../installation/02-trust.md#kms-software-core).
+This is software-test evidence; the integration limits below still apply.
+
 Session limits: 16 registered nodes, 8 configured generations per node, 64 grants
 per activation, 8 in-flight operations and 1024 accepted activation request IDs
 per daemon instance. IDs remain remembered after expiry/lock, so replay cannot

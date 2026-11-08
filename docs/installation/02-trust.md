@@ -306,6 +306,13 @@ these software tests without hardware or network calls. See the
 no daemon scheduler, isolated worker, local authorization transport or native
 gRPC/TLS integration is implemented. Production keys and hardware remain gated.
 
+**Operator verification passed on 2026-11-08:** `simlun-x1`,
+`make -C support/hsm test`, following the KMS core implementation at `8a5d8f9`.
+The target completed successfully: its parent suite runs before the component
+suite, whose final summary reported 74 tests in 0.195 seconds, `OK`. This records
+software-test validation only; it does not establish daemon, transport, physical
+YubiKey session authorization, Pi boot or disk-unlock verification.
+
 ### Step-by-step working rules
 
 1. Choose **one** pending decision or test; document any preconditions before implementation.
@@ -335,6 +342,7 @@ gRPC/TLS integration is implemented. Production keys and hardware remain gated.
 | 2026-11-08 | Administration — operator rehearsal | `simlun-x1`: `make admin-rehearse` passed with the physical YubiKey and `/dev/shm`; native 24-hour client issuance, context/target/role inspection and cleanup verified; disposable identity only | Review remaining installation prerequisites and select the next slice |
 | 2026-11-08 | KMS contract — documentation draft | Pinned Talos/proto source inspected; proposed envelope, authorization, failure/recovery behavior and test gates documented; no implementation or deployment | Review contract and resolve open choices before disposable service tests |
 | 2026-11-08 | KMS — software core | Envelope/session logic and independent public vector implemented; controlled-clock and race tests pass locally; no service or hardware operations | Review core evidence; proceed with Pi discovery and remaining service integration gates |
+| 2026-11-08 | KMS core — operator software tests | `simlun-x1`: `make -C support/hsm test` completed successfully; parent suite followed by the HSM component suite (74 tests, `OK`); no hardware/service operations | Proceed with non-destructive Pi discovery; daemon/transport and deployment gates remain pending |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 
