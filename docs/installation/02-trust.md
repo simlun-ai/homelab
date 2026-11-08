@@ -10,9 +10,9 @@
 
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
-- **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. EEPROM version/exact BOOT_ORDER, persistence of deliberately changed settings and automatic USB selection remain unverified.
+- **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Disable the UEFI 3 GB RAM limit, cold boot the same live media with candidate disks disconnected, and repeat read-only memory, Ethernet and UUID queries against the DHCP address actually observed after reboot. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. Pi networking/time/UUID, full memory and disk inventory must be verified before installation; check settings persistence when making deliberate UEFI changes.
+- **Current next step:** Inventory candidate disks and adapters read-only on the workstation, including existing partition/filesystem signatures, before connecting them to the Pi. Final disk and OS/data pair selection remains open. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. Disk/adapter behavior, DNS and actual pre-STATE/KMS networking/time remain to be verified before installation; the provisional `eth0` patch must be corrected before any apply.
 
 Trust's four-disk, 128 GB-per-disk allocation is provisional. The upcoming disk
 inventory phase will gather each disk's brand, model, capacity, serial and
@@ -28,7 +28,7 @@ before selecting disks for installation.
 | 1 | Provisioning contract and scoped tools | Agree on declarative node/disk schema, `clusters/trust/` layout, version pins, `make` entry points and safe secret-handling approach; implement the minimum needed | Pending |
 | 2 | KMS protocol and recovery decisions | Specify per-node wrapped key context, seal/unseal envelope, TLS endpoint and certificate handling, session authorization, early boot DNS/NTP, admission restrictions, and independent loss recovery | Payload/session behavior, endpoint and sequence approved; wire details proposed; UUID/time/admission/recovery choices pending |
 | 3 | `ups-aux` KMS implementation | Service and Ansible configuration deployed; authorized `Seal`/`Unseal`, expiry, restart and fail-closed checks verified independently of Kubernetes/OpenBao | Pending |
-| 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | In progress — UEFI/Talos maintenance boot and read-only baseline verified; full memory, repeated UUID and disk discovery pending |
+| 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | In progress — UEFI/Talos maintenance boot, full memory and UUID/link continuity across the RAM-cap cold boot verified; disk discovery pending |
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
 | 6 | Install encrypted Talos | Deliberately install onto assigned OS disks only; cold boot with the independent KMS authorized; encrypted volume coverage verified | Pending |
 | 7 | Bootstrap Kubernetes | Bootstrap the single control-plane node; verify API, node readiness, system pods, DNS and Flannel networking | Pending |
@@ -354,6 +354,7 @@ YubiKey session authorization, Pi boot or disk-unlock verification.
 | 2026-11-09 | Pi UEFI — cold-boot verification | Operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle; settings were unchanged, so modified-setting persistence is not established | Identify and prepare the separate Talos ISO USB medium; keep candidate disks disconnected |
 | 2026-11-09 | Talos live boot — operator verification | Manually selected USB installer in UEFI Boot Manager; reached maintenance mode at DHCP `10.10.0.246`; automatic USB selection and hardware/API inspection not yet verified | Run read-only UUID, network, memory and time discovery; preserve discovery-only scope |
 | 2026-11-09 | Pi live baseline — operator verification | Scoped read-only queries confirmed Talos v1.14.5 ARM64, observed UUID, Ethernet/MAC at 1 Gbit/s, limited RAM and synchronized time; provisional `eth0` mismatch identified | Disable RAM limit and cold boot; repeat UUID/link/memory/time queries; correct network patch before any apply |
+| 2026-11-09 | Pi full-memory cold boot — operator verification | Disabled UEFI RAM cap; TOTAL increased to `7748`; UUID, physical interface/MAC, 1 Gbit/s link and synchronized time retained at DHCP `10.10.0.246` | Inventory disks/adapters read-only; resolve `eth0` mismatch before any apply |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 
@@ -542,13 +543,15 @@ Record the repository revision, EEPROM and EDK2 versions/settings, Talos image/s
 - [x] Operator completed SD-first EEPROM configuration (2026-11-08).
 - [x] Prepared firmware card reaches UEFI setup (2026-11-08).
 - [x] UEFI Firmware v1.53 confirmed; setup reached again after a full power cycle, with no settings changes (2026-11-09).
-- [ ] When deliberately changing UEFI settings, verify those changes survive a cold boot.
+- [x] UEFI RAM-cap disable remained effective after a full cold boot (2026-11-09); other deliberately changed settings need separate verification.
 - [x] Generic Talos ARM64 ISO reaches maintenance mode via manual USB selection in UEFI Boot Manager (2026-11-09).
 - [ ] Automatic selection of the intended USB installer boot entry is verified, if needed for this experiment.
 - [x] Record initial node UUID, running Talos version, Ethernet/MAC/link, limited-memory baseline and synchronized-time status (2026-11-09).
-- [ ] Verify UUID stability across cold boots/settings changes; verify full memory, DNS and pre-STATE networking/time separately.
+- [x] Repeat UUID, physical interface/MAC, Ethernet link, memory and synchronized-time observations after disabling the RAM cap and cold booting (2026-11-09).
+- [ ] Verify DNS and actual pre-STATE networking/time separately; UUID stability across other firmware/reinstall changes remains unverified.
 - [ ] Inventory candidate disks/adapter identities and existing signatures read-only; decide final OS/data assignments in inventory.md.
-- [ ] Generic Talos ARM64 installer sees the selected disks and full RAM after removing the limit.
+- [x] Generic Talos ARM64 live environment uses the increased RAM after removing the limit: TOTAL `7748` (2026-11-09).
+- [ ] Generic Talos ARM64 live environment sees and operates with the selected disks/adapters.
 - [ ] Firmware card does not confuse Talos EFI/system-disk discovery.
 - [ ] Installation onto MD RAID1 with metadata `1.0` completes without META deletion or copying firmware.
 - [ ] Installed Talos cold boots with installation media removed.
@@ -598,7 +601,7 @@ configuration or installed/encrypted Talos.
 | Time status | `synced: true`, `syncDisabled: false`, `epoch: 1` |
 
 The memory total is consistent with the initial UEFI 3 GB cap; nominal physical
-inventory remains 8 GB and full-memory operation is not yet verified. Initial
+inventory remains 8 GB; the subsequent full-memory result is recorded below. Initial
 resource timestamps were `2026-08-31`, while TimeStatus was subsequently updated
 at `2026-11-08T23:20:01Z`. This is consistent with a clock correction after boot;
 it does not establish when time became usable relative to encrypted STATE/TLS.
@@ -609,12 +612,31 @@ the public render before applying any full configuration. No network patch was
 changed or applied in this documentation step. Bond/dummy/tunnel links in the
 output are not selected as the physical Ethernet interface.
 
-Next, disable the UEFI RAM cap, save that deliberate change and cold boot the
-same live media. Re-query the server UUID, physical link/MAC, memory and time,
-using its current DHCP address. Confirm memory availability, setting persistence
-and UUID continuity before disk discovery or KMS registration. DNS and actual
-pre-STATE network/time readiness need separate verification; production keys,
-disk formatting and installation remain out of scope.
+### Full-memory cold-boot verification (2026-11-09)
+
+The operator disabled the UEFI 3 GB RAM limit, saved the change and cold booted
+the same Talos live media. Read-only queries again reached DHCP `10.10.0.246`.
+
+| Check | Result after cold boot |
+| --- | --- |
+| Firmware | `UEFI Firmware v1.53` |
+| UUID | Unchanged: `00d03115-0000-0000-1000-000089261f6e` |
+| Ethernet | Same `enabcm6e4ei0`, alternative `enxd83add37d639`, MAC `d8:3a:dd:37:d6:39`, driver `bcmgenet` |
+| Link | Up, 1000 Mbit/s, full duplex, MTU 1500 |
+| Memory | TOTAL increased from `2848` to `7748`; AVAILABLE `7203` |
+| Time | `synced: true`, `syncDisabled: false`, `epoch: 1`; updated `2026-11-08T23:34:44Z` |
+
+The increased RAM is available after the cold boot, confirming the RAM-cap
+change remained effective. UUID and physical Ethernet continuity passed for
+this observed settings change; this does not establish UUID stability across
+firmware upgrades or reinstall. Successful live Ethernet/time checks do not
+establish pre-STATE/KMS readiness or disk/adapter compatibility.
+
+Next, inventory candidate disks/adapter identities and existing signatures
+read-only on the workstation before booting the Pi with them attached. Select
+the final disks and pairs only after inventory. The `eth0` apply blocker above
+remains unresolved. Production KMS registration/keys, formatting and installation
+remain out of scope.
 
 If the firmware card fails, power off and recreate it from the pinned archive; recheck SD-first EEPROM boot. Preserve the previous boot media/settings for rollback. Reverting a Talos disk installation needs its own recovery procedure before destructive installation is attempted.
 

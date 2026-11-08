@@ -71,7 +71,9 @@ before any apply. The current patch was not applied to the live Pi. The operator
 UEFI setup on 2026-11-08, confirmed Firmware v1.53 with a repeat cold boot on
 2026-11-09, and then booted Talos into maintenance mode by manually selecting
 the USB installer in UEFI Boot Manager. Automatic USB selection, modified-setting
-persistence, UUID stability and full-memory verification remain unverified.
+persistence beyond the RAM-cap change remains unverified. Disabling the RAM cap
+and cold booting on 2026-11-09 increased memory TOTAL to `7748`, preserved the
+UUID and physical link/MAC, and retained 1 Gbit/s Ethernet and synchronized time.
 Do not apply this partial public bundle to a node.
 
 ## Experimental bootstrap-secret CLI (Point 3)
@@ -326,8 +328,11 @@ UEFI Firmware v1.53 and a repeat cold boot into setup were verified on
 2026-11-09 without settings changes. Manual USB selection in UEFI Boot Manager
 then reached Talos maintenance mode at DHCP `10.10.0.246`. That address is for
 discovery; the planned static node configuration has not been applied. Automatic
-USB selection and modified-setting persistence remain unverified. Read-only
+USB selection remains unverified. The RAM-cap change was effective after the
+subsequent cold boot; persistence of other modified settings has not been tested. Read-only
 queries confirmed Talos v1.14.5 on ARM64, system UUID, Ethernet/MAC, the limited
 memory baseline and synchronized time; see the
 [baseline record](../../docs/installation/02-trust.md#read-only-live-baseline-2026-11-09).
-Full-memory, repeat UUID, DNS and pre-STATE readiness checks remain pending.
+The full-memory cold boot increased TOTAL from `2848` to `7748`, with unchanged
+UUID/link/MAC and synchronized time. Disk/adapter, DNS and actual pre-STATE/KMS
+readiness checks remain pending.

@@ -80,9 +80,10 @@ Register `trust-cp1` with an independently recorded hardware UUID observed throu
 pinned Talos on the actual Pi. Live discovery on 2026-11-09 reported
 `00d03115-0000-0000-1000-000089261f6e`; see the
 [inventory](../inventory.md#trust) and [baseline record](../installation/02-trust.md#read-only-live-baseline-2026-11-09).
-This is an observed candidate, not an operational registration. Verify UUID
-stability across cold boots, UEFI settings changes, reinstall and the intended
-disk layout before relying on it for recovery. Do not infer a UUID from the
+This is an observed candidate, not an operational registration. The UUID remained
+unchanged across the recorded cold boot after disabling the UEFI RAM cap on
+2026-11-09. Stability across other firmware changes, reinstall and the intended
+disk layout still needs verification before relying on it for recovery. Do not infer a UUID from the
 hostname, IP, MAC or Raspberry Pi serial.
 
 Proposed wrapped key context: `homelab/v1/trust/kms/trust-cp1/r1`, under the
