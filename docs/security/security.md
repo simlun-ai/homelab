@@ -157,8 +157,11 @@ The native CSR/signing path was smoke-tested with fixed public dummy CA/client
 keys on 2026-11-08: issuer signature, client key match, `os:admin`, client-auth
 usage and approximately 24-hour expiry all passed. These CLI properties were
 also checked against the pinned upstream implementation. The protected named-file rehearsal is implemented with a disposable native
-Talos CA and included in offline tmpfs CI. Operator verification, integration
-with recovered bootstrap material and live-node authentication remain unverified. See [native signing](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/mgmt/gen/crt.go)
+Talos CA and included in offline tmpfs CI. The operator verified the disposable
+rehearsal on 2026-11-08; see the
+[verification record](../installation/02-trust.md#protected-24-hour-client-issuer).
+Integration with recovered bootstrap material and live-node authentication
+remain unverified. See [native signing](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/mgmt/gen/crt.go)
 and [online client issuance](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/talos/config.go).
 Kubernetes administration credential retrieval/lifetimes remain a separate
 decision after bootstrap; the Talos policy does not set Kubernetes lifetimes.

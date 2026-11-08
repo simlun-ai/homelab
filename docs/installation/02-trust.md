@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Verify the protected 24-hour credential rehearsal on the workstation, then integrate wrapped bootstrap recovery. The production API endpoint and Talos recovery authority are agreed; DNS resolution is verified; the protected issuer is implemented, with operator verification pending. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
+- **Current next step:** Integrate wrapped bootstrap recovery with protected configuration generation and 24-hour client issuance. The production API endpoint and Talos recovery authority are agreed; DNS resolution and the disposable protected issuer rehearsal are verified on the workstation. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
 
 ### Milestone tracker
 
@@ -175,7 +175,7 @@ without implicit regeneration, administration credential issuance/reissuance
 from the same bundle, and descriptor cleanup without named plaintext files.
 This establishes a disposable preparation path, not deployable Trust settings
 or actual node access. The stable endpoint and Talos recovery/lifetime policy are now agreed;
-production identity creation, a verified 24-hour issuance workflow, KMS/disk
+production identity creation, issuance from recovered bootstrap material, KMS/disk
 configuration, Kubernetes credential retrieval and apply operations remain gated. No additional wrapped administration record has
 been created; native client reissuance from bootstrap material is demonstrated.
 
@@ -208,8 +208,14 @@ checks the certificate/key/role/expiry and inspects the assembled talosconfig.
 Filesystem admission, cleanup, resource-limit and certificate-policy unit tests
 pass; CI runs native issuance offline on a dedicated tmpfs mount.
 
-**Operator verification pending.** No production bootstrap bundle was generated
-or recovered. The reusable issuer accepts existing CA PEM material, but safe
+**Operator verification passed on 2026-11-08:** `simlun-x1` (Linux amd64),
+commit `bd1e759`, `make -C clusters/trust credentials-rehearse`, using `/dev/shm`.
+All checks passed: issuer signature, client key match, `os:admin` role,
+client-auth usage, 24-hour expiry, native talosconfig assembly/inspection and
+RAM workspace cleanup. The scoped tools verified Talos `v1.14.5` and kubectl
+`v1.37.1`. No production bootstrap bundle was generated or recovered.
+
+The reusable issuer accepts existing CA PEM material, but safe
 extraction from the wrapped Talos bundle, selected production endpoints in the
 client, and live-node authentication remain to be integrated and verified. The
 previous `config-rehearse` target still tests native default one-year generation.
@@ -238,6 +244,7 @@ previous `config-rehearse` target still tests native default one-year generation
 | 2026-11-07 | Point 3 — operator rehearsal | `simlun-x1`: `make secrets-rehearse` passed all checks with the physical YubiKey and approved encrypted swap; disposable repository removed, no production identity created | Complete protected machine configuration generation and admin credential recovery |
 | 2026-11-08 | Configuration — operator rehearsal | `simlun-x1`, commit `d12de94`: `make config-rehearse` passed all checks; disposable material only, no node operations | Decide production API endpoint and client lifetime/renewal, then integrate secret recovery |
 | 2026-11-08 | Trust API DNS — operator verification | Cloud Gateway Ultra DNS entry configured; `simlun-x1` resolved the required name through `dig @10.10.0.1` and `getent ahostsv4`; details in [network.md](../network.md#required-dns-entries) | Implement protected 24-hour Talos client issuance |
+| 2026-11-08 | Credentials — operator rehearsal | `simlun-x1`, commit `bd1e759`: `make credentials-rehearse` passed native 24-hour issuance, certificate policy, talosconfig assembly/inspection and cleanup on `/dev/shm`; disposable CA only, no node operations | Integrate wrapped bootstrap recovery with protected generation and client issuance |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 

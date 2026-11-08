@@ -219,5 +219,8 @@ Workspaces are removed on success, exceptions, Ctrl-C, SIGTERM and SIGHUP.
 SIGKILL or a crash can leave private RAM files until manual removal or reboot;
 the helper prints each workspace path so a stopped operation can be cleaned up.
 Do not use an ordinary temporary-directory fallback. Memory copies are not
-physically zeroizable through Python. Workstation verification remains pending
-in the installation roadmap; live Talos authentication is not tested.
+physically zeroizable through Python. The operator verified this target on
+`simlun-x1` (Linux amd64) on 2026-11-08 at commit `bd1e759`, using `/dev/shm`;
+all checks and RAM workspace cleanup passed. See the
+[verification record](../../docs/installation/02-trust.md#protected-24-hour-client-issuer).
+Live Talos authentication is not tested.
