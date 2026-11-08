@@ -274,8 +274,11 @@ make -C clusters/trust admin-rehearse
 This exercises the administration wrapper with a disposable authority and the
 physical YubiKey. It uses the same private ciphertext Git fixture and tmpfs
 requirements as `recovery-rehearse`. It recovers the wrapped bundle, issues a
-fresh 24-hour `os:admin` client, inspects it locally and cleans up. Operator
-verification is pending; CI runs native issuance with the public fake responder.
+fresh 24-hour `os:admin` client, inspects it locally and cleans up. The operator
+verified this path on `simlun-x1` (Linux amd64) on 2026-11-08 with the physical
+YubiKey and `/dev/shm`; all checks and cleanup passed. See the
+[verification record](../../docs/installation/02-trust.md#operating-entry-points-point-5).
+CI runs native issuance with the public fake responder.
 
 Once a production bootstrap record has been deliberately initialized, use:
 
