@@ -210,7 +210,7 @@ before secret files are created. Child home/temp paths stay inside the workspace
 output is suppressed, and umask `077` protects generated files.
 
 Each native process inherits a file-size limit of at most 1 MiB. After each
-command the helper admits at most the six expected private regular files;
+command the helper admits at most the seven expected private regular files;
 unknown files, symlinks, exposed permissions or oversized output fail. CI adds
 a dedicated 16 MiB tmpfs mount and disables networking for the rehearsal.
 Approved OS swap protection remains required.

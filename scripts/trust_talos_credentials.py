@@ -23,7 +23,15 @@ import trust_talos_config as config
 
 MAX_FILE = 1024 * 1024
 CLIENT_HOURS = 24
-FILES = {"ca.crt", "ca.key", "client.key", "client.csr", "client.crt", "talosconfig"}
+FILES = {
+    "ca.crt",
+    "ca.key",
+    "ca.sha256",
+    "client.key",
+    "client.csr",
+    "client.crt",
+    "talosconfig",
+}
 
 
 def require_tmpfs(fd: int) -> None:
@@ -274,9 +282,7 @@ def issue(talosctl: str, ca_crt: bytes, ca_key: bytes, root: Path) -> bytes:
 def rehearse(talosctl: str, root: Path) -> None:
     print("Generating a disposable CA with native Talos tooling on tmpfs.", flush=True)
     with ram_directory(root) as (path, fd):
-        run_native(
-            talosctl, ["gen", "ca", "--organization", "trust-rehearsal"], path, fd
-        )
+        run_native(talosctl, ["gen", "ca", "--organization", "ca"], path, fd)
         ca_crt, ca_key = read_file(path / "ca.crt"), read_file(path / "ca.key")
     print(
         "Issuing a 24-hour administration credential from the supplied CA.", flush=True

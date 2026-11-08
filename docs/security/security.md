@@ -147,7 +147,7 @@ The CSR/signing commands require named key/certificate paths and write named
 outputs. The protected issuer now uses an opened tmpfs directory verified through its
 mount ID, an operator-owned 0700 workspace and inherited directory descriptors.
 Native child home/temp paths remain in that workspace, with umask 077, a 1 MiB
-per-file limit and a six-file private regular-file allowlist checked after each
+per-file limit and a seven-file private regular-file allowlist checked after each
 command. Approved OS paging, dump suppression and handled-failure cleanup
 remain required. SIGKILL/crashes can leave private RAM files; printed workspace
 paths support manual cleanup. Never substitute an ordinary temporary directory. The existing sealed-descriptor configuration rehearsal
