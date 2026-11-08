@@ -144,18 +144,21 @@ supports offline signing with the existing Talos CA. Conversely,
 independent offline recovery.
 
 The CSR/signing commands require named key/certificate paths and write named
-outputs. Before using that path, implement and verify a private, permission-
-restricted RAM-backed directory with approved OS paging, bounded storage,
-cleanup and suppressed secret-bearing errors. Never substitute an ordinary
-temporary directory. The existing sealed-descriptor configuration rehearsal
+outputs. The protected issuer now uses an opened tmpfs directory verified through its
+mount ID, an operator-owned 0700 workspace and inherited directory descriptors.
+Native child home/temp paths remain in that workspace, with umask 077, a 1 MiB
+per-file limit and a six-file private regular-file allowlist checked after each
+command. Approved OS paging, dump suppression and handled-failure cleanup
+remain required. SIGKILL/crashes can leave private RAM files; printed workspace
+paths support manual cleanup. Never substitute an ordinary temporary directory. The existing sealed-descriptor configuration rehearsal
 does not implement this named-file workflow or demonstrate 24-hour issuance.
 
 The native CSR/signing path was smoke-tested with fixed public dummy CA/client
 keys on 2026-11-08: issuer signature, client key match, `os:admin`, client-auth
 usage and approximately 24-hour expiry all passed. These CLI properties were
-also checked against the pinned upstream implementation. The protected-memory
-workflow with recovered bootstrap material and live-node authentication remain
-unverified. See [native signing](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/mgmt/gen/crt.go)
+also checked against the pinned upstream implementation. The protected named-file rehearsal is implemented with a disposable native
+Talos CA and included in offline tmpfs CI. Operator verification, integration
+with recovered bootstrap material and live-node authentication remain unverified. See [native signing](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/mgmt/gen/crt.go)
 and [online client issuance](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/talos/config.go).
 Kubernetes administration credential retrieval/lifetimes remain a separate
 decision after bootstrap; the Talos policy does not set Kubernetes lifetimes.

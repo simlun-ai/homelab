@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Implement and verify memory-safe 24-hour Talos client issuance, then integrate wrapped bootstrap recovery. The production API endpoint and Talos recovery authority are agreed; DNS resolution is verified; the issuance workflow remains pending. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
+- **Current next step:** Verify the protected 24-hour credential rehearsal on the workstation, then integrate wrapped bootstrap recovery. The production API endpoint and Talos recovery authority are agreed; DNS resolution is verified; the protected issuer is implemented, with operator verification pending. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
 
 ### Milestone tracker
 
@@ -190,13 +190,29 @@ The [security policy](../security/security.md#trust-administration-credentials)
 owns the bootstrap-authority and 24-hour routine client decision. Pinned-source
 inspection confirms offline native signing supports the target lifetime, while
 `config new` needs a live node. The offline signing tools require named paths,
-so a verified RAM-backed directory is needed before implementing that workflow.
+and the protected named-file workflow is now implemented in the separate
+credential rehearsal below.
 Native offline 24-hour CSR/signing was smoke-tested with fixed public dummy
 CA/client keys; issuer signature, client key match, role, client-auth usage and
 expiry passed. This is not verification of the protected-memory bootstrap
 recovery workflow or node authentication. The existing configuration rehearsal
 still exercises native one-year credentials. No production secrets were created by these checks. DNS was subsequently
 configured and verified as recorded above.
+
+### Protected 24-hour client issuer
+
+Implemented `make -C clusters/trust credentials-rehearse`; see the
+[workspace and rehearsal contract](../../clusters/trust/README.md#protected-24-hour-credential-rehearsal).
+It uses a disposable native CA, issues a 24-hour client with native commands,
+checks the certificate/key/role/expiry and inspects the assembled talosconfig.
+Filesystem admission, cleanup, resource-limit and certificate-policy unit tests
+pass; CI runs native issuance offline on a dedicated tmpfs mount.
+
+**Operator verification pending.** No production bootstrap bundle was generated
+or recovered. The reusable issuer accepts existing CA PEM material, but safe
+extraction from the wrapped Talos bundle, selected production endpoints in the
+client, and live-node authentication remain to be integrated and verified. The
+previous `config-rehearse` target still tests native default one-year generation.
 
 ### Step-by-step working rules
 

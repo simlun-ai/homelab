@@ -13,7 +13,7 @@ emulation configured in the builder. No host Python environment is required.
 Docker needs network access for base images, the Dockerfile frontend, OS packages,
 Python dependencies, and pinned Trust CLI downloads during preparation.
 
-`docker-bake.hcl` runs nine targets in parallel:
+`docker-bake.hcl` runs ten targets in parallel:
 
 | Target | Checks |
 | --- | --- |
@@ -25,6 +25,7 @@ Python dependencies, and pinned Trust CLI downloads during preparation.
 | `trust-render` | Reproduces the committed public Trust node YAML from native patches and fails on drift, duplicate document identities, or obvious secret fields; does not validate a complete Talos machine configuration. |
 | `trust-validate` | Acquires checksum-verified scoped clients, then runs `make -C clusters/trust validate` offline with native strict Talos validation of the public bundle. |
 | `trust-config-rehearsal` | Offline native generation/strict validation with disposable secrets and the public patches, then Talos administration credential issuance/reissuance using sealed memory descriptors and pipes; no YubiKey or node operations. |
+| `trust-credentials-rehearsal` | Native 24-hour client signing and certificate verification using a disposable CA on a dedicated 16 MiB tmpfs mount, with networking disabled. |
 | `syntax` | Parent Python compilation and `bash -n`, including standalone support scripts. Checked scripts are not executed. |
 
 Run one target with `docker buildx bake --file docker-bake.hcl --progress=plain helpers`

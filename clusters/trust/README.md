@@ -158,7 +158,7 @@ from that same bundle and checks their context, roles and expiry through native
 `talosctl config info` JSON output. This tests local credential preparation,
 not authentication to a running node. Native generation currently issues
 one-year client certificates. The agreed [routine policy](../../docs/security/security.md#trust-administration-credentials)
-targets 24 hours; its protected offline signing workflow is not yet implemented. Offline reissuance does not revoke earlier credentials. Kubernetes admin
+targets 24 hours; the separate credential rehearsal below implements that signer. Offline reissuance does not revoke earlier credentials. Kubernetes admin
 access needs a bootstrapped API and is not tested here.
 
 Inputs are private, anonymous Linux `memfd` descriptors sealed against changes;
@@ -186,3 +186,38 @@ is configured; resolution was verified on 2026-11-08. See the
 [required DNS entries](../../docs/network.md#required-dns-entries). The rehearsal retains test-only
 placeholders. Talos clients will be reissued from the wrapped bootstrap authority;
 no separate wrapped administration record is planned.
+
+## Protected 24-hour credential rehearsal
+
+```sh
+make -C clusters/trust credentials-rehearse
+```
+
+No YubiKey or private records are needed. The target generates a disposable CA
+with native Talos tooling, issues an `os:admin` client using `gen key`, `gen csr`
+and `gen crt --hours 24`, then uses native commands to assemble/inspect a
+`talosconfig`. It verifies issuer signature and validity, client key match, role,
+client-auth usage and expiry. The issuer accepts supplied CA PEM bytes; extracting
+those bytes from the recovered production bootstrap bundle is still future work.
+No production identity, node access, DNS, installation or apply is involved.
+
+`RAM_ROOT` defaults to `/dev/shm`; override it only with an existing tmpfs
+location, for example `RAM_ROOT="$XDG_RUNTIME_DIR"` when that is verified tmpfs.
+The helper checks the opened directory's mount ID against Linux mountinfo,
+creates an operator-owned `0700` subdirectory, and holds directory descriptors
+so native paths remain anchored to that mount. Ordinary directories are rejected
+before secret files are created. Child home/temp paths stay inside the workspace,
+output is suppressed, and umask `077` protects generated files.
+
+Each native process inherits a file-size limit of at most 1 MiB. After each
+command the helper admits at most the six expected private regular files;
+unknown files, symlinks, exposed permissions or oversized output fail. CI adds
+a dedicated 16 MiB tmpfs mount and disables networking for the rehearsal.
+Approved OS swap protection remains required.
+
+Workspaces are removed on success, exceptions, Ctrl-C, SIGTERM and SIGHUP.
+SIGKILL or a crash can leave private RAM files until manual removal or reboot;
+the helper prints each workspace path so a stopped operation can be cleaned up.
+Do not use an ordinary temporary-directory fallback. Memory copies are not
+physically zeroizable through Python. Workstation verification remains pending
+in the installation roadmap; live Talos authentication is not tested.

@@ -74,7 +74,7 @@ and public-bundle validation; see its [operating instructions](../clusters/trust
 
 Keep machine-readable node assignments synchronized with the inventory. A declaration does not authorize disk initialization.
 
-Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, **complete secret-bearing rendered configurations**, tokens, and keys have no workstation-disk location. Public committed per-node patch bundles under `talos/rendered/` contain non-secret configuration only and must never include credentials. Wrapped credential records are permitted in `/secrets/wrapped/`. Trust implements sealed anonymous memory descriptors for offline native configuration generation; broader runtime storage remains TBD under [security.md](security/security.md#secret-handling-boundary).
+Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, **complete secret-bearing rendered configurations**, tokens, and keys have no workstation-disk location. Public committed per-node patch bundles under `talos/rendered/` contain non-secret configuration only and must never include credentials. Wrapped credential records are permitted in `/secrets/wrapped/`. Trust uses sealed anonymous memory descriptors for offline configuration generation and verified tmpfs directories for native client signing; other runtime storage remains TBD under [security.md](security/security.md#secret-handling-boundary).
 
 ## Shared implementation
 

@@ -1,8 +1,9 @@
 .DEFAULT_GOAL := help
 SCOPE := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 PYTHON ?= python3
+RAM_ROOT ?= /dev/shm
 HSM_VENV ?= $(HOME)/.local/share/homelab/venvs/hsm
-.PHONY: help tools check-tools render check-rendered validate secrets-rehearse config-rehearse
+.PHONY: help tools check-tools render check-rendered validate secrets-rehearse config-rehearse credentials-rehearse
 help:
 	@printf '%s\n' \
 	  'tools: download and verify pinned talosctl and kubectl (Linux amd64/arm64)' \
@@ -11,7 +12,8 @@ help:
 	  'check-rendered: verify committed YAML is current' \
 	  'validate: verify public bundle with pinned Talos tooling (run tools first)' \
 	  'secrets-rehearse: disposable in-memory Talos/YubiKey round trip and failure checks' \
-	  'config-rehearse: offline disposable full config and Talos admin credential generation'
+	  'config-rehearse: offline disposable full config and Talos admin credential generation' \
+	  'credentials-rehearse: native 24-hour client issuance on verified tmpfs (RAM_ROOT=/dev/shm)'
 tools:
 	@$(PYTHON) -I -B "$(SCOPE)/tooling.py" install
 check-tools:
@@ -32,3 +34,7 @@ secrets-rehearse: check-tools
 config-rehearse: check-tools check-rendered
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_talos_config.py" \
 	  --talosctl "$(SCOPE)/bin/talosctl"
+
+credentials-rehearse: check-tools
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_talos_credentials.py" \
+	  --talosctl "$(SCOPE)/bin/talosctl" --ram-root "$(RAM_ROOT)"

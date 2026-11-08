@@ -21,7 +21,7 @@ expected identifiers before querying a token. Bound input sizes and
 deliver plaintext directly to its consumer, with no default plaintext
 output.
 
-Keep secrets out of arguments, environment variables, temporary files,
+Keep secrets out of arguments, environment variables, disk-backed temporary files,
 and logs. Follow the
 [memory-only policy](security.md#secret-handling-boundary).
 Package recovery dependencies for use without downloads.

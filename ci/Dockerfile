@@ -102,7 +102,11 @@ FROM trust-tools AS trust-validate
 RUN --network=none make -C clusters/trust validate
 
 FROM helper-tools AS trust-config-rehearsal
-COPY --link scripts/trust_talos_secrets.py scripts/trust_talos_config.py ./scripts/
+COPY --link scripts/trust_talos_secrets.py scripts/trust_talos_config.py scripts/trust_talos_credentials.py ./scripts/
 COPY --link clusters/trust/ ./clusters/trust/
 COPY --from=trust-tools /project/clusters/trust/bin/ ./clusters/trust/bin/
 RUN --network=none make -C clusters/trust config-rehearse
+
+FROM trust-config-rehearsal AS trust-credentials-rehearsal
+RUN --mount=type=tmpfs,target=/run/trust-credentials,size=16777216 \
+    --network=none make -C clusters/trust credentials-rehearse RAM_ROOT=/run/trust-credentials

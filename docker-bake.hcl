@@ -1,9 +1,9 @@
 group "default" {
-  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax", "trust-render", "trust-validate", "trust-config-rehearsal"]
+  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax", "trust-render", "trust-validate", "trust-config-rehearsal", "trust-credentials-rehearsal"]
 }
 
 group "ci" {
-  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax", "trust-render", "trust-validate", "trust-config-rehearsal"]
+  targets = ["lint", "typecheck", "ansible-lint", "helpers", "ups", "syntax", "trust-render", "trust-validate", "trust-config-rehearsal", "trust-credentials-rehearsal"]
 }
 
 target "_common" {
@@ -65,11 +65,17 @@ target "trust-render" {
 target "trust-validate" {
   inherits = ["_common"]
   target = "trust-validate"
-  no-cache-filter = ["trust-validate", "trust-config-rehearsal"]
+  no-cache-filter = ["trust-validate", "trust-config-rehearsal", "trust-credentials-rehearsal"]
 }
 
 target "trust-config-rehearsal" {
   inherits = ["_common"]
   target = "trust-config-rehearsal"
-  no-cache-filter = ["trust-config-rehearsal"]
+  no-cache-filter = ["trust-config-rehearsal", "trust-credentials-rehearsal"]
+}
+
+target "trust-credentials-rehearsal" {
+  inherits = ["_common"]
+  target = "trust-credentials-rehearsal"
+  no-cache-filter = ["trust-credentials-rehearsal"]
 }
