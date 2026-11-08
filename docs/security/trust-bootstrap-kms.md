@@ -3,15 +3,16 @@
 **Design walkthrough approved — 2026-11-08; implementation and verification
 pending. No service, keys or endpoint deployment is implemented by this document.** Existing approved policy remains authoritative
 in [security.md](security.md#trust-bootstrap-kms) and
-[coordinator sessions](coordinator-sessions.md). The wire formats, limits,
-process model and error handling below are proposals, pending review and tests.
+[coordinator sessions](coordinator-sessions.md). The envelope codec and in-process session model are now implemented and
+software-tested as described below. Local transport framing, daemon/process
+isolation and gRPC error mapping remain proposals, pending implementation.
 This contract covers Trust only; the OpenBao transit adapter is separate.
 
 ## Walkthrough decisions (2026-11-08)
 
 The operator approved the following behavior and implementation sequence. The
-exact wire encodings, resource limits and worker mechanics below remain proposed
-implementation details to validate through the test harness.
+envelope encoding and in-process bounds are selected and tested in the software
+core below; transport framing and worker mechanics remain proposals.
 
 1. One wrapped KMS key per node protects independent Talos unlock payloads with
    fresh randomness and authenticated node/generation binding. Missing keys or
@@ -97,7 +98,7 @@ Unseal selects only the exact configured generation named by its envelope.
 Retain older generations while surviving disks or retained recovery material
 need them; authorization must explicitly include any such generation.
 
-## Proposed `homelab-kms-v1` envelope
+## `homelab-kms-v1` envelope
 
 Response `data` from Seal is UTF-8 JSON with exactly these seven fields:
 
@@ -111,13 +112,17 @@ Response `data` from Seal is UTF-8 JSON with exactly these seven fields:
 | `ciphertext` | Canonical standard Base64 of 32 ciphertext bytes plus the 16-byte GCM tag. |
 | `encoding` | String, exactly `raw-32`, documenting the pinned client's input size. |
 
-Proposed derivation: HKDF-SHA-256 with length 32, the unwrapped node KMS key as
+Implemented derivation: HKDF-SHA-256 with length 32, the unwrapped node KMS key as
 input key material, the decoded salt, and info equal to the ASCII encodings of
 `homelab-kms-v1`, canonical UUID and full key ID joined by single NUL bytes.
 The six fields other than `ciphertext` are the authenticated header. Encode that
 header as sorted-key, compact, ASCII JSON with no whitespace for AES-GCM AAD;
-all permitted values are strings in restricted ASCII alphabets. Publish fixed
-public test vectors for this exact representation before implementation review.
+all permitted values are strings in restricted ASCII alphabets. The fixed public
+vector in `tests/kms_vector.py` covers the HKDF input/output, AAD and full envelope;
+it was computed separately using stdlib HMAC and PyCryptodome 3.23.0 AES-GCM,
+then checked against the runtime cryptography implementation. PyCryptodome is
+not a runtime or CI dependency. Key IDs are limited to 256 ASCII characters
+and the `homelab/v1/trust/kms/<node-id>/r<generation>` namespace.
 Outer JSON whitespace does not change the reconstructed AAD. Authentication
 does not prevent replay of an older valid envelope; the existing
 [rotation/rollback policy](rotation-and-rollback.md) still applies.
@@ -129,10 +134,10 @@ performing decryption. Reject aliases, extra fields, trailing JSON data,
 invalid tags and plaintext of any length other than 32. Never fall back to
 `homelab-wrap-v1`, another node, another generation, or generated plaintext.
 
-Proposed bounds: 4 KiB for envelope data and 8 KiB for a complete gRPC message;
-reject oversized input before JSON decoding. Bound concurrent operations and
-local authorization frames as well; concrete concurrency and time budgets need
-Pi 3 measurement, within Talos's ten-second operation timeout. Do not log request,
+Implemented bound: 4 KiB for envelope data, checked before JSON decoding.
+The complete gRPC message limit (8 KiB proposed), local authorization framing
+and transport time budgets remain unimplemented and need Pi 3 measurement
+within Talos's ten-second operation timeout. Do not log request,
 response, envelope or decrypted payload bytes. Errors expose only static codes.
 
 ## Proposed local authorization protocol and process boundary
@@ -179,7 +184,8 @@ deadline; a result completing after lock/expiry is discarded. Bytes already
 released before locking cannot be recalled. Start with no active worker or keys.
 
 Use a monotonic elapsed-time source for the hour, including suspend time (Linux
-`CLOCK_BOOTTIME` proposed); wall-clock corrections must not extend authorization.
+`CLOCK_BOOTTIME` selected for the software core); wall-clock corrections must
+not extend authorization. Daemon scheduling and worker termination are pending.
 Never restart a worker with cached keys after failure. No plaintext key or unlock
 cache survives a window. Python object deletion is not secure zeroization;
 process isolation, dump/paging protection and observed cleanup remain validation
@@ -240,20 +246,63 @@ that coordinator-loss recovery works. Verify loss of coordinator and expired TLS
 without OpenBao, unlocked Trust storage, or plaintext workstation-disk files
 before declaring the encrypted installation recoverable.
 
+## Implemented software core and its limits
+
+`/scripts/homelab/trust_kms/` contains the envelope codec and thread-safe session
+state machine. Existing homelab-hsm wrapping remains responsible for stored node
+keys; its library is exercised with a public fake responder in an integration
+test. No shared wrapping format or HSM submodule pin changes.
+
+Run the offline helper tests (including the KMS cases) after normal installation:
+
+```sh
+make -C support/hsm tools
+make -C support/hsm test
+```
+
+The existing `helpers` CI target discovers these tests automatically, alongside
+parent lint and strict type checking. Fixed vectors, malformed input/tampering,
+independent payloads, explicit generation admission, atomic activation, lost
+acknowledgment/status lookup, expiry/lock/restart and late-result races use only
+public disposable keys and controlled clocks. There are no real-hour sleeps.
+
+Session limits: 16 registered nodes, 8 configured generations per node, 64 grants
+per activation, 8 in-flight operations and 1024 accepted activation request IDs
+per daemon instance. IDs remain remembered after expiry/lock, so replay cannot
+reopen a window. Hitting the request-ID bound rejects activation until an explicit
+restart changes the daemon instance; it does not evict IDs and enable replay.
+Unknown configured-but-unloaded generations are denied without searching other
+keys. Clock failure, non-finite values or regression clears retained authority.
+
+**This is not a deployable service or secure worker implementation.** The core
+API trusts its local caller; it does not authenticate peers or enforce YubiKey
+touch. It validates the current deadline at status, activation, expiry and RPC
+entry/release boundaries using Linux `CLOCK_BOOTTIME` by default. A future daemon
+must schedule `expire()` at the deadline even without traffic, terminate its
+key-holding worker, bound/cancel transport work and gate the final network
+response handoff against the session epoch/deadline. Returning bytes from the
+core is only the tested in-process release boundary.
+
+Clearing dictionaries drops the model's retained key references; caller-owned
+keys and in-flight crypto copies may still exist until their owners release
+them. Python does not promise physical erasure. No process memory isolation,
+unattended expiry scheduler, socket framing, gRPC/TLS listener, SSH command,
+Ansible deployment, production UUID/key registration or hardware verification
+is supplied by this slice. Those gates remain mandatory before live keys.
+
 ## Acceptance criteria before encrypted installation
 
-| Test layer | Required evidence (all pending) |
+| Test layer | Required evidence and status |
 | --- | --- |
-| Protocol/crypto unit tests | Fixed public vectors; exact 32-byte round trip; fresh salt/nonce; unknown/duplicate/oversized fields, wrong UUID/generation, malformed encodings and every authenticated-field/ciphertext mutation rejected. |
-| Session tests with controlled clocks | Atomic batches; wrong local peer, stale daemon ID and repeated activation rejected; dropped acknowledgment resolved without extension; wall-clock changes and suspend do not extend the hour. |
-| Concurrency/failure tests | Deadline/lock races discard late results; worker crash/restart clears authority; bounded request queues; no secret logs, dumps or named disk files. |
+| Protocol/crypto unit tests | Software tests pass for the fixed public vector; exact 32-byte round trip; fresh salt/nonce; unknown/duplicate/oversized fields, wrong UUID/generation, malformed encodings and every authenticated-field/ciphertext mutation rejected. |
+| Session tests with controlled clocks | In-process tests pass for atomic batches, stale daemon ID and repeated activation rejected; dropped acknowledgment resolved without extension; wall-clock changes and suspend do not extend the modeled hour. Local peer admission remains pending. |
+| Concurrency/failure tests | In-process race tests pass for discarding late results; actual worker termination and network release gating remain pending: worker crash/restart clears authority; bounded request queues; no secret logs, dumps or named disk files. |
 | Native client integration | Generated Python stubs match pinned proto; real gRPC/TLS interoperability, wrong hostname/chain/expiry rejected, no client-auth assumption; repeated Seal/Unseal for independent STATE/EPHEMERAL payloads under one node key. |
 | Coordinator deployment | SSH and UPS available while locked; local ciphertext-only startup; one-hour window, lock, disconnect, reboot, time loss, certificate renewal and expired-certificate recovery tested. |
 | Pi live boot | Recorded stable UUID; actual pre-STATE Ethernet/DNS/NTP; TLS chain trusted by stock Talos; cold-boot unlock, timeout/retry behavior and expired-window rejection. |
 | Independent recovery | Rebuilt coordinator unseals an existing disposable payload using preserved generations without original coordinator/OpenBao; document real recovery locations and prerequisites. |
 
-Next implementation slice: a disposable software-only envelope/session test
-harness for the approved behavior. Validate the proposed exact wire formats,
-limits and process mechanics during implementation review. Resolve UUID/time,
-admission and recovery choices before deployment or production key creation. Hardware and destructive install
-steps remain gated by the installation roadmap.
+Next: review the software-core evidence, then proceed with the agreed
+non-destructive Pi live-boot discovery. UUID/time/admission/recovery choices and
+the daemon/transport/process-boundary implementation remain prerequisites for
+service deployment, production keys and encrypted installation.

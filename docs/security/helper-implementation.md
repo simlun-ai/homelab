@@ -99,8 +99,8 @@ envelope and request context before deriving the same key and decrypting.
 
 This envelope is distinct from `homelab-wrap-v1`, which protects the
 node's KMS key. Exact envelope fields, encodings, HKDF context, and
-validation limits are proposed in the [draft KMS contract](trust-bootstrap-kms.md#proposed-homelab-kms-v1-envelope)
-and must be reviewed before implementation.
+validation limits are implemented in the [KMS software core](trust-bootstrap-kms.md#implemented-software-core-and-its-limits)
+with a fixed public vector. Daemon/transport integration remains pending.
 
 ## Keys: where and when
 
@@ -136,7 +136,7 @@ a new random key cannot decrypt existing payloads.
 
 ## Remaining implementation work
 
-- Review the [draft KMS envelope and authorization contract](trust-bootstrap-kms.md), resolve its open choices, then implement disposable protocol/session tests.
+- The [KMS software core](trust-bootstrap-kms.md#implemented-software-core-and-its-limits) implements envelope/session logic with disposable tests; resolve open deployment choices and implement the daemon/process/transport boundary next.
 - Extend dependency pins and offline recovery packaging for the service helpers.
 - Implement memory handling, consumer delivery, and failure cleanup.
 - Test malformed/tampered records, identifier and node substitution,

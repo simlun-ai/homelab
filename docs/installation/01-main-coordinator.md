@@ -12,7 +12,7 @@ The [draft Trust KMS contract](../security/trust-bootstrap-kms.md) records the
 pinned Talos interface, proposed envelope/session protocol, open choices and
 acceptance criteria. It is documentation, not a deployed or verified service.
 
-- [ ] Implement disposable software-only envelope/session tests for the approved behavior; validate proposed wire details and process mechanics.
+- [x] Implement disposable software-only envelope/session tests for the approved behavior, with a fixed public vector. This verifies core logic only; daemon, scheduler, transport and worker memory cleanup remain pending.
 - [ ] Settle UUID mapping, early-boot NTP/networking, admission rules and independent recovery inputs. The public TLS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; DNS/certificate/listener deployment remains pending.
 - [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
 - [ ] Implement the Python helpers and Ansible configuration for KMS, TLS/ACME, and local wrapped-record deployment.

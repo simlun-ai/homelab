@@ -66,13 +66,17 @@ clients; the trusted-network boundary remains in effect.
 Review the [proposed authorization protocol and process boundary](trust-bootstrap-kms.md#proposed-local-authorization-protocol-and-process-boundary),
 including framing, atomic activation, acknowledgments, deadline races and worker
 termination. Command/socket paths, service identities, TLS-secret delivery and
-implementation remain pending. Verify disconnect, expiry, lock,
+daemon/transport implementation remain pending. The [software session model](trust-bootstrap-kms.md#implemented-software-core-and-its-limits)
+now tests atomic activation, acknowledgment lookup, expiry/lock and restart
+semantics with controlled clocks; it is not a scheduler or isolated worker.
+Verify actual disconnect, expiry, lock,
 restart, and certificate-renewal behavior.
 
 The [two-layer KMS design](helper-implementation.md#trust-kms-two-layers)
 uses YubiKey-wrapped node KMS keys to support fresh Seal payloads and
 existing Unseal payloads. Exact envelope and delivery specifications
-are proposed in the [draft contract](trust-bootstrap-kms.md), pending review;
+are separated in the [contract](trust-bootstrap-kms.md): envelope encoding is
+implemented and tested; local delivery framing remains proposed;
 do not give the coordinator raw HMAC responses or
 indefinite KMS authority.
 

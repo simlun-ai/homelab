@@ -86,7 +86,7 @@ Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, **complete 
 | `/make/helm.mk` | Render/deploy selected releases. |
 | `/make/tofu.mk` | Operate the selected root/state. |
 | `/make/storage.mk` | Validate disks, coordinate assigned Piraeus preparation, inspect manual pools. |
-| `/scripts/homelab/` | Application consumers; shared wrapping/token access is imported from `tools/homelab-hsm/homelab_secrets`. Workstation unseal, [Talos KMS adapter](security/security.md#talos-kms-adapter), and [Trust bootstrap KMS](security/security.md#trust-bootstrap-kms) remain planned. |
+| `/scripts/homelab/` | Application consumers; shared wrapping/token access is imported from `tools/homelab-hsm/homelab_secrets`. Workstation unseal and the [Talos KMS adapter](security/security.md#talos-kms-adapter) remain planned. The [Trust KMS envelope/session core](security/trust-bootstrap-kms.md#implemented-software-core-and-its-limits) is implemented under `scripts/homelab/trust_kms/`; its daemon and deployment remain planned. |
 | `/scripts/bash/` | Small shell helpers. |
 | `/charts/<chart>/` | Chart definition, values, templates, dependency locks. |
 | `/tofu/modules/<module>/` | Shared definitions without credentials or ownership of other scopes' state. |

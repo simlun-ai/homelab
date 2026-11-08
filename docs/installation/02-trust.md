@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Implement disposable software-only envelope/session tests for the [approved KMS walkthrough](../security/trust-bootstrap-kms.md#walkthrough-decisions-2026-11-08), with controlled clocks and public keys. The endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; DNS, certificate and listener deployment remain pending. UUID/time/admission/recovery details remain open. Point 5 separates explicit identity initialization, node installation and routine administration; local administration inspection is now verified with a disposable authority and the physical YubiKey. Production identity creation, live command delivery and node authentication remain pending. KMS readiness, Pi networking and early-boot behavior must be verified before installing onto disks.
+- **Current next step:** Review the tested [KMS software core](../security/trust-bootstrap-kms.md#implemented-software-core-and-its-limits), then proceed with the non-destructive Pi live-boot discovery from the approved walkthrough. Daemon/process/transport integration remains pending. The endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; DNS, certificate and listener deployment remain pending. UUID/time/admission/recovery details remain open. Point 5 separates explicit identity initialization, node installation and routine administration; local administration inspection is now verified with a disposable authority and the physical YubiKey. Production identity creation, live command delivery and node authentication remain pending. KMS readiness, Pi networking and early-boot behavior must be verified before installing onto disks.
 
 ### Milestone tracker
 
@@ -294,6 +294,18 @@ No live test, deployment or production key generation is established by this
 agreement. Independent recovery copies/locations must be agreed before
 production KMS key creation.
 
+### KMS software core
+
+Implemented `scripts/homelab/trust_kms/` with the exact bounded envelope format,
+fixed public HKDF/AES-GCM vector and a controlled-clock session model. Parent
+helper tests cover round trips, tampering/malformed input, explicit generation
+selection, atomic activation, acknowledgment recovery, expiry/lock/restart,
+bounded admission and stale in-flight results. Existing helper CI discovery runs
+these software tests without hardware or network calls. See the
+[implementation limits](../security/trust-bootstrap-kms.md#implemented-software-core-and-its-limits):
+no daemon scheduler, isolated worker, local authorization transport or native
+gRPC/TLS integration is implemented. Production keys and hardware remain gated.
+
 ### Step-by-step working rules
 
 1. Choose **one** pending decision or test; document any preconditions before implementation.
@@ -322,6 +334,7 @@ production KMS key creation.
 | 2026-11-08 | Wrapped recovery — operator rehearsal | `simlun-x1`: `make recovery-rehearse` passed with the physical YubiKey and `/dev/shm`; both recovered bundles produced validated machine configurations and fresh 24-hour clients under the same authority; temporary ciphertext and RAM workspaces removed | Settle initial-installation versus ongoing-operation entry points (Point 5) |
 | 2026-11-08 | Administration — operator rehearsal | `simlun-x1`: `make admin-rehearse` passed with the physical YubiKey and `/dev/shm`; native 24-hour client issuance, context/target/role inspection and cleanup verified; disposable identity only | Review remaining installation prerequisites and select the next slice |
 | 2026-11-08 | KMS contract — documentation draft | Pinned Talos/proto source inspected; proposed envelope, authorization, failure/recovery behavior and test gates documented; no implementation or deployment | Review contract and resolve open choices before disposable service tests |
+| 2026-11-08 | KMS — software core | Envelope/session logic and independent public vector implemented; controlled-clock and race tests pass locally; no service or hardware operations | Review core evidence; proceed with Pi discovery and remaining service integration gates |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 
