@@ -28,6 +28,9 @@ old cached release after a pin change. `check-tools` verifies offline; it never
 falls back to host binaries. `validate` requires verified tools and a fresh
 public render, then runs native `talosctl validate --mode metal --strict`.
 Both clients are hash-checked; no per-helper CLI version probing is required.
+Tool acquisition prints flushed progress messages to stderr before cache checks,
+downloads, checksum verification, installation and cleanup. Cache misses explain
+why a download is needed; network failures identify the tool and source URL.
 
 CI acquires tools in a preparation stage and runs the same validation without
 network access. This validates only the authored public documents. Complete
