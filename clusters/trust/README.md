@@ -181,7 +181,8 @@ The operator verified this target on `simlun-x1` (Linux amd64) on 2026-11-08.
 See the [recorded results](../../docs/installation/02-trust.md#full-configuration-and-administration-credential-rehearsal)
 for the verification scope and remaining production decisions.
 
-The [production API endpoint](../../docs/network.md#kubernetes-api-endpoint) is
-agreed but its DNS record is not yet created. The rehearsal retains test-only
+The DNS record for the [production API endpoint](../../docs/network.md#kubernetes-api-endpoint)
+is configured; resolution was verified on 2026-11-08. See the
+[required DNS entries](../../docs/network.md#required-dns-entries). The rehearsal retains test-only
 placeholders. Talos clients will be reissued from the wrapped bootstrap authority;
 no separate wrapped administration record is planned.

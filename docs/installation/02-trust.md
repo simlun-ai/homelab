@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Implement and verify memory-safe 24-hour Talos client issuance, then integrate wrapped bootstrap recovery. The production API endpoint and Talos recovery authority are agreed; DNS record creation and the issuance workflow remain pending. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
+- **Current next step:** Implement and verify memory-safe 24-hour Talos client issuance, then integrate wrapped bootstrap recovery. The production API endpoint and Talos recovery authority are agreed; DNS resolution is verified; the issuance workflow remains pending. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
 
 ### Milestone tracker
 
@@ -33,7 +33,7 @@
 
 | Topic | Current direction / unresolved question |
 | --- | --- |
-| Cluster and node identity | `trust` / `trust-cp1` agreed; stable API endpoint agreed in [network.md](../network.md#kubernetes-api-endpoint), DNS creation pending |
+| Cluster and node identity | `trust` / `trust-cp1` agreed; stable API endpoint agreed in [network.md](../network.md#kubernetes-api-endpoint), DNS resolution verified 2026-11-08 |
 | Networking | VLAN 10, `10.10.0.10/24`, gateway `10.10.0.1`; current proposed pod/service CIDRs and Flannel are in [network.md](../network.md). Pre-`STATE` DNS and NTP details TBD |
 | Provisioning | **Decided:** native single-document Talos patches organized by cluster/role/node are authoritative; commit a deterministic public multi-document per-node render and enforce regeneration through CI. No custom node schema. Full Talos generation + secret handling TBD |
 | Versioning and upgrades | Agreed: explicit Talos, Kubernetes and kubectl version pins, with Kubernetes selected from the target Talos release's recommended/default Kubernetes version and kubectl chosen to match. `talosctl` matches Talos. Upgrade Talos first, verify health, then upgrade Kubernetes separately; check compatibility and supported upgrade paths before either action. Selected: Talos `v1.14.5`, Kubernetes `v1.37.1`, kubectl `v1.37.1`; talosctl follows Talos. Scoped Linux CLI acquisition, checksums and public-bundle validation implemented; hardware deployment unverified |
@@ -182,7 +182,8 @@ been created; native client reissuance from bootstrap material is demonstrated.
 ### Endpoint and administration decisions (2026-11-08)
 
 The [network overview](../network.md#kubernetes-api-endpoint) owns the agreed
-production API URL and initial direct-node DNS mapping. DNS creation is pending;
+production API URL and direct-node DNS mapping. The operator configured and
+verified DNS on 2026-11-08 via the gateway and workstation resolver;
 the configuration rehearsal deliberately retains its `.invalid` endpoint.
 
 The [security policy](../security/security.md#trust-administration-credentials)
@@ -194,8 +195,8 @@ Native offline 24-hour CSR/signing was smoke-tested with fixed public dummy
 CA/client keys; issuer signature, client key match, role, client-auth usage and
 expiry passed. This is not verification of the protected-memory bootstrap
 recovery workflow or node authentication. The existing configuration rehearsal
-still exercises native one-year credentials. No production secrets or DNS
-changes were made.
+still exercises native one-year credentials. No production secrets were created by these checks. DNS was subsequently
+configured and verified as recorded above.
 
 ### Step-by-step working rules
 
@@ -220,6 +221,7 @@ changes were made.
 | 2026-11-07 | Point 4 — operator verification | `simlun-x1`, Linux amd64: `make tools` verified talosctl `v1.14.5` and kubectl `v1.37.1`; `make validate` passed render freshness, client verification and native metal-mode validation. Point 4 complete; no node installation performed | Test the secret workflow with disposable material |
 | 2026-11-07 | Point 3 — operator rehearsal | `simlun-x1`: `make secrets-rehearse` passed all checks with the physical YubiKey and approved encrypted swap; disposable repository removed, no production identity created | Complete protected machine configuration generation and admin credential recovery |
 | 2026-11-08 | Configuration — operator rehearsal | `simlun-x1`, commit `d12de94`: `make config-rehearse` passed all checks; disposable material only, no node operations | Decide production API endpoint and client lifetime/renewal, then integrate secret recovery |
+| 2026-11-08 | Trust API DNS — operator verification | Cloud Gateway Ultra DNS entry configured; `simlun-x1` resolved the required name through `dig @10.10.0.1` and `getent ahostsv4`; details in [network.md](../network.md#required-dns-entries) | Implement protected 24-hour Talos client issuance |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 

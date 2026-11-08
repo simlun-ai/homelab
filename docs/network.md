@@ -44,16 +44,39 @@ The last octet has the same meaning on all three VLANs.
 
 Individual Pi and Metal node addresses and the addresses for `ups-pi` and `ups-metal` are TBD.
 
+## Required DNS entries
+
+| Type | DNS name | Value | Purpose | Status |
+| --- | --- | --- | --- | --- |
+| A | `trust-api.k8s-aux.lundmark.internal` | `10.10.0.10` | Trust Kubernetes API | Configured; resolution verified 2026-11-08 |
+
+### Configure on the UniFi gateway
+
+In UniFi Network, use **Settings → Policy Table → Create New Policy → DNS**.
+This path was verified on the Cloud Gateway Ultra on 2026-11-08. Select
+**Host (A)**, enter the DNS name and address from the table, then click **Add**.
+Enter the hostname alone, without `https://` or a port.
+
+### Verify resolution
+
+The operator verified both the gateway directly and the normal workstation
+resolver from `simlun-x1` on 2026-11-08:
+
+```sh
+dig @10.10.0.1 trust-api.k8s-aux.lundmark.internal +short
+getent ahostsv4 trust-api.k8s-aux.lundmark.internal
+```
+
+Both resolved to `10.10.0.10`. Clients must use the gateway's DNS service,
+directly or through a resolver forwarding this domain to it.
+
 ## Kubernetes API endpoint
 
-| Cluster | DNS name | Target | Port | Status |
-| --- | --- | --- | --- | --- |
-| Trust | `trust-api.k8s-aux.lundmark.internal` | `10.10.0.10` | TCP 6443 | Agreed; DNS record creation pending |
-
-The intended client URL is `https://trust-api.k8s-aux.lundmark.internal:6443`.
-Initially resolve it directly to the single control-plane node; no API load
-balancer is introduced. Talos administration continues to target the explicit
-node address independently of this Kubernetes DNS name.
+Trust's client URL is `https://trust-api.k8s-aux.lundmark.internal:6443`.
+The required DNS entry above points directly to the single control-plane node;
+no API load balancer is introduced. Talos administration continues to target
+the explicit node address independently of this Kubernetes DNS name.
+DNS verification does not establish that the Kubernetes API is running.
 
 ## Kubernetes networking
 
