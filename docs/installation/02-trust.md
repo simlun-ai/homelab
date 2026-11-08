@@ -10,8 +10,15 @@
 
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
-- **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
+- **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
 - **Current next step:** Review the tested [KMS software core](../security/trust-bootstrap-kms.md#implemented-software-core-and-its-limits), then proceed with the non-destructive Pi live-boot discovery from the approved walkthrough. Daemon/process/transport integration remains pending. The endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; DNS, certificate and listener deployment remain pending. UUID/time/admission/recovery details remain open. Point 5 separates explicit identity initialization, node installation and routine administration; local administration inspection is now verified with a disposable authority and the physical YubiKey. Production identity creation, live command delivery and node authentication remain pending. KMS readiness, Pi networking and early-boot behavior must be verified before installing onto disks.
+
+The Trust disk allocation has been revised to four 128 GB SATA disks from four
+different brands through USB-to-SATA adapters; see the
+[inventory](../inventory.md#trust). Before live-boot disk discovery, record the
+actual models, serials, adapter identities and OS/data pair assignments. The
+operator reports no need for the former Intenso USB-drive kernel quirks with
+these adapters; pinned Talos behavior is still unverified.
 
 ### Milestone tracker
 
@@ -38,7 +45,7 @@
 | Provisioning | **Decided:** native single-document Talos patches organized by cluster/role/node are authoritative; commit a deterministic public multi-document per-node render and enforce regeneration through CI. No custom node schema. Full Talos generation + secret handling TBD |
 | Versioning and upgrades | Agreed: explicit Talos, Kubernetes and kubectl version pins, with Kubernetes selected from the target Talos release's recommended/default Kubernetes version and kubectl chosen to match. `talosctl` matches Talos. Upgrade Talos first, verify health, then upgrade Kubernetes separately; check compatibility and supported upgrade paths before either action. Selected: Talos `v1.14.5`, Kubernetes `v1.37.1`, kubectl `v1.37.1`; talosctl follows Talos. Scoped Linux CLI acquisition, checksums and public-bundle validation implemented; hardware deployment unverified |
 | Boot | First experiment is SD-first EDK2/UEFI plus generic ARM64 Talos installer; supported behavior and firmware boot dependency must be verified |
-| Storage | Two explicitly assigned OS SSDs are intended for MD RAID1; confirm stable identities, Talos compatibility, metadata format, degraded boot and replacement before any destructive installation. Separate encrypted ZFS data disks are **out of scope and protected** |
+| Storage | Two explicitly assigned OS disks are intended for MD RAID1; confirm stable identities, Talos compatibility, metadata format, degraded boot and replacement before any destructive installation. Separate encrypted ZFS data disks are **out of scope and protected** |
 | Encryption | KMS-backed `STATE` and `EPHEMERAL` on the **initial** installation. Talos bootloader/kernel still require readable boot components; no claim of fully encrypted boot media |
 | KMS | Dedicated coordinator service on `ups-aux`, independent of Trust and OpenBao; YubiKey-authorized one-hour key window, TLS and encrypted wrapped records per [security policy](../security/security.md#trust-bootstrap-kms). See the [draft service contract](../security/trust-bootstrap-kms.md); review and independent recovery details pending |
 | Secret handling | Never write plaintext Talos machine secrets, talosconfig, kubeconfig, KMS keys or unsealed material to workstation disk. Final generation/transport/bootstrap workflow TBD |
@@ -356,15 +363,15 @@ Use `10.10.0.10/24` with gateway `10.10.0.1` on `k8s-aux` (VLAN 10) for the inst
 
 ## First installation experiment: Pi 4 UEFI
 
-The first method to try is [pftf/RPi4](https://github.com/pftf/RPi4) firmware on a dedicated microSD card, booting a generic Talos ARM64 installer from USB and installing onto the assigned OS SSD mirror. This is a candidate installation method, not a settled design or a verified supported combination.
+The first method to try is [pftf/RPi4](https://github.com/pftf/RPi4) firmware on a dedicated microSD card, booting a generic Talos ARM64 installer from USB and installing onto the assigned OS disk mirror. This is a candidate installation method, not a settled design or a verified supported combination.
 
-The SD card remains inserted for normal operation and is a boot dependency outside the SSD mirror. Keep all disk operations below confined to the firmware card; the [Trust data disks](../inventory.md#trust) are not installation targets.
+The SD card remains inserted for normal operation and is a boot dependency outside the disk mirror. Keep all disk operations below confined to the firmware card; the [Trust data disks](../inventory.md#trust) are not installation targets.
 
 This experiment aims to avoid the modified raw-image/META deletion and manual firmware-copy workaround described in [Talos issue #14555](https://github.com/siderolabs/talos/issues/14555#issuecomment-6464577848). Successful UEFI boot reports exist, but do not establish that our ISO installation, RAID1 failover, upgrades, or KMS unlock work.
 
 ### Prepare SD-first EEPROM boot
 
-The Pi EEPROM bootloader must select SD before USB so that EDK2 runs before the SSD bootloader. EEPROM boot order and EDK2's subsequent OS boot order are separate settings.
+The Pi EEPROM bootloader must select SD before USB so that EDK2 runs before the disk bootloader. EEPROM boot order and EDK2's subsequent OS boot order are separate settings.
 
 If SD-first boot is already configured, skip this step. Otherwise, on the workstation, use Raspberry Pi Imager with a spare card:
 
@@ -447,18 +454,18 @@ Both file checks must succeed. Preserve the archive's filenames, directories, an
 
 After the first successful Talos boot, disable **Limit RAM to 3 GB**, reboot, and verify full memory availability plus working Ethernet and USB storage. The default limit addresses Pi DMA constraints; see [pftf's compatibility notes](https://github.com/pftf/RPi4#initial-notice).
 
-The firmware card is ready once UEFI setup works. Keep it inserted. The next experiment is to boot a separate generic `metal-arm64.iso` USB installer, initially without the `rpi_generic` overlay. Exact image pins, scoped tooling, RAID selectors, and installation commands remain TODO. After installation, prefer the SSD boot entries over network boot entries in EDK2.
+The firmware card is ready once UEFI setup works. Keep it inserted. The next experiment is to boot a separate generic `metal-arm64.iso` USB installer, initially without the `rpi_generic` overlay. Exact image pins, scoped tooling, RAID selectors, and installation commands remain TODO. After installation, prefer the disk boot entries over network boot entries in EDK2.
 
 ### Experiment record and acceptance checks
 
 Record the repository revision, EEPROM and EDK2 versions/settings, Talos image/schematic, assigned disk identities, results, and remaining issues here. Do not mark these complete until tried.
 
 - [ ] Firmware card reaches UEFI; settings survive a cold boot.
-- [ ] Generic Talos ARM64 installer boots and sees Ethernet, both OS SSDs, and full RAM after removing the limit.
+- [ ] Generic Talos ARM64 installer boots and sees Ethernet, both OS disks, and full RAM after removing the limit.
 - [ ] Firmware card does not confuse Talos EFI/system-disk discovery.
 - [ ] Installation onto MD RAID1 with metadata `1.0` completes without META deletion or copying firmware.
 - [ ] Installed Talos cold boots with installation media removed.
-- [ ] Cold boot succeeds with either OS SSD disconnected, tested separately after restoring mirror health between tests.
+- [ ] Cold boot succeeds with either OS disk disconnected, tested separately after restoring mirror health between tests.
 - [ ] Talos upgrade and subsequent cold boot work.
 - [ ] Independent coordinator KMS unlock works, including a cold startup.
 
