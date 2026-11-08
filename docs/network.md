@@ -44,6 +44,17 @@ The last octet has the same meaning on all three VLANs.
 
 Individual Pi and Metal node addresses and the addresses for `ups-pi` and `ups-metal` are TBD.
 
+## Kubernetes API endpoint
+
+| Cluster | DNS name | Target | Port | Status |
+| --- | --- | --- | --- | --- |
+| Trust | `trust-api.k8s-aux.lundmark.internal` | `10.10.0.10` | TCP 6443 | Agreed; DNS record creation pending |
+
+The intended client URL is `https://trust-api.k8s-aux.lundmark.internal:6443`.
+Initially resolve it directly to the single control-plane node; no API load
+balancer is introduced. Talos administration continues to target the explicit
+node address independently of this Kubernetes DNS name.
+
 ## Kubernetes networking
 
 All four clusters are independent, including Trust and Backup on VLAN 10. The CNI and load balancer choices are planned. The proposed pod and service CIDRs are disjoint from each other and from all three VLANs.

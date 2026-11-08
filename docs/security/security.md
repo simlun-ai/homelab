@@ -126,6 +126,40 @@ Application/service secrets are fetched from OpenBao; dependent clusters use Ext
 
 Touch is required when querying a token, not for each scheduled backup. Runtime credentials may be provisioned at setup and held securely server-side; backup-job authentication and lifecycle belong in [backup-and-restore.md](../backup-and-restore.md#openbao-online-backups).
 
+## Trust administration credentials
+
+The wrapped Talos bootstrap bundle is the durable Talos recovery authority.
+Recover it with YubiKey authorization and issue fresh client credentials from
+the existing Talos CA; do not create a separately wrapped `talosconfig` record
+or implicitly replace the cluster identity. Routine Talos administration targets
+`os:admin` credentials valid for **24 hours**, held only for the operation in
+protected memory. Reissuance does not revoke previously issued credentials.
+
+**Pinned-tool findings:** `talosctl gen config --with-secrets` supports offline
+administration credential recovery, but its generated client certificates use
+the native one-year default and offer no TTL flag. These are not the selected
+routine credential policy. The native `gen csr` / `gen crt --hours 24` path
+supports offline signing with the existing Talos CA. Conversely,
+`config new --crt-ttl 24h` calls a running node's API; it cannot provide
+independent offline recovery.
+
+The CSR/signing commands require named key/certificate paths and write named
+outputs. Before using that path, implement and verify a private, permission-
+restricted RAM-backed directory with approved OS paging, bounded storage,
+cleanup and suppressed secret-bearing errors. Never substitute an ordinary
+temporary directory. The existing sealed-descriptor configuration rehearsal
+does not implement this named-file workflow or demonstrate 24-hour issuance.
+
+The native CSR/signing path was smoke-tested with fixed public dummy CA/client
+keys on 2026-11-08: issuer signature, client key match, `os:admin`, client-auth
+usage and approximately 24-hour expiry all passed. These CLI properties were
+also checked against the pinned upstream implementation. The protected-memory
+workflow with recovered bootstrap material and live-node authentication remain
+unverified. See [native signing](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/mgmt/gen/crt.go)
+and [online client issuance](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/talos/config.go).
+Kubernetes administration credential retrieval/lifetimes remain a separate
+decision after bootstrap; the Talos policy does not set Kubernetes lifetimes.
+
 ## Disk encryption and OpenTofu
 
 - **All ZFS storage:** require encryption, including Piraeus backing storage and manual pools. Native ZFS encryption needs dataset/zvol coverage and inheritance checks; it does not encrypt all pool metadata. Layer and provisioning sequence are TBD.

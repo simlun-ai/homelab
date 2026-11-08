@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Decide the stable Kubernetes API endpoint and operational client credential lifetime/renewal, then integrate production secret recovery using the verified preparation path. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
+- **Current next step:** Implement and verify memory-safe 24-hour Talos client issuance, then integrate wrapped bootstrap recovery. The production API endpoint and Talos recovery authority are agreed; DNS record creation and the issuance workflow remain pending. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
 
 ### Milestone tracker
 
@@ -33,7 +33,7 @@
 
 | Topic | Current direction / unresolved question |
 | --- | --- |
-| Cluster and node identity | `trust` / `trust-cp1` agreed; stable Kubernetes API DNS name and endpoint choice TBD |
+| Cluster and node identity | `trust` / `trust-cp1` agreed; stable API endpoint agreed in [network.md](../network.md#kubernetes-api-endpoint), DNS creation pending |
 | Networking | VLAN 10, `10.10.0.10/24`, gateway `10.10.0.1`; current proposed pod/service CIDRs and Flannel are in [network.md](../network.md). Pre-`STATE` DNS and NTP details TBD |
 | Provisioning | **Decided:** native single-document Talos patches organized by cluster/role/node are authoritative; commit a deterministic public multi-document per-node render and enforce regeneration through CI. No custom node schema. Full Talos generation + secret handling TBD |
 | Versioning and upgrades | Agreed: explicit Talos, Kubernetes and kubectl version pins, with Kubernetes selected from the target Talos release's recommended/default Kubernetes version and kubectl chosen to match. `talosctl` matches Talos. Upgrade Talos first, verify health, then upgrade Kubernetes separately; check compatibility and supported upgrade paths before either action. Selected: Talos `v1.14.5`, Kubernetes `v1.37.1`, kubectl `v1.37.1`; talosctl follows Talos. Scoped Linux CLI acquisition, checksums and public-bundle validation implemented; hardware deployment unverified |
@@ -72,17 +72,14 @@ installation, repair, configuration render or rebuild must recover the
 **same** bootstrap secret bundle. Missing, corrupt or mismatched records
 are fatal: never silently generate replacement cluster credentials.
 
-The proposed record identities are recorded in
-[the YubiKey catalogue](../security/yubikey.md):
-`homelab/v1/trust/talos/bootstrap/r1` for bootstrap material,
-`homelab/v1/trust/talos/administration/r1` for operator Talos credentials,
-and `homelab/v1/trust/kubernetes/administration/r1` for Kubernetes admin
-credentials. None is provisioned yet. Decide which operator credentials can
-be safely derived/reissued from bootstrap material and avoid duplicating
-secret authority in separate records unnecessarily. Only add finalized,
-actually generated records to the public manifest. The Trust node's
-independent `trust/kms/<node-id>/r1` coordinator key is a separate secret
-and must never be conflated with Talos machine secrets.
+**Agreed recovery model:** `homelab/v1/trust/talos/bootstrap/r1` is the durable
+Talos authority; reissue client credentials from that material rather than
+maintaining a separate wrapped `talosconfig`. No production bootstrap bundle
+has been created yet. Routine client lifetime is a 24-hour target under the
+[administration policy](../security/security.md#trust-administration-credentials).
+Kubernetes credential recovery/lifetimes remain undecided; see the
+[YubiKey catalogue](../security/yubikey.md). Add only actually generated records
+to the manifest. The independent coordinator KMS key is a separate secret.
 
 **Configuration and delivery:**
 1. Explicit one-time initialization, with operator intent and YubiKey touch,
@@ -177,11 +174,28 @@ validation of the generated configuration, rejection of invalid supplied secrets
 without implicit regeneration, administration credential issuance/reissuance
 from the same bundle, and descriptor cleanup without named plaintext files.
 This establishes a disposable preparation path, not deployable Trust settings
-or actual node access. Keep production
-identity creation, the stable endpoint, credential lifetime/renewal, KMS/disk
-configuration, Kubernetes credential retrieval and apply operations gated on
-separate decisions and checks. No additional wrapped administration record has
+or actual node access. The stable endpoint and Talos recovery/lifetime policy are now agreed;
+production identity creation, a verified 24-hour issuance workflow, KMS/disk
+configuration, Kubernetes credential retrieval and apply operations remain gated. No additional wrapped administration record has
 been created; native client reissuance from bootstrap material is demonstrated.
+
+### Endpoint and administration decisions (2026-11-08)
+
+The [network overview](../network.md#kubernetes-api-endpoint) owns the agreed
+production API URL and initial direct-node DNS mapping. DNS creation is pending;
+the configuration rehearsal deliberately retains its `.invalid` endpoint.
+
+The [security policy](../security/security.md#trust-administration-credentials)
+owns the bootstrap-authority and 24-hour routine client decision. Pinned-source
+inspection confirms offline native signing supports the target lifetime, while
+`config new` needs a live node. The offline signing tools require named paths,
+so a verified RAM-backed directory is needed before implementing that workflow.
+Native offline 24-hour CSR/signing was smoke-tested with fixed public dummy
+CA/client keys; issuer signature, client key match, role, client-auth usage and
+expiry passed. This is not verification of the protected-memory bootstrap
+recovery workflow or node authentication. The existing configuration rehearsal
+still exercises native one-year credentials. No production secrets or DNS
+changes were made.
 
 ### Step-by-step working rules
 

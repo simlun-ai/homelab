@@ -85,8 +85,12 @@ These identifiers propose coverage for the credential roles already documented i
 | `recovery/r2/openbao-restore/r1` | Independently recoverable R2 download credentials. | Snapshot restore helper. |
 | `recovery/backup-decryption/openbao/r1` | Additional snapshot-decryption material, **if additional encryption is selected**. | Snapshot restore helper. |
 | `trust/talos/bootstrap/r1` | Secret-bearing Talos bootstrap material; bundle boundaries TBD. | Trust bootstrap/rebuild helper. |
-| `trust/talos/administration/r1` | Talos administration credentials. | Operator tooling. |
 | `trust/kubernetes/administration/r1` | Kubernetes administration credentials. | Operator tooling. |
+
+Talos administration credentials are reissued from the wrapped bootstrap bundle;
+the previously proposed `trust/talos/administration/r1` record is not used. See the
+[administration policy](security.md#trust-administration-credentials). Kubernetes
+administration remains proposed pending its separate recovery/lifetime decision.
 
 KMS authority and coordinator credentials are supplied from the workstation over SSH under the [session policy](coordinator-sessions.md): KMS expires after one hour; DNS, TLS, and ACME plaintext lasts for the coordinator process lifetime.
 

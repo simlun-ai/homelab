@@ -157,8 +157,8 @@ It then issues and reissues `os:admin` talosconfigs
 from that same bundle and checks their context, roles and expiry through native
 `talosctl config info` JSON output. This tests local credential preparation,
 not authentication to a running node. Native generation currently issues
-one-year client certificates; the operational lifetime/renewal policy remains
-open. Offline reissuance does not revoke earlier credentials. Kubernetes admin
+one-year client certificates. The agreed [routine policy](../../docs/security/security.md#trust-administration-credentials)
+targets 24 hours; its protected offline signing workflow is not yet implemented. Offline reissuance does not revoke earlier credentials. Kubernetes admin
 access needs a bootstrapped API and is not tested here.
 
 Inputs are private, anonymous Linux `memfd` descriptors sealed against changes;
@@ -180,3 +180,8 @@ same public render is used for inspection, native generation and CI.
 The operator verified this target on `simlun-x1` (Linux amd64) on 2026-11-08.
 See the [recorded results](../../docs/installation/02-trust.md#full-configuration-and-administration-credential-rehearsal)
 for the verification scope and remaining production decisions.
+
+The [production API endpoint](../../docs/network.md#kubernetes-api-endpoint) is
+agreed but its DNS record is not yet created. The rehearsal retains test-only
+placeholders. Talos clients will be reissued from the wrapped bootstrap authority;
+no separate wrapped administration record is planned.
