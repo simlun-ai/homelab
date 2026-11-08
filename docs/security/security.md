@@ -160,8 +160,11 @@ also checked against the pinned upstream implementation. The protected named-fil
 Talos CA and included in offline tmpfs CI. The operator verified the disposable
 rehearsal on 2026-11-08; see the
 [verification record](../installation/02-trust.md#protected-24-hour-client-issuer).
-Integration with recovered bootstrap material and live-node authentication
-remain unverified. See [native signing](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/mgmt/gen/crt.go)
+The [wrapped recovery rehearsal](../../clusters/trust/README.md#wrapped-recovery-rehearsal)
+now integrates disposable bundle recovery, native machine validation and fresh
+24-hour clients with authority continuity checks. CI uses real record cryptography
+and a public fake responder; its workstation/YubiKey verification is pending.
+Production bundle use and live-node authentication remain unverified. See [native signing](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/mgmt/gen/crt.go)
 and [online client issuance](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/talos/config.go).
 Kubernetes administration credential retrieval/lifetimes remain a separate
 decision after bootstrap; the Talos policy does not set Kubernetes lifetimes.

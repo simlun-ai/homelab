@@ -13,6 +13,8 @@
 !tests/**/*.py
 !support/**/*.sh
 !support/hsm/Makefile
+!support/hsm/requirements.txt
+!support/hsm/wheels/*.whl
 !support/ups/Makefile
 !support/ups/requirements.txt
 !support/ups/check-tools.py

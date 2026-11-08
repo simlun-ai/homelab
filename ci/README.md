@@ -13,7 +13,7 @@ emulation configured in the builder. No host Python environment is required.
 Docker needs network access for base images, the Dockerfile frontend, OS packages,
 Python dependencies, and pinned Trust CLI downloads during preparation.
 
-`docker-bake.hcl` runs ten targets in parallel:
+`docker-bake.hcl` runs eleven targets in parallel:
 
 | Target | Checks |
 | --- | --- |
@@ -26,6 +26,7 @@ Python dependencies, and pinned Trust CLI downloads during preparation.
 | `trust-validate` | Acquires checksum-verified scoped clients, then runs `make -C clusters/trust validate` offline with native strict Talos validation of the public bundle. |
 | `trust-config-rehearsal` | Offline native generation/strict validation with disposable secrets and the public patches, then Talos administration credential issuance/reissuance using sealed memory descriptors and pipes; no YubiKey or node operations. |
 | `trust-credentials-rehearsal` | Native 24-hour client signing and certificate verification using a disposable CA on a dedicated 16 MiB tmpfs mount, with networking disabled. |
+| `trust-recovery-rehearsal` | Disposable native bundle wrapping/recovery, machine validation and 24-hour client reissuance with authority continuity checks; real HSM record cryptography with the public fake responder, dedicated 16 MiB tmpfs, networking disabled. |
 | `syntax` | Parent Python compilation and `bash -n`, including standalone support scripts. Checked scripts are not executed. |
 
 Run one target with `docker buildx bake --file docker-bake.hcl --progress=plain helpers`
@@ -35,7 +36,7 @@ build cache; nothing is loaded or published.
 
 Only the public code submodule is required. `.dockerignore` allowlists validation
 inputs and excludes private records, Git metadata, local environments, and offline
-wheelhouses. The helper stage asserts that `secrets/wrapped` is absent. Tests use
+wheelhouses except the pinned HSM bundles and parent YAML wheel. The helper stage asserts that `secrets/wrapped` is absent. Tests use
 public disposable key material and temporary Git fixtures, without a YubiKey,
 SSH agent, or coordinator connections. Ansible is parsed and syntax checked;
 provisioning, hardware behavior, and deployment verification remain manual.

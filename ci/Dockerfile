@@ -10,7 +10,8 @@ RUN --mount=type=cache,id=homelab-ci-apt-packages,target=/var/cache/apt,sharing=
 
 FROM base AS helper-tools
 ENV HSM_VENV=/opt/homelab-hsm
-COPY --link support/hsm/Makefile ./support/hsm/
+COPY --link support/hsm/Makefile support/hsm/requirements.txt ./support/hsm/
+COPY --link support/hsm/wheels/ ./support/hsm/wheels/
 COPY --link tools/homelab-hsm/homelab_secrets/ ./tools/homelab-hsm/homelab_secrets/
 RUN --network=none make -C support/hsm tools
 
@@ -102,7 +103,7 @@ FROM trust-tools AS trust-validate
 RUN --network=none make -C clusters/trust validate
 
 FROM helper-tools AS trust-config-rehearsal
-COPY --link scripts/trust_talos_secrets.py scripts/trust_talos_config.py scripts/trust_talos_credentials.py ./scripts/
+COPY --link scripts/trust_talos_secrets.py scripts/trust_talos_config.py scripts/trust_talos_credentials.py scripts/trust_talos_recovery.py ./scripts/
 COPY --link clusters/trust/ ./clusters/trust/
 COPY --from=trust-tools /project/clusters/trust/bin/ ./clusters/trust/bin/
 RUN --network=none make -C clusters/trust config-rehearse
@@ -110,3 +111,9 @@ RUN --network=none make -C clusters/trust config-rehearse
 FROM trust-config-rehearsal AS trust-credentials-rehearsal
 RUN --mount=type=tmpfs,target=/run/trust-credentials,size=16777216 \
     --network=none make -C clusters/trust credentials-rehearse RAM_ROOT=/run/trust-credentials
+
+FROM trust-credentials-rehearsal AS trust-recovery-rehearsal
+COPY --link tests/trust_recovery_native.py ./tests/
+RUN --mount=type=tmpfs,target=/run/trust-recovery,size=16777216 \
+    --network=none /opt/homelab-hsm/bin/python -I -B tests/trust_recovery_native.py \
+    --talosctl /project/clusters/trust/bin/talosctl --ram-root /run/trust-recovery

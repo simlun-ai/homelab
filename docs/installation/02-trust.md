@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Integrate wrapped bootstrap recovery with protected configuration generation and 24-hour client issuance. The production API endpoint and Talos recovery authority are agreed; DNS resolution and the disposable protected issuer rehearsal are verified on the workstation. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
+- **Current next step:** Verify the new disposable wrapped recovery rehearsal on the workstation, integrating protected configuration generation and 24-hour client issuance. The production API endpoint and Talos recovery authority are agreed; DNS resolution and the disposable protected issuer rehearsal are verified on the workstation. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
 
 ### Milestone tracker
 
@@ -215,10 +215,24 @@ client-auth usage, 24-hour expiry, native talosconfig assembly/inspection and
 RAM workspace cleanup. The scoped tools verified Talos `v1.14.5` and kubectl
 `v1.37.1`. No production bootstrap bundle was generated or recovered.
 
-The reusable issuer accepts existing CA PEM material, but safe
-extraction from the wrapped Talos bundle, selected production endpoints in the
-client, and live-node authentication remain to be integrated and verified. The
+The reusable issuer accepts existing CA PEM material. Extraction and integration
+with a disposable wrapped Talos bundle are implemented in the recovery rehearsal
+below; selected production endpoints and live-node authentication remain pending. The
 previous `config-rehearse` target still tests native default one-year generation.
+
+### Wrapped recovery and reissuance rehearsal
+
+Implemented `make -C clusters/trust recovery-rehearse`; refresh the helper
+environment first with `make -C support/hsm tools` for the pinned offline YAML
+parser. See the [rehearsal contract](../../clusters/trust/README.md#wrapped-recovery-rehearsal).
+The target wraps a disposable native bootstrap bundle and recovers it twice,
+validates generated machine configurations against the public patches, and
+issues fresh 24-hour clients from the recovered Talos authority. It checks
+machine/client CA continuity, unchanged recovered input and ciphertext, and
+fresh client keys/certificates. Temporary ciphertext Git fixtures and RAM
+workspaces are removed on completion. CI uses real wrapping with a public fake
+responder; workstation/YubiKey verification is pending. No production identity,
+node authentication, installation or apply is performed.
 
 ### Step-by-step working rules
 

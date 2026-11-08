@@ -197,8 +197,8 @@ No YubiKey or private records are needed. The target generates a disposable CA
 with native Talos tooling, issues an `os:admin` client using `gen key`, `gen csr`
 and `gen crt --hours 24`, then uses native commands to assemble/inspect a
 `talosconfig`. It verifies issuer signature and validity, client key match, role,
-client-auth usage and expiry. The issuer accepts supplied CA PEM bytes; extracting
-those bytes from the recovered production bootstrap bundle is still future work.
+client-auth usage and expiry. The issuer accepts supplied CA PEM bytes; the
+recovery rehearsal below extracts those bytes from a disposable wrapped bundle.
 No production identity, node access, DNS, installation or apply is involved.
 
 `RAM_ROOT` defaults to `/dev/shm`; override it only with an existing tmpfs
@@ -224,3 +224,37 @@ physically zeroizable through Python. The operator verified this target on
 all checks and RAM workspace cleanup passed. See the
 [verification record](../../docs/installation/02-trust.md#protected-24-hour-client-issuer).
 Live Talos authentication is not tested.
+
+
+## Wrapped recovery rehearsal
+
+Refresh the helper environment for the new offline YAML dependency, then run:
+
+```sh
+make -C support/hsm tools
+make -C clusters/trust recovery-rehearse
+```
+
+A YubiKey with the existing slot-2 golden key and approved swap protection is
+required. `RAM_ROOT` has the same verified-tmpfs contract as credential issuance
+above. The target uses only a disposable identity and isolated ciphertext Git
+repositories; the production private submodule is not needed or accessed.
+
+The helper generates and wraps one disposable Talos bundle, discards that input,
+and recovers the ciphertext twice with YubiKey touch. Each recovered bundle feeds
+native configuration generation with the committed public patches and strict
+metal-mode validation, followed by native 24-hour `os:admin` client issuance.
+PyYAML's safe loader reads existing `certs.os` material in memory; missing CA
+fields fail before generation. The helper checks that the generated machine and
+client use that CA, both recoveries return the original bundle, fresh client
+certificates and keys differ, and the ciphertext remains unchanged.
+
+Full machine configurations use sealed anonymous descriptors and pipes; native
+signing files stay in private tmpfs workspaces. Successful completion removes
+the temporary ciphertext repositories and RAM files. The cleanup and SIGKILL
+limitations above also apply. No plaintext credential or configuration is printed.
+Test-only endpoint and disk placeholders remain; this performs no node calls,
+installation, apply, or production identity creation. Operator verification is
+pending in the installation roadmap. CI exercises this flow offline on tmpfs
+using real record cryptography with the public fake responder; it cannot verify
+the physical token or the workstation CLI integration.

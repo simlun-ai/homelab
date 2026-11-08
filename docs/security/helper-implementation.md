@@ -2,7 +2,7 @@
 
 **Initial token setup and wrapping helpers implemented and verified on all four tokens; service helpers remain pending.**
 
-[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Application consumers live under `scripts/homelab/`. Key generation, token programming/verification, shared wrapping and the `homelab-hsm`/`homelab-wrap`/`homelab-unwrap` commands live in homelab-hsm, pinned for application use at `tools/homelab-hsm/homelab_secrets/`. Standalone step 00 uses the separately imported HSM repository. Its `pyproject.toml` owns crypto/token dependency pins; `support/hsm/` installs its committed wheels offline into an external virtualenv for application helpers. The coordinator password and SSH key workflows use `secrets/wrapped/`; real records require local token-backed generation. Coordinator KMS services and OpenBao integration remain pending.
+[Step 00](../installation/00-yubikey-setup.md) owns the executable setup and verification procedure. Application consumers live under `scripts/homelab/`. Key generation, token programming/verification, shared wrapping and the `homelab-hsm`/`homelab-wrap`/`homelab-unwrap` commands live in homelab-hsm, pinned for application use at `tools/homelab-hsm/homelab_secrets/`. Standalone step 00 uses the separately imported HSM repository. Its `pyproject.toml` owns crypto/token dependency pins; `support/hsm/` installs its committed wheels and the parent-owned pinned YAML parser offline into an external virtualenv for application helpers. The coordinator password and SSH key workflows use `secrets/wrapped/`; real records require local token-backed generation. Coordinator KMS services and OpenBao integration remain pending.
 
 ## Workstation helper
 

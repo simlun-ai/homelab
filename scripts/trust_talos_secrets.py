@@ -18,12 +18,15 @@ import subprocess
 import sys
 import tempfile
 import time
+from collections.abc import Generator
+from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RECORD = ROOT / "secrets/wrapped/trust-talos-bootstrap.json"
 KEY_ID = "homelab/v1/trust/talos/bootstrap/r1"
 ROOT_KEY = "golden-1"
+REHEARSAL_KEY_ID = "homelab/v1/trust/talos/rehearsal/r1"
 MAX_SECRETS = 1024 * 1024
 
 
@@ -219,9 +222,9 @@ def recover(unwrap_cli: str) -> None:
     sys.stdout.buffer.flush()
 
 
-def rehearse(talosctl: str, wrap_cli: str, unwrap_cli: str) -> None:
-    """Use only disposable identity material and an isolated ciphertext repository."""
-    key_id = "homelab/v1/trust/talos/rehearsal/r1"
+@contextmanager
+def rehearsal_record() -> Generator[Path]:
+    """Create and clean up an isolated repository containing ciphertext only."""
     print("Preparing isolated ciphertext repository.", flush=True)
     with tempfile.TemporaryDirectory(prefix="trust-talos-rehearsal-") as directory:
         root = Path(directory)
@@ -252,6 +255,13 @@ def rehearse(talosctl: str, wrap_cli: str, unwrap_cli: str) -> None:
             timeout=10,
         )
         require_private_repository(root=root, record=record)
+        yield record
+
+
+def rehearse(talosctl: str, wrap_cli: str, unwrap_cli: str) -> None:
+    """Use only disposable identity material and an isolated ciphertext repository."""
+    key_id = REHEARSAL_KEY_ID
+    with rehearsal_record() as record:
         print("Generating disposable Talos secrets in memory.", flush=True)
         plaintext = generate(talosctl)
         print(
