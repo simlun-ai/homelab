@@ -163,7 +163,9 @@ rehearsal on 2026-11-08; see the
 The [wrapped recovery rehearsal](../../clusters/trust/README.md#wrapped-recovery-rehearsal)
 now integrates disposable bundle recovery, native machine validation and fresh
 24-hour clients with authority continuity checks. CI uses real record cryptography
-and a public fake responder; its workstation/YubiKey verification is pending.
+and a public fake responder. The operator also verified the complete disposable
+flow with the physical YubiKey on 2026-11-08; see the
+[verification record](../installation/02-trust.md#wrapped-recovery-and-reissuance-rehearsal).
 Production bundle use and live-node authentication remain unverified. See [native signing](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/mgmt/gen/crt.go)
 and [online client issuance](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/talos/config.go).
 Kubernetes administration credential retrieval/lifetimes remain a separate

@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Verify the new disposable wrapped recovery rehearsal on the workstation, integrating protected configuration generation and 24-hour client issuance. The production API endpoint and Talos recovery authority are agreed; DNS resolution and the disposable protected issuer rehearsal are verified on the workstation. Then settle initial-installation versus ongoing-operation entry points (Point 5). Verify Pi networking and early-boot behavior before installing onto disks.
+- **Current next step:** Settle initial-installation versus ongoing-operation entry points (Point 5). Disposable wrapped recovery, protected configuration generation and 24-hour client reissuance are verified on the workstation. Production identity creation and node operations remain pending. Verify Pi networking and early-boot behavior before installing onto disks.
 
 ### Milestone tracker
 
@@ -231,8 +231,16 @@ issues fresh 24-hour clients from the recovered Talos authority. It checks
 machine/client CA continuity, unchanged recovered input and ciphertext, and
 fresh client keys/certificates. Temporary ciphertext Git fixtures and RAM
 workspaces are removed on completion. CI uses real wrapping with a public fake
-responder; workstation/YubiKey verification is pending. No production identity,
+responder; the native CI rehearsal passed. No production identity,
 node authentication, installation or apply is performed.
+
+**Operator verification passed on 2026-11-08:** `simlun-x1` (Linux amd64),
+`make -C clusters/trust recovery-rehearse`, using the physical YubiKey and
+`/dev/shm`. The pinned clients and public render checks passed. Both recoveries
+passed native strict metal-mode machine validation and authority continuity;
+fresh 24-hour clients passed certificate policy and native talosconfig inspection.
+The final checks confirmed reissuance from the same authority and removal of
+the temporary ciphertext repository and RAM workspaces.
 
 ### Step-by-step working rules
 
@@ -259,6 +267,7 @@ node authentication, installation or apply is performed.
 | 2026-11-08 | Configuration — operator rehearsal | `simlun-x1`, commit `d12de94`: `make config-rehearse` passed all checks; disposable material only, no node operations | Decide production API endpoint and client lifetime/renewal, then integrate secret recovery |
 | 2026-11-08 | Trust API DNS — operator verification | Cloud Gateway Ultra DNS entry configured; `simlun-x1` resolved the required name through `dig @10.10.0.1` and `getent ahostsv4`; details in [network.md](../network.md#required-dns-entries) | Implement protected 24-hour Talos client issuance |
 | 2026-11-08 | Credentials — operator rehearsal | `simlun-x1`, commit `bd1e759`: `make credentials-rehearse` passed native 24-hour issuance, certificate policy, talosconfig assembly/inspection and cleanup on `/dev/shm`; disposable CA only, no node operations | Integrate wrapped bootstrap recovery with protected generation and client issuance |
+| 2026-11-08 | Wrapped recovery — operator rehearsal | `simlun-x1`: `make recovery-rehearse` passed with the physical YubiKey and `/dev/shm`; both recovered bundles produced validated machine configurations and fresh 24-hour clients under the same authority; temporary ciphertext and RAM workspaces removed | Settle initial-installation versus ongoing-operation entry points (Point 5) |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 

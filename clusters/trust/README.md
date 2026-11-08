@@ -62,7 +62,7 @@ tooling will build the complete native machine config using the same patches
 and independently recoverable secrets **in memory only**, and validate before
 applying. Never commit or persist that complete config on workstation disk.
 
-The [Talos secret lifecycle](../../docs/installation/02-trust.md#talos-secrets-lifecycle-point-3) requires one-time native Talos generation, authenticated YubiKey wrapping and stable recovery of the same cluster identity. An experimental bootstrap-secret helper exists below; administration credential recovery and deployment remain unimplemented.
+The [Talos secret lifecycle](../../docs/installation/02-trust.md#talos-secrets-lifecycle-point-3) requires one-time native Talos generation, authenticated YubiKey wrapping and stable recovery of the same cluster identity. An experimental bootstrap-secret helper exists below; disposable administration credential recovery is verified below; production delivery and deployment remain unimplemented.
 
 The Raspberry Pi `eth0` interface name and UEFI behavior remain unverified.
 Do not apply this partial public bundle to a node.
@@ -257,7 +257,9 @@ signing files stay in private tmpfs workspaces. Successful completion removes
 the temporary ciphertext repositories and RAM files. The cleanup and SIGKILL
 limitations above also apply. No plaintext credential or configuration is printed.
 Test-only endpoint and disk placeholders remain; this performs no node calls,
-installation, apply, or production identity creation. Operator verification is
-pending in the installation roadmap. CI exercises this flow offline on tmpfs
+installation, apply, or production identity creation. The operator verified this
+flow with the physical YubiKey on `simlun-x1` (Linux amd64) on 2026-11-08,
+using `/dev/shm`; all checks and cleanup passed. See the
+[verification record](../../docs/installation/02-trust.md#wrapped-recovery-and-reissuance-rehearsal). CI exercises this flow offline on tmpfs
 using real record cryptography with the public fake responder; it cannot verify
 the physical token or the workstation CLI integration.
