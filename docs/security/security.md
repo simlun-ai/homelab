@@ -166,7 +166,12 @@ now integrates disposable bundle recovery, native machine validation and fresh
 and a public fake responder. The operator also verified the complete disposable
 flow with the physical YubiKey on 2026-11-08; see the
 [verification record](../installation/02-trust.md#wrapped-recovery-and-reissuance-rehearsal).
-Production bundle use and live-node authentication remain unverified. See [native signing](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/mgmt/gen/crt.go)
+The [administration inspection wrapper](../../clusters/trust/README.md#administration-client-inspection)
+now provides a guarded existing-record entry point and a disposable rehearsal.
+It prints only public metadata, requires the initialized private repository for
+production recovery, and never initializes a missing identity. Operator
+verification of this wrapper, production bundle use and live-node authentication
+remain pending. See [native signing](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/mgmt/gen/crt.go)
 and [online client issuance](https://github.com/siderolabs/talos/blob/v1.14.5/cmd/talosctl/cmd/talos/config.go).
 Kubernetes administration credential retrieval/lifetimes remain a separate
 decision after bootstrap; the Talos policy does not set Kubernetes lifetimes.

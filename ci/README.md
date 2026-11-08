@@ -26,7 +26,7 @@ Python dependencies, and pinned Trust CLI downloads during preparation.
 | `trust-validate` | Acquires checksum-verified scoped clients, then runs `make -C clusters/trust validate` offline with native strict Talos validation of the public bundle. |
 | `trust-config-rehearsal` | Offline native generation/strict validation with disposable secrets and the public patches, then Talos administration credential issuance/reissuance using sealed memory descriptors and pipes; no YubiKey or node operations. |
 | `trust-credentials-rehearsal` | Native 24-hour client signing and certificate verification using a disposable CA on a dedicated 16 MiB tmpfs mount, with networking disabled. |
-| `trust-recovery-rehearsal` | Disposable native bundle wrapping/recovery, machine validation and 24-hour client reissuance with authority continuity checks; real HSM record cryptography with the public fake responder, dedicated 16 MiB tmpfs, networking disabled. |
+| `trust-recovery-rehearsal` | Disposable native bundle wrapping/recovery, machine validation, 24-hour client reissuance, and administration-wrapper inspection with explicit endpoint/node and public metadata checks; real HSM record cryptography with the public fake responder, dedicated 16 MiB tmpfs, networking disabled. |
 | `syntax` | Parent Python compilation and `bash -n`, including standalone support scripts. Checked scripts are not executed. |
 
 Run one target with `docker buildx bake --file docker-bake.hcl --progress=plain helpers`

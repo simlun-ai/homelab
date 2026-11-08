@@ -9,6 +9,7 @@ from homelab_secrets import wrapping
 from homelab_secrets.cli import FAKE_ROOT, fake_responder
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+import trust_talos_admin as admin
 import trust_talos_recovery as recovery
 
 
@@ -33,6 +34,13 @@ def main() -> None:
             patch.object(recovery.secrets, "recover_bundle", unwrap),
         ):
             recovery.rehearse(
+                recovery.secrets.executable(args.talosctl),
+                "unused",
+                "unused",
+                args.ram_root,
+            )
+
+            admin.rehearse(
                 recovery.secrets.executable(args.talosctl),
                 "unused",
                 "unused",

@@ -97,7 +97,9 @@ def validate_machine(talosctl: str, config: bytes) -> None:
         )
 
 
-def validate_client(talosctl: str, config: bytes) -> None:
+def validate_client(
+    talosctl: str, config: bytes, expected_context: str = CLUSTER
+) -> dict[str, object]:
     with memory_file(config) as fd:
         result = secrets.capture_bundle(
             [
@@ -113,13 +115,14 @@ def validate_client(talosctl: str, config: bytes) -> None:
             pass_fds=(fd,),
         )
     info: dict[str, object] = json.loads(result)
-    if info.get("context") != CLUSTER or info.get("roles") != ["os:admin"]:
+    if info.get("context") != expected_context or info.get("roles") != ["os:admin"]:
         raise ValueError("Unexpected generated client identity or roles")
     expiry = info.get("certNotAfter")
     if not isinstance(expiry, str):
         raise ValueError("Missing client certificate expiry")
     if date.fromisoformat(expiry) <= datetime.now(UTC).date():
         raise ValueError("Generated client certificate is expired")
+    return info
 
 
 def rehearse(talosctl: str) -> None:

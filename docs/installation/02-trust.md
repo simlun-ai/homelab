@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, OS SSD MD RAID1, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Settle initial-installation versus ongoing-operation entry points (Point 5). Disposable wrapped recovery, protected configuration generation and 24-hour client reissuance are verified on the workstation. Production identity creation and node operations remain pending. Verify Pi networking and early-boot behavior before installing onto disks.
+- **Current next step:** Verify `make -C clusters/trust admin-rehearse` with the physical YubiKey. Point 5 now separates explicit identity initialization, node installation and routine administration; the local administration inspection wrapper is implemented, with operator verification pending. Disposable wrapped recovery, protected configuration generation and 24-hour client reissuance are verified on the workstation. Production identity creation and node operations remain pending. Verify Pi networking and early-boot behavior before installing onto disks.
 
 ### Milestone tracker
 
@@ -241,6 +241,23 @@ passed native strict metal-mode machine validation and authority continuity;
 fresh 24-hour clients passed certificate policy and native talosconfig inspection.
 The final checks confirmed reissuance from the same authority and removal of
 the temporary ciphertext repository and RAM workspaces.
+
+### Operating entry points (Point 5)
+
+Agreed separate workflows: initialize the wrapped identity once; install a node
+from the recovered authority after KMS/disk readiness; administer using fresh
+24-hour clients recovered from that same authority. Installation and routine
+administration must never generate a replacement identity. Installation
+preparation and explicit apply remain separate; no apply workflow is implemented.
+
+The first administration slice is implemented as `admin-inspect`, which requires
+an existing production record and performs local inspection only. Its disposable
+`admin-rehearse` counterpart exercises the same path with the physical YubiKey
+without creating a production identity. Native CI uses the public fake responder;
+operator verification is pending. The wrapper uses context `trust` and derives
+the direct Talos node/endpoint from the committed node address; it prints only
+public metadata. See the [command contract](../../clusters/trust/README.md#administration-client-inspection).
+Live Talos command delivery and authentication remain pending.
 
 ### Step-by-step working rules
 

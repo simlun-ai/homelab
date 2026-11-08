@@ -203,7 +203,15 @@ def verify_client(
         raise ValueError("Unexpected client certificate expiry")
 
 
-def issue(talosctl: str, ca_crt: bytes, ca_key: bytes, root: Path) -> bytes:
+def issue(
+    talosctl: str,
+    ca_crt: bytes,
+    ca_key: bytes,
+    root: Path,
+    *,
+    context: str = config.CLUSTER,
+    node: str | None = None,
+) -> bytes:
     """Issue from supplied CA material; never generate a replacement authority."""
     with ram_directory(root) as (path, fd):
         write_file(path / "ca.crt", ca_crt)
@@ -256,7 +264,7 @@ def issue(talosctl: str, ca_crt: bytes, ca_key: bytes, root: Path) -> bytes:
             [
                 "config",
                 "add",
-                config.CLUSTER,
+                context,
                 "--ca",
                 str(path / "ca.crt"),
                 "--crt",
@@ -274,16 +282,30 @@ def issue(talosctl: str, ca_crt: bytes, ca_key: bytes, root: Path) -> bytes:
             [
                 "config",
                 "context",
-                config.CLUSTER,
+                context,
                 "--talosconfig",
                 str(path / "talosconfig"),
             ],
             path,
             fd,
         )
+        if node is not None:
+            for setting in ("endpoint", "node"):
+                run_native(
+                    talosctl,
+                    [
+                        "config",
+                        setting,
+                        node,
+                        "--talosconfig",
+                        str(path / "talosconfig"),
+                    ],
+                    path,
+                    fd,
+                )
         client = read_file(path / "talosconfig")
         print("Inspecting assembled client configuration.", flush=True)
-        config.validate_client(talosctl, client)
+        config.validate_client(talosctl, client, context)
         return client
 
 

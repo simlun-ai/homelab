@@ -263,3 +263,37 @@ using `/dev/shm`; all checks and cleanup passed. See the
 [verification record](../../docs/installation/02-trust.md#wrapped-recovery-and-reissuance-rehearsal). CI exercises this flow offline on tmpfs
 using real record cryptography with the public fake responder; it cannot verify
 the physical token or the workstation CLI integration.
+
+
+## Administration client inspection
+
+```sh
+make -C clusters/trust admin-rehearse
+```
+
+This exercises the administration wrapper with a disposable authority and the
+physical YubiKey. It uses the same private ciphertext Git fixture and tmpfs
+requirements as `recovery-rehearse`. It recovers the wrapped bundle, issues a
+fresh 24-hour `os:admin` client, inspects it locally and cleans up. Operator
+verification is pending; CI runs native issuance with the public fake responder.
+
+Once a production bootstrap record has been deliberately initialized, use:
+
+```sh
+make -C clusters/trust admin-inspect
+```
+
+This requires the initialized private submodule and existing bootstrap record.
+It never generates an identity, wraps a record, or overwrites the authority.
+Missing records, failed recovery or invalid CA material stop the operation.
+The context is `trust`; both Talos endpoint and target node come from the single
+IPv4 address in the committed `trust-cp1` LinkConfig patch, independently of the
+Kubernetes API DNS endpoint. Missing or ambiguous addresses are rejected.
+
+The wrapper issues through the protected native signer and uses a sealed memfd
+for local inspection. Only context, endpoint/node, roles and certificate dates
+are printed; the talosconfig, private key and recovered bundle are never printed
+or persisted. The same cleanup and paging limitations as the credential
+rehearsal apply. Neither command contacts a node. Live command delivery remains
+a later slice; this entry point currently supports local inspection only.
+No production identity has been created by implementation or CI.

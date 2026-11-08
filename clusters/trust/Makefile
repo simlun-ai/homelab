@@ -3,7 +3,7 @@ SCOPE := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 PYTHON ?= python3
 RAM_ROOT ?= /dev/shm
 HSM_VENV ?= $(HOME)/.local/share/homelab/venvs/hsm
-.PHONY: help tools check-tools render check-rendered validate secrets-rehearse config-rehearse credentials-rehearse recovery-rehearse
+.PHONY: help tools check-tools render check-rendered validate secrets-rehearse config-rehearse credentials-rehearse recovery-rehearse admin-inspect admin-rehearse
 help:
 	@printf '%s\n' \
 	  'tools: download and verify pinned talosctl and kubectl (Linux amd64/arm64)' \
@@ -14,7 +14,9 @@ help:
 	  'secrets-rehearse: disposable in-memory Talos/YubiKey round trip and failure checks' \
 	  'config-rehearse: offline disposable full config and Talos admin credential generation' \
 	  'credentials-rehearse: native 24-hour client issuance on verified tmpfs (RAM_ROOT=/dev/shm)' \
-	  'recovery-rehearse: disposable YubiKey recovery, configuration and 24-hour client reissuance'
+	  'recovery-rehearse: disposable YubiKey recovery, configuration and 24-hour client reissuance' \
+	  'admin-inspect: recover existing production authority and inspect a fresh client locally' \
+	  'admin-rehearse: test administration inspection with a disposable wrapped authority'
 tools:
 	@$(PYTHON) -I -B "$(SCOPE)/tooling.py" install
 check-tools:
@@ -42,6 +44,17 @@ credentials-rehearse: check-tools
 
 recovery-rehearse: check-tools check-rendered
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_talos_recovery.py" \
+	  --talosctl "$(SCOPE)/bin/talosctl" --ram-root "$(RAM_ROOT)" \
+	  --wrap "$(HSM_VENV)/bin/homelab-wrap" \
+	  --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
+
+admin-inspect: check-tools check-rendered
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_talos_admin.py" inspect \
+	  --talosctl "$(SCOPE)/bin/talosctl" --ram-root "$(RAM_ROOT)" \
+	  --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
+
+admin-rehearse: check-tools check-rendered
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_talos_admin.py" rehearse \
 	  --talosctl "$(SCOPE)/bin/talosctl" --ram-root "$(RAM_ROOT)" \
 	  --wrap "$(HSM_VENV)/bin/homelab-wrap" \
 	  --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
