@@ -300,3 +300,16 @@ or persisted. The same cleanup and paging limitations as the credential
 rehearsal apply. Neither command contacts a node. Live command delivery remains
 a later slice; this entry point currently supports local inspection only.
 No production identity has been created by implementation or CI.
+
+
+## Pi live-boot discovery
+
+The [UEFI experiment](../../docs/installation/02-trust.md#discovery-scope-and-boot-artifacts)
+selects pftf/RPi4 v1.53 and the generic ARM64 ISO for the Talos version in
+`versions.yaml`, with reviewed SHA-256 values and manual download instructions.
+Downloads and card-preparation working files belong in ignored `boot/`.
+Start with candidate disks disconnected; reach UEFI setup before preparing the
+separate ISO USB medium. Disk identities, adapter details and final assignments
+will be recorded during inventory. No machine configuration is applied in this
+phase; reaching maintenance mode does not establish encrypted installation or
+pre-STATE KMS readiness. Hardware verification remains pending.

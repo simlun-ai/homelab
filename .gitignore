@@ -9,3 +9,5 @@ dist/
 .ruff_cache/
 
 /clusters/trust/bin/
+
+/clusters/trust/boot/

@@ -11,7 +11,7 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Review the tested [KMS software core](../security/trust-bootstrap-kms.md#implemented-software-core-and-its-limits), then proceed with the non-destructive Pi live-boot discovery from the approved walkthrough. Daemon/process/transport integration remains pending. The endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; DNS, certificate and listener deployment remain pending. UUID/time/admission/recovery details remain open. Point 5 separates explicit identity initialization, node installation and routine administration; local administration inspection is now verified with a disposable authority and the physical YubiKey. Production identity creation, live command delivery and node authentication remain pending. KMS readiness, Pi networking and early-boot behavior must be verified before installing onto disks.
+- **Current next step:** Identify the firmware microSD card and reach UEFI setup with candidate disks disconnected, using the verified boot artifacts below. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. Firmware boot, Pi networking/time/UUID and disk inventory must be verified before installation.
 
 Trust's four-disk, 128 GB-per-disk allocation is provisional. The upcoming disk
 inventory phase will gather each disk's brand, model, capacity, serial and
@@ -368,6 +368,42 @@ The SD card remains inserted for normal operation and is a boot dependency outsi
 
 This experiment aims to avoid the modified raw-image/META deletion and manual firmware-copy workaround described in [Talos issue #14555](https://github.com/siderolabs/talos/issues/14555#issuecomment-6464577848). Successful UEFI boot reports exist, but do not establish that our ISO installation, RAID1 failover, upgrades, or KMS unlock work.
 
+### Discovery scope and boot artifacts
+
+Begin with all candidate OS/data disks disconnected. Use a dedicated microSD
+card for UEFI and a separate disposable USB stick for the Talos ISO. Neither
+medium is a selected OS/data disk. Identify each by model, serial and capacity
+before writing it; do not infer a device from `/dev/sdX` ordering. Firmware-card
+formatting below deliberately erases only the positively identified card.
+
+| Artifact | Selected release | SHA-256 |
+| --- | --- | --- |
+| `RPi4_UEFI_Firmware_v1.53.zip` | pftf/RPi4 `v1.53` | `ca9973e2a7a546b3df871cfb7382e656829114b6dfa424f40dc67cc90a217d88` |
+| `metal-arm64.iso` | Talos `v1.14.5`, from `clusters/trust/versions.yaml` | `1b1d3b3d49d326da941cab967ffb92e927fa11c2893f5e5da8224dff255306cc` |
+
+Release metadata was rechecked on 2026-11-08. This pins the generic ARM64 ISO,
+without a Raspberry Pi overlay, custom schematic or machine configuration.
+Keep the ISO hash synchronized with a deliberate Talos pin change. This is an
+experiment, not evidence of Raspberry Pi compatibility or a supported mirror
+installation method.
+
+The [Talos ISO guide](https://docs.siderolabs.com/talos/v1.14/platform-specific-installations/bare-metal-platforms/iso)
+states that applying machine configuration initiates installation, and that an
+existing Talos installation on an attached disk can be used when booting an ISO.
+Do not apply configuration during discovery. Before later attaching candidate
+disks, inventory existing partition/filesystem signatures read-only on the
+workstation; an existing Talos system must be reviewed before allowing the Pi
+to boot with it attached. Do not erase it merely to obtain maintenance mode.
+The final disk selection and OS/data assignment remain undecided until inventory.
+
+First gate: reach UEFI setup with disks disconnected. Second gate: prepare the
+separate ISO USB medium, then boot it into maintenance mode with candidate disks
+still disconnected. Later discovery will record UUID stability across cold boots,
+Ethernet/MAC, networking/DNS/time and disk/adapter identities in inventory.md.
+A live network check does not prove pre-STATE networking or KMS unlock readiness.
+No production identity creation, apply, formatting of OS/data disks or cluster
+bootstrap belongs to these discovery gates.
+
 ### Prepare SD-first EEPROM boot
 
 The Pi EEPROM bootloader must select SD before USB so that EDK2 runs before the disk bootloader. EEPROM boot order and EDK2's subsequent OS boot order are separate settings.
@@ -384,7 +420,14 @@ This resets the EEPROM bootloader configuration. The recovery card may then be r
 
 ### Download firmware on the Linux workstation
 
-Use the release ZIP, not GitHub's source archive. Version 1.53 is the initial experiment pin; revisit it deliberately when recording results.
+Use the release ZIP, not GitHub's source archive. Version 1.53 remains the
+experiment pin. From the repository root, create an ignored working directory;
+run the remaining download/card-preparation blocks from that directory:
+
+```bash
+mkdir -p clusters/trust/boot
+cd clusters/trust/boot
+```
 
 ```bash
 curl -fL -o RPi4_UEFI_Firmware_v1.53.zip \
@@ -394,7 +437,27 @@ echo 'ca9973e2a7a546b3df871cfb7382e656829114b6dfa424f40dc67cc90a217d88  RPi4_UEF
   | sha256sum --check
 ```
 
-The checksum comes from the [release asset metadata](https://api.github.com/repos/pftf/RPi4/releases/tags/v1.53) checked on 2026-10-28; proceed only if verification succeeds.
+The checksum comes from the [release asset metadata](https://api.github.com/repos/pftf/RPi4/releases/tags/v1.53) rechecked on 2026-11-08; proceed only if verification succeeds.
+
+### Download the Talos discovery ISO
+
+From the same `clusters/trust/boot` directory, read the central Talos pin without
+probing an installed CLI, then download the generic ARM64 ISO:
+
+```bash
+talos_release=$(python3 -I -B -c 'import runpy; print(runpy.run_path("../tooling.py")["version"]("talos"))')
+curl -fL -o metal-arm64.iso \
+  "https://github.com/siderolabs/talos/releases/download/${talos_release}/metal-arm64.iso"
+
+echo '1b1d3b3d49d326da941cab967ffb92e927fa11c2893f5e5da8224dff255306cc  metal-arm64.iso' \
+  | sha256sum --check
+```
+
+The hash is from the [Talos release asset metadata](https://api.github.com/repos/siderolabs/talos/releases/tags/v1.14.5).
+Stop on any error. These commands download files only; writing the ISO to a
+separate USB stick is a later step after that device is positively identified.
+The ZIP must be extracted onto the FAT firmware card; it must not be flashed
+as an image. The ISO uses a separate installer medium.
 
 ### Partition and populate the firmware card
 
@@ -453,14 +516,28 @@ Both file checks must succeed. Preserve the archive's filenames, directories, an
 
 After the first successful Talos boot, disable **Limit RAM to 3 GB**, reboot, and verify full memory availability plus working Ethernet and USB storage. The default limit addresses Pi DMA constraints; see [pftf's compatibility notes](https://github.com/pftf/RPi4#initial-notice).
 
-The firmware card is ready once UEFI setup works. Keep it inserted. The next experiment is to boot a separate generic `metal-arm64.iso` USB installer, initially without the `rpi_generic` overlay. Exact image pins, scoped tooling, RAID selectors, and installation commands remain TODO. After installation, prefer the disk boot entries over network boot entries in EDK2.
+The firmware card is ready once UEFI setup works. Keep it inserted. The next
+experiment is to write the checksum-verified generic ARM64 ISO to the separately
+identified USB installer and boot with candidate disks disconnected. Exact USB
+device selection/write commands will be confirmed at that gate. RAID selectors
+and installation commands remain TODO. After a future installation, prefer disk
+boot entries over network boot entries in EDK2.
+
+Artifact preparation (2026-11-08): both pinned downloads were retrieved and
+SHA-256 verified in the development workspace; firmware ZIP inspection confirmed
+`RPI_EFI.fd`, `config.txt`, `start4.elf` and `fixup4.dat` at its root. The central
+Talos-pin lookup command was also checked. No card was written or Pi booted by
+these checks; operator firmware-card preparation and hardware results are pending.
 
 ### Experiment record and acceptance checks
 
 Record the repository revision, EEPROM and EDK2 versions/settings, Talos image/schematic, assigned disk identities, results, and remaining issues here. Do not mark these complete until tried.
 
 - [ ] Firmware card reaches UEFI; settings survive a cold boot.
-- [ ] Generic Talos ARM64 installer boots and sees Ethernet, both OS disks, and full RAM after removing the limit.
+- [ ] Checksum-verified generic Talos ARM64 ISO reaches maintenance mode with candidate disks disconnected.
+- [ ] Record node UUID and verify stability across cold boots; record Ethernet/MAC, network, DNS and time observations.
+- [ ] Inventory candidate disks/adapter identities and existing signatures read-only; decide final OS/data assignments in inventory.md.
+- [ ] Generic Talos ARM64 installer sees the selected disks and full RAM after removing the limit.
 - [ ] Firmware card does not confuse Talos EFI/system-disk discovery.
 - [ ] Installation onto MD RAID1 with metadata `1.0` completes without META deletion or copying firmware.
 - [ ] Installed Talos cold boots with installation media removed.
