@@ -177,5 +177,6 @@ The hostname patch explicitly sets `auto: off`: otherwise native merging retains
 Talos's generated `auto: stable`, conflicting with the explicit hostname. The
 same public render is used for inspection, native generation and CI.
 
-Native amd64 generation/validation passed during implementation. Operator
-verification of this target is pending in the installation roadmap.
+The operator verified this target on `simlun-x1` (Linux amd64) on 2026-11-08.
+See the [recorded results](../../docs/installation/02-trust.md#full-configuration-and-administration-credential-rehearsal)
+for the verification scope and remaining production decisions.
