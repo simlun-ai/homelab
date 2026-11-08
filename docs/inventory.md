@@ -29,7 +29,7 @@ Per-device power-return support, settings, and verification remain TBD, includin
 - **Capacity accounting:** Summary totals use this provisional allocation: 512 GB raw and 256 GB nominal usable across the two mirrors. Final hardware identities and allocation will be confirmed during the disk inventory phase.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
 - **Network:** 1 Gbit Ethernet on `k8s-aux` (VLAN 10), static `10.10.0.10`; planned node hostname `trust-cp1.k8s-aux.lundmark.internal`.
-- **Boot configuration:** Operator completed SD-first EEPROM configuration and reached pftf/EDK2 UEFI setup from the dedicated firmware microSD card on 2026-11-08. Exact EEPROM/UEFI display versions and BOOT_ORDER are not yet recorded; settings persistence and Talos boot remain unverified. See the [UEFI experiment results](installation/02-trust.md#experiment-record-and-acceptance-checks). Exact card model/capacity remains pending inventory; boot media are excluded from disk totals.
+- **Boot configuration:** Operator completed SD-first EEPROM configuration and reached pftf/EDK2 UEFI setup from the dedicated firmware microSD card on 2026-11-08. UEFI Firmware v1.53 was confirmed on 2026-11-09, with setup reached again after a full power cycle and no settings changes. Exact EEPROM version and BOOT_ORDER are not yet recorded; persistence of modified settings and Talos boot remain unverified. See the [UEFI experiment results](installation/02-trust.md#experiment-record-and-acceptance-checks). Exact card model/capacity remains pending inventory; boot media are excluded from disk totals.
 
 ## Backup
 

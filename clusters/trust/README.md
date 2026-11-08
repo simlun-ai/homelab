@@ -65,8 +65,9 @@ applying. Never commit or persist that complete config on workstation disk.
 The [Talos secret lifecycle](../../docs/installation/02-trust.md#talos-secrets-lifecycle-point-3) requires one-time native Talos generation, authenticated YubiKey wrapping and stable recovery of the same cluster identity. An experimental bootstrap-secret helper exists below; disposable administration credential recovery is verified below; production delivery and deployment remain unimplemented.
 
 The Raspberry Pi `eth0` interface name and Talos behavior under UEFI remain
-unverified. The operator reached UEFI setup on 2026-11-08; subsequent cold-boot
-settings persistence and Talos ISO boot are still pending.
+unverified. The operator reached UEFI setup on 2026-11-08 and confirmed UEFI
+Firmware v1.53 with a successful repeat cold boot on 2026-11-09. Settings were
+unchanged; modified-setting persistence and Talos ISO boot remain unverified.
 Do not apply this partial public bundle to a node.
 
 ## Experimental bootstrap-secret CLI (Point 3)
@@ -317,4 +318,6 @@ phase; reaching maintenance mode does not establish encrypted installation or
 pre-STATE KMS readiness. SD-first EEPROM configuration and the first UEFI setup
 boot were operator-verified on 2026-11-08; see the
 [experiment record](../../docs/installation/02-trust.md#experiment-record-and-acceptance-checks).
-Cold-boot settings persistence and Talos hardware discovery remain pending.
+UEFI Firmware v1.53 and a repeat cold boot into setup were verified on
+2026-11-09 without settings changes. Persistence of modified settings and
+Talos hardware discovery remain pending.
