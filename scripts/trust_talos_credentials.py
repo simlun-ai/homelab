@@ -127,6 +127,7 @@ def run_native(talosctl: str, args: list[str], path: Path, fd: int) -> None:
         "XDG_CACHE_HOME": str(path),
     }
     env.pop("TALOSCONFIG", None)
+    print(f"Native step: {args[0]} {args[1]}", flush=True)
     with file_limit():
         subprocess.run(
             [talosctl, *args],
@@ -237,6 +238,7 @@ def issue(talosctl: str, ca_crt: bytes, ca_key: bytes, root: Path) -> bytes:
             fd,
         )
         after = datetime.now(UTC)
+        print("Verifying issued certificate policy.", flush=True)
         verify_client(
             ca_crt,
             read_file(path / "client.crt"),
@@ -275,6 +277,7 @@ def issue(talosctl: str, ca_crt: bytes, ca_key: bytes, root: Path) -> bytes:
             fd,
         )
         client = read_file(path / "talosconfig")
+        print("Inspecting assembled client configuration.", flush=True)
         config.validate_client(talosctl, client)
         return client
 
