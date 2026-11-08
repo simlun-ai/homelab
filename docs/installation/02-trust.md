@@ -10,8 +10,9 @@
 
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
-- **Planned, not verified:** Pi 4 UEFI firmware-card boot, Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Identify the firmware microSD card and reach UEFI setup with candidate disks disconnected, using the verified boot artifacts below. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. Firmware boot, Pi networking/time/UUID and disk inventory must be verified before installation.
+- **Verified first boot:** SD-first EEPROM configuration completed and the prepared UEFI firmware card reached setup on 2026-11-08. EEPROM version, exact BOOT_ORDER, settings persistence and Talos boot remain unverified.
+- **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
+- **Current next step:** Confirm UEFI settings persist across a cold boot with candidate disks disconnected, then identify the separate Talos ISO USB medium. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. UEFI settings persistence, Talos boot, Pi networking/time/UUID and disk inventory must be verified before installation.
 
 Trust's four-disk, 128 GB-per-disk allocation is provisional. The upcoming disk
 inventory phase will gather each disk's brand, model, capacity, serial and
@@ -27,7 +28,7 @@ before selecting disks for installation.
 | 1 | Provisioning contract and scoped tools | Agree on declarative node/disk schema, `clusters/trust/` layout, version pins, `make` entry points and safe secret-handling approach; implement the minimum needed | Pending |
 | 2 | KMS protocol and recovery decisions | Specify per-node wrapped key context, seal/unseal envelope, TLS endpoint and certificate handling, session authorization, early boot DNS/NTP, admission restrictions, and independent loss recovery | Payload/session behavior, endpoint and sequence approved; wire details proposed; UUID/time/admission/recovery choices pending |
 | 3 | `ups-aux` KMS implementation | Service and Ansible configuration deployed; authorized `Seal`/`Unseal`, expiry, restart and fail-closed checks verified independently of Kubernetes/OpenBao | Pending |
-| 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | Pending |
+| 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | In progress — SD-first configured and first UEFI setup boot verified; persistence/Talos discovery pending |
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
 | 6 | Install encrypted Talos | Deliberately install onto assigned OS disks only; cold boot with the independent KMS authorized; encrypted volume coverage verified | Pending |
 | 7 | Bootstrap Kubernetes | Bootstrap the single control-plane node; verify API, node readiness, system pods, DNS and Flannel networking | Pending |
@@ -349,6 +350,7 @@ YubiKey session authorization, Pi boot or disk-unlock verification.
 | 2026-11-08 | KMS contract — documentation draft | Pinned Talos/proto source inspected; proposed envelope, authorization, failure/recovery behavior and test gates documented; no implementation or deployment | Review contract and resolve open choices before disposable service tests |
 | 2026-11-08 | KMS — software core | Envelope/session logic and independent public vector implemented; controlled-clock and race tests pass locally; no service or hardware operations | Review core evidence; proceed with Pi discovery and remaining service integration gates |
 | 2026-11-08 | KMS core — operator software tests | `simlun-x1`: `make -C support/hsm test` completed successfully; parent suite followed by the HSM component suite (74 tests, `OK`); no hardware/service operations | Proceed with non-destructive Pi discovery; daemon/transport and deployment gates remain pending |
+| 2026-11-08 | Pi firmware — operator verification | SD-first EEPROM step completed; separate firmware microSD card reached UEFI setup; exact EEPROM/UEFI display versions and BOOT_ORDER not captured | Confirm cold-boot settings persistence, then prepare the separately identified Talos ISO USB medium |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 
@@ -527,13 +529,16 @@ Artifact preparation (2026-11-08): both pinned downloads were retrieved and
 SHA-256 verified in the development workspace; firmware ZIP inspection confirmed
 `RPI_EFI.fd`, `config.txt`, `start4.elf` and `fixup4.dat` at its root. The central
 Talos-pin lookup command was also checked. No card was written or Pi booted by
-these checks; operator firmware-card preparation and hardware results are pending.
+these checks. The operator subsequently completed EEPROM/card preparation and
+reached UEFI setup as recorded below.
 
 ### Experiment record and acceptance checks
 
 Record the repository revision, EEPROM and EDK2 versions/settings, Talos image/schematic, assigned disk identities, results, and remaining issues here. Do not mark these complete until tried.
 
-- [ ] Firmware card reaches UEFI; settings survive a cold boot.
+- [x] Operator completed SD-first EEPROM configuration (2026-11-08).
+- [x] Prepared firmware card reaches UEFI setup (2026-11-08).
+- [ ] UEFI settings survive a subsequent cold boot.
 - [ ] Checksum-verified generic Talos ARM64 ISO reaches maintenance mode with candidate disks disconnected.
 - [ ] Record node UUID and verify stability across cold boots; record Ethernet/MAC, network, DNS and time observations.
 - [ ] Inventory candidate disks/adapter identities and existing signatures read-only; decide final OS/data assignments in inventory.md.
@@ -545,7 +550,16 @@ Record the repository revision, EEPROM and EDK2 versions/settings, Talos image/s
 - [ ] Talos upgrade and subsequent cold boot work.
 - [ ] Independent coordinator KMS unlock works, including a cold startup.
 
-Results: **Not tried.**
+Results (2026-11-08): **First UEFI setup boot passed.** The operator completed
+the Raspberry Pi Imager SD Card Boot EEPROM step, then used a different card
+(reported as 14.8 GiB at `/dev/sda` on `simlun-x1`) for the documented pftf/RPi4
+v1.53 firmware preparation and reported reaching UEFI setup. `/dev/sda` is a
+workstation observation, not a persistent card identifier. Card model/exact byte
+capacity and displayed firmware/EEPROM versions have not been captured. The
+exact BOOT_ORDER value and ACPI/RAM settings were not reported. Settings
+persistence across another cold boot, Talos ISO boot and subsequent discovery
+checks remain pending. No Talos configuration or installation was performed in
+this step.
 
 If the firmware card fails, power off and recreate it from the pinned archive; recheck SD-first EEPROM boot. Preserve the previous boot media/settings for rollback. Reverting a Talos disk installation needs its own recovery procedure before destructive installation is attempted.
 
