@@ -18,9 +18,15 @@ acceptance criteria. It is documentation, not a deployed or verified service.
 - [ ] Settle UUID mapping, early-boot NTP/networking, admission rules and independent recovery inputs. The public TLS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`. The [UniFi DNS record](../network.md#required-dns-entries) resolved to `10.10.0.5` from the workstation and the Pi. The Pi's TCP probe timed out. Certificate and listener deployment remain pending.
 - [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
 - [x] Stage the locked service on `ups-aux` and verify it reports an empty authorization window (2026-11-09).
-- [ ] Implement TLS/ACME and local wrapped-record deployment.
+- [ ] Run the [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) on `ups-aux`.
+- [ ] Implement durable wrapped ACME state recovery, scheduled production renewal and the locked TLS listener.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).
 - [ ] Verify startup without Trust/OpenBao, the one-hour KMS window, expiry/lock/restart behaviour, and certificate renewal.
+
+## Prepare Cloudflare and rehearse ACME
+
+Follow the [standalone Cloudflare configuration guide](trust-kms-cloudflare.md)
+to create the scoped DNS token and exercise Certbot issuance and renewal in RAM.
 
 ## Stage the locked service
 

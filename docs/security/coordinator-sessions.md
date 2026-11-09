@@ -24,9 +24,14 @@ The coordinator starts with KMS locked; UPS management remains available.
    be removed.
 
 Never transmit the golden key or raw HMAC responses to the coordinator.
-Keep secret payloads out of command arguments, files, and logs.
+Keep secret payloads out of command arguments, persistent files, and logs.
 Follow the [memory-only handling policy](security.md#secret-handling-boundary)
-on both hosts.
+on both hosts. The operator approved one exception on 2026-11-09 for Certbot
+and its Cloudflare plugin on `ups-aux`. Their named secret files may exist
+inside a dedicated, access-restricted tmpfs mount verified with `noswap`.
+Check coordinator swap and core dump policy before reading credentials.
+Remove the workspace when ACME authorization ends. Workstation and KMS
+unlock secrets continue to use memory or streams.
 
 ## Separate lifetimes
 
