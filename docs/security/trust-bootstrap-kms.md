@@ -5,7 +5,8 @@ pending. No service, keys or endpoint deployment is implemented by this document
 in [security.md](security.md#trust-bootstrap-kms) and
 [coordinator sessions](coordinator-sessions.md). The envelope codec and in-process session model are now implemented and
 software-tested as described below. The loopback rehearsal implements gRPC error
-mapping. Local authorization framing and daemon/process isolation remain proposed.
+mapping. The daemon rehearsal also exercises local authorization framing and a
+per-window worker process.
 This contract covers Trust only; the OpenBao transit adapter is separate.
 
 ## Walkthrough decisions (2026-11-08)
@@ -190,7 +191,8 @@ released before locking cannot be recalled. Start with no active worker or keys.
 
 Use a monotonic elapsed-time source for the hour, including suspend time (Linux
 `CLOCK_BOOTTIME` selected for the software core); wall-clock corrections must
-not extend authorization. Daemon scheduling and worker termination are pending.
+not extend authorization. The rehearsal supervisor polls for expiry and worker
+exit and checks the deadline again at request and response handoff.
 Never restart a worker with cached keys after failure. No plaintext key or unlock
 cache survives a window. Python object deletion is not secure zeroization;
 process isolation, dump/paging protection and observed cleanup remain validation
@@ -305,8 +307,8 @@ is supplied by this slice. Those gates remain mandatory before live keys.
 | Test layer | Required evidence and status |
 | --- | --- |
 | Protocol/crypto unit tests | Software tests pass for the fixed public vector; exact 32-byte round trip; fresh salt/nonce; unknown/duplicate/oversized fields, wrong UUID/generation, malformed encodings and every authenticated-field/ciphertext mutation rejected. |
-| Session tests with controlled clocks | In-process tests pass for atomic batches, stale daemon ID and repeated activation rejected; dropped acknowledgment resolved without extension; wall-clock changes and suspend do not extend the modeled hour. Local peer admission remains pending. |
-| Concurrency/failure tests | In-process race tests pass for discarding late results; actual worker termination and network release gating remain pending: worker crash/restart clears authority; bounded request queues; no secret logs, dumps or named disk files. |
+| Session tests with controlled clocks | In-process tests pass for atomic batches, stale daemon ID and repeated activation rejected; dropped acknowledgment resolved without extension; wall-clock changes and suspend do not extend the modeled hour. The loopback rehearsal checks an explicit Unix peer UID allowlist. |
+| Concurrency/failure tests | In-process race tests pass for discarding late results; the daemon rehearsal exercises worker termination, expiry, worker death and release gating. Coordinator service hardening remains pending. |
 | Native client integration | Generated Python stubs match pinned proto; real gRPC/TLS interoperability, wrong hostname/chain/expiry rejected, no client-auth assumption; repeated Seal/Unseal for independent STATE/EPHEMERAL payloads under one node key. |
 | Coordinator deployment | SSH and UPS available while locked; local ciphertext-only startup; one-hour window, lock, disconnect, reboot, time loss, certificate renewal and expired-certificate recovery tested. |
 | Pi live boot | Recorded stable UUID; actual pre-STATE Ethernet/DNS/NTP; TLS chain trusted by stock Talos; cold-boot unlock, timeout/retry behavior and expired-window rejection. |
@@ -331,6 +333,24 @@ The operator ran `make -C support/hsm kms-tls-rehearse` successfully on
 `simlun-x1` with Python 3.13.18 at `b2ca4e6` on 2026-11-09. See the
 [Trust runbook](../installation/02-trust.md#experiment-record-and-acceptance-checks).
 
-This stage uses one process. Production socket authorization, an expiry
-scheduler, worker termination, and a production response handoff still require
-implementation and verification before coordinator deployment.
+The same target now also rehearses a supervised key worker. The supervisor
+passes the grant over a private process pipe and retains public window metadata.
+The worker disables process dumps before receiving keys and requests a Linux
+parent-death signal. Lock invalidates the epoch, kills the worker and waits for
+it to exit before acknowledging. An idle expiry check or worker exit also clears
+the window. A response from an old epoch is rejected at gRPC serialization.
+
+The Linux Unix socket requires an owner-controlled directory and a fresh socket
+path. It uses mode `0660` and checks the peer UID against an explicit allowlist.
+Each connection accepts one four-byte big-endian length followed by at most
+16 KiB of UTF-8 JSON. Requests carry `protocol: 1` and an `action`.
+`open-boot-window` also takes `expected_instance`, `request_id` and `grants`.
+Each grant contains `node_uuid`, `key_id` and the canonical Base64 `key`.
+The supervisor stores the successful request ID before sending its acknowledgment.
+Retrying it cannot open another window.
+
+The test uses a disposable certificate, public fixture keys, and a controlled
+clock. Coordinator service startup, SSH/YubiKey delivery, production TLS,
+and paging and dump protections for the coordinator process remain pending.
+The supervisor handles a transient activation payload. The worker lifetime
+bounds retained key authority and does not establish Python memory zeroization.

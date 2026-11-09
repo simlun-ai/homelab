@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Implement the coordinator KMS daemon's local authorization socket, expiry scheduler and isolated key worker. The Pi's network-only rehearsal confirmed the planned static address, route and DNS, followed by DHCP rollback. The KMS TCP probe timed out. The corrected `enabcm6e4ei0` LinkConfig passed offline validation on the operator workstation. The standalone MD RAID1 draft passed strict offline validation with pinned `talosctl`. The maintenance-mode volume probe confirmed that both appear as whole disks. All four ATA device links and exact capacities matched after a cold boot. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core and loopback gRPC-over-TLS tests passed on the workstation. Daemon process isolation, production identity creation and live-node authentication remain pending. Disk/adapter behavior and actual pre-STATE/KMS networking, DNS and time remain to be verified on the Pi before installation.
+- **Current next step:** Validate the local KMS daemon rehearsal with its authorization socket, expiry scheduler and isolated key worker. The Pi's network-only rehearsal confirmed the planned static address, route and DNS, followed by DHCP rollback. The KMS TCP probe timed out. The corrected `enabcm6e4ei0` LinkConfig passed offline validation on the operator workstation. The standalone MD RAID1 draft passed strict offline validation with pinned `talosctl`. The maintenance-mode volume probe confirmed that both appear as whole disks. All four ATA device links and exact capacities matched after a cold boot. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core and loopback gRPC-over-TLS tests passed on the workstation. The daemon rehearsal exercises a separate key worker. Operator validation, coordinator deployment, production identity creation and live-node authentication remain pending. Disk/adapter behavior and actual pre-STATE/KMS networking, DNS and time remain to be verified on the Pi before installation.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -313,8 +313,9 @@ selection, atomic activation, acknowledgment recovery, expiry/lock/restart,
 bounded admission and stale in-flight results. Existing helper CI discovery runs
 these software tests without hardware or network calls. See the
 [implementation limits](../security/trust-bootstrap-kms.md#implemented-software-core-and-its-limits):
-no daemon scheduler, isolated worker, local authorization transport or native
-gRPC/TLS integration is implemented. Production keys and hardware remain gated.
+this record covers the original in-process core. See the
+[daemon rehearsal](../security/trust-bootstrap-kms.md#disposable-loopback-transport)
+for the subsequent worker, local authorization and TLS implementation.
 
 **Operator verification passed on 2026-11-08:** `simlun-x1`,
 `make -C support/hsm test`, following the KMS core implementation at `8a5d8f9`.

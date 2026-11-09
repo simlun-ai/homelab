@@ -3,13 +3,14 @@
 from collections.abc import Callable, Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import cast
+from dataclasses import dataclass
+from typing import Protocol, cast
 
 import grpc
 from google.protobuf import descriptor_pb2, descriptor_pool, message_factory
 from google.protobuf.message import DecodeError, Message
 
-from . import envelope, session
+from . import envelope, session, worker
 
 SERVICE = "sidero.kms.KMSService"
 MAX_MESSAGE_BYTES = 8192
@@ -61,10 +62,24 @@ def _messages() -> tuple[type[_Request], type[_Response]]:
 REQUEST, RESPONSE = _messages()
 
 
+class _Authority(Protocol):
+    def status(self) -> session.Status: ...
+    def seal(self, node: str, data: bytes, /) -> bytes: ...
+    def unseal(self, node: str, data: bytes, /) -> bytes: ...
+    def lock(self) -> None: ...
+    def release(self, epoch: str | None, data: bytes) -> bytes: ...
+
+
+@dataclass(frozen=True, repr=False)
+class _Reply:
+    epoch: str | None
+    data: bytes
+
+
 def _handler(
-    authority: session.Session, operation: Callable[[str, bytes], bytes]
-) -> Callable[[bytes, grpc.ServicerContext], bytes]:
-    def handle(raw: bytes, context: grpc.ServicerContext) -> bytes:
+    authority: _Authority, operation: Callable[[str, bytes], bytes]
+) -> Callable[[bytes, grpc.ServicerContext], _Reply]:
+    def handle(raw: bytes, context: grpc.ServicerContext) -> _Reply:
         try:
             before = authority.status()
             if before.state != "active":
@@ -83,6 +98,8 @@ def _handler(
             context.abort(grpc.StatusCode.PERMISSION_DENIED, "KMS request denied")
         except session.Capacity:
             context.abort(grpc.StatusCode.RESOURCE_EXHAUSTED, "KMS capacity exhausted")
+        except worker.Unavailable:
+            context.abort(grpc.StatusCode.UNAVAILABLE, "KMS worker unavailable")
         except (DecodeError, envelope.InvalidArgument):
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Invalid KMS request")
         except Exception:
@@ -90,14 +107,14 @@ def _handler(
 
         if not context.is_active():
             context.abort(grpc.StatusCode.CANCELLED, "KMS request cancelled")
-        return encoded
+        return _Reply(before.session_id, encoded)
 
     return handle
 
 
 @contextmanager
 def listen_loopback(
-    authority: session.Session, *, private_key: bytes, certificate: bytes
+    authority: _Authority, *, private_key: bytes, certificate: bytes
 ) -> Generator[str]:
     """Serve only on localhost using caller-supplied PEM TLS material."""
     with ThreadPoolExecutor(max_workers=session.MAX_INFLIGHT) as executor:
@@ -110,16 +127,22 @@ def listen_loopback(
             ),
             maximum_concurrent_rpcs=session.MAX_INFLIGHT,
         )
+
+        def serialize(reply: _Reply) -> bytes:
+            return authority.release(reply.epoch, reply.data)
+
         server.add_generic_rpc_handlers(
             (
                 grpc.method_handlers_generic_handler(
                     SERVICE,
                     {
                         "Seal": grpc.unary_unary_rpc_method_handler(
-                            _handler(authority, authority.seal)
+                            _handler(authority, authority.seal),
+                            response_serializer=serialize,
                         ),
                         "Unseal": grpc.unary_unary_rpc_method_handler(
-                            _handler(authority, authority.unseal)
+                            _handler(authority, authority.unseal),
+                            response_serializer=serialize,
                         ),
                     },
                 ),
@@ -131,5 +154,7 @@ def listen_loopback(
         try:
             yield f"127.0.0.1:{port}"
         finally:
-            authority.lock()
-            server.stop(0).wait()
+            try:
+                authority.lock()
+            finally:
+                server.stop(0).wait()
