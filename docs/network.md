@@ -49,11 +49,16 @@ Individual Pi and Metal node addresses and the addresses for `ups-pi` and `ups-m
 | Type | DNS name | Value | Purpose | Status |
 | --- | --- | --- | --- | --- |
 | A | `trust-api.k8s-aux.lundmark.internal` | `10.10.0.10` | Trust Kubernetes API | Configured; resolution verified 2026-11-08 |
+| A | `ups-aux.k8s-aux.lundmark.internal` | `10.10.0.5` | Coordinator SSH and Ansible | UniFi device **Local DNS Record** enabled. Ansible connected using the name on 2026-11-09. |
 | A | `kms.k8s-aux.simlun.se` | `10.10.0.5` | Trust coordinator KMS TLS endpoint | UniFi resolver `10.10.0.1` returned `10.10.0.5` from `simlun-x1`; the Pi also resolved the name during its static network rehearsal (2026-11-09) |
 
 ### Configure on the UniFi gateway
 
-In UniFi Network, use **Settings → Policy Table → Create New Policy → DNS**.
+For the `ups-aux` SSH hostname, open the `ups-aux` device in UniFi Network,
+enable **Local DNS Record**, and set it to `ups-aux.k8s-aux.lundmark.internal`.
+The operator verified this method on 2026-11-09.
+
+For a DNS policy, use **Settings → Policy Table → Create New Policy → DNS**.
 This path was verified on the Cloud Gateway Ultra on 2026-11-08. Select
 **Host (A)**, enter the DNS name and address from the table, then click **Add**.
 Enter the hostname alone, without `https://` or a port.

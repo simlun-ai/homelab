@@ -17,7 +17,7 @@ acceptance criteria. It is documentation, not a deployed or verified service.
 - [x] Verify the [local authorization and worker rehearsal](../../support/hsm/README.md#trust-kms-loopback-rehearsal) on the operator workstation (three tests passed, 2026-11-09).
 - [ ] Settle UUID mapping, early-boot NTP/networking, admission rules and independent recovery inputs. The public TLS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`. The [UniFi DNS record](../network.md#required-dns-entries) resolved to `10.10.0.5` from the workstation and the Pi. The Pi's TCP probe timed out. Certificate and listener deployment remain pending.
 - [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
-- [ ] Stage the locked service on `ups-aux` and verify it reports an empty authorization window.
+- [x] Stage the locked service on `ups-aux` and verify it reports an empty authorization window (2026-11-09).
 - [ ] Implement TLS/ACME and local wrapped-record deployment.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).
 - [ ] Verify startup without Trust/OpenBao, the one-hour KMS window, expiry/lock/restart behaviour, and certificate renewal.
@@ -41,7 +41,9 @@ To repeat the status check on the coordinator:
 sudo /usr/bin/python3 -I -B /usr/local/lib/trust-kms/trust_kms_service.py status
 ```
 
-Expect `state: locked`, a daemon instance ID, and `listener: disabled`. The
+Expect `state: locked`, a daemon instance ID, and `listener: disabled`.
+On 2026-11-09 the operator ran the staging play successfully on `ups-aux`.
+See the [Trust experiment record](02-trust.md#experiment-record-and-acceptance-checks). The
 staged service has an empty key policy and rejects activation. It listens
 only on the local Unix socket. Production TLS, remote admission, and
 SSH/YubiKey delivery are separate acceptance checks.

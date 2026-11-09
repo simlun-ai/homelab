@@ -90,7 +90,9 @@ Use DHCP reservations for `ups-pi` and `ups-metal` during base setup. Their fina
 addresses are TBD.
 
 The [Ansible inventory](../support/ups/inventory.yaml) and the password helper
-connect to `ups-aux.k8s-aux.lundmark.internal`. From the workstation, verify
+connect to `ups-aux.k8s-aux.lundmark.internal`. On the UniFi device, enable
+**Local DNS Record** and set that hostname as described in the [DNS table](../docs/network.md#required-dns-entries).
+From the workstation, verify
 that it resolves to `10.10.0.5` with `getent ahostsv4 ups-aux.k8s-aux.lundmark.internal`.
 Keep `HOST=ups-aux` for Make commands. Set up name resolution for `ups-pi` and
 `ups-metal` once their addresses are known. An `ansible_host` override affects

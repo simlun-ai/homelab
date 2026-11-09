@@ -214,8 +214,9 @@ requirements. UPS processes must not share the KMS worker's lifetime.
 
 Use `kms.k8s-aux.simlun.se`, resolving internally to `10.10.0.5`, with a matching
 SAN/full certificate chain; serve gRPC over TLS on TCP 443. Cloudflare DNS-01
-is selected for certificate issuance. DNS and certificate deployment are pending;
-see the [required DNS entries](../network.md#required-dns-entries).
+is selected for certificate issuance. Internal KMS DNS resolution was verified
+from the workstation and Pi. Certificate issuance and the TCP listener remain
+pending. See the [required DNS entries](../network.md#required-dns-entries).
 **Exact Cloudflare zone/delegation and credential scope, ACME client and
 renewal/key-persistence policy remain TBD.** Initial and
 expired-certificate recovery must use SSH and independent DNS/ACME access;
@@ -354,7 +355,7 @@ clock. The operator ran the expanded rehearsal on `simlun-x1` on 2026-11-09.
 All three tests passed. See the [Trust runbook](../installation/02-trust.md#experiment-record-and-acceptance-checks). The [locked staging play](../installation/01-main-coordinator.md#stage-the-locked-service)
 installs a systemd unit that starts with an empty key policy. The staging unit
 allows Unix sockets only. Its runtime socket accepts the service UID and root.
-Staged startup on the coordinator, SSH/YubiKey delivery, production TLS,
+Locked startup was verified on `ups-aux` on 2026-11-09. SSH/YubiKey delivery, production TLS,
 and paging and dump protections for the coordinator process remain pending.
 The supervisor handles a transient activation payload. The worker lifetime
 bounds retained key authority and does not establish Python memory zeroization.
