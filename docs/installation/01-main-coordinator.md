@@ -58,3 +58,13 @@ NUT and Prometheus exporter setup will extend the shared base runbook later.
 
 References: [hardware](../inventory.md#shared-infrastructure), [coordinator layout](../layout.md#ups-shutdown-coordinators), [helper design](../security/helper-implementation.md), [wrapped-record deployment](../security/encrypted-record-storage.md#coordinator-deployment).
 
+
+## Final follow-up: coordinator memory review
+
+- [ ] Once the coordinator services are in place, review all homelab code that
+  runs on `ups-aux` for memory leaks and unbounded growth. With swap disabled,
+  soak-test the long-running services at idle and under repeated work. Include
+  KMS authorization and worker teardown, certificate renewal and reload, and
+  failure and retry paths. Track memory per service and for the whole host.
+  Verify that usage stabilizes after repeated cycles and leaves headroom for
+  concurrent services.
