@@ -49,7 +49,7 @@ Individual Pi and Metal node addresses and the addresses for `ups-pi` and `ups-m
 | Type | DNS name | Value | Purpose | Status |
 | --- | --- | --- | --- | --- |
 | A | `trust-api.k8s-aux.lundmark.internal` | `10.10.0.10` | Trust Kubernetes API | Configured; resolution verified 2026-11-08 |
-| A | `kms.k8s-aux.simlun.se` | `10.10.0.5` | Trust coordinator KMS TLS endpoint | UniFi resolver `10.10.0.1` returned `10.10.0.5` from `simlun-x1` (2026-11-09) |
+| A | `kms.k8s-aux.simlun.se` | `10.10.0.5` | Trust coordinator KMS TLS endpoint | UniFi resolver `10.10.0.1` returned `10.10.0.5` from `simlun-x1`; the Pi also resolved the name during its static network rehearsal (2026-11-09) |
 
 ### Configure on the UniFi gateway
 
@@ -103,8 +103,9 @@ Temporary OpenBao and Garage outages are acceptable. Running clusters can contin
 The coordinator KMS endpoint is separate from the Kubernetes API and direct
 Talos administration address. The selected endpoint is
 `https://kms.k8s-aux.simlun.se:443`, serving gRPC over TLS on TCP 443.
-Its internal A record targets `ups-aux` at `10.10.0.5`; configuration and
-verification are pending. A public certificate will use Cloudflare DNS-01;
+Its internal A record resolved to `10.10.0.5` from both the workstation and
+the Pi during the [network rehearsal](installation/02-trust.md#experiment-record-and-acceptance-checks).
+The Pi's connection to TCP 443 timed out. A public certificate will use Cloudflare DNS-01;
 DNS-01 issuance does not require exposing the KMS listener to the Internet. Independent public NTP endpoints and pre-STATE network/DNS/time
 configuration also remain pending. See the [draft KMS contract](security/trust-bootstrap-kms.md#proposed-readiness-tls-and-admission-behavior).
 Same-VLAN Trust/coordinator traffic requires host/switch admission consideration;

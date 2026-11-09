@@ -13,7 +13,7 @@ pinned Talos interface, proposed envelope/session protocol, open choices and
 acceptance criteria. It is documentation, not a deployed or verified service.
 
 - [x] Implement disposable software-only envelope/session tests for the approved behavior, with a fixed public vector. This verifies core logic only; daemon, scheduler, transport and worker memory cleanup remain pending.
-- [ ] Settle UUID mapping, early-boot NTP/networking, admission rules and independent recovery inputs. The public TLS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; The [UniFi DNS record](../network.md#required-dns-entries) resolved to `10.10.0.5` from the operator workstation. Certificate and listener deployment remain pending.
+- [ ] Settle UUID mapping, early-boot NTP/networking, admission rules and independent recovery inputs. The public TLS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`. The [UniFi DNS record](../network.md#required-dns-entries) resolved to `10.10.0.5` from the workstation and the Pi. The Pi's TCP probe timed out. Certificate and listener deployment remain pending.
 - [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
 - [ ] Implement the Python helpers and Ansible configuration for KMS, TLS/ACME, and local wrapped-record deployment.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).
