@@ -1,0 +1,19 @@
+# Offline RAID1 draft for trust-cp1. Applying these documents can write to disk.
+apiVersion: v1alpha1
+kind: RAIDArrayConfig
+name: boot
+level: raid1
+metadata: "1.0"
+provisioning:
+  volumeSelector:
+    match: >-
+      "/dev/disk/by-id/ata-Intenso_SSD_Sata_III_2025032901388" in disk.symlinks ||
+      "/dev/disk/by-id/ata-SPCC_Solid_State_Disk_WWDD241210062007013" in disk.symlinks
+---
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+installer:
+  image: factory.talos.dev/metal-installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.14.5
+provisioning:
+  diskSelector:
+    match: '"/dev/disk/by-id/md-name-talos:boot" in disk.symlinks'
