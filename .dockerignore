@@ -14,6 +14,8 @@
 !support/**/*.sh
 !support/hsm/Makefile
 !support/hsm/requirements.txt
+!support/hsm/kms-rehearsal-requirements.txt
+!support/hsm/kms_tls_rehearsal.py
 !support/hsm/wheels/*.whl
 !support/ups/Makefile
 !support/ups/requirements.txt
