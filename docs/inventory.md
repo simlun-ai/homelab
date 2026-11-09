@@ -39,7 +39,7 @@ Read-only workstation inspection on 2026-11-09. Each candidate was presented
 as `/dev/sda` and displayed `119.2G` in `lsblk`. No partitions or mountpoints
 were listed. The ATA links below were observed on `simlun-x1`.
 
-| Candidate | Reported model | ATA serial | Workstation device link | Signatures reported by `wipefs --no-act` |
+| Candidate | Reported model | ATA serial | Workstation ATA device link | Signatures reported by `wipefs --no-act` |
 | --- | --- | --- | --- | --- |
 | 1 | Intenso SSD Sata III | `2025032901388` | `/dev/disk/by-id/ata-Intenso_SSD_Sata_III_2025032901388` | DOS/MBR signature at `0x1fe` |
 | 2 | SPCC Solid State Disk | `WWDD241210062007013` | `/dev/disk/by-id/ata-SPCC_Solid_State_Disk_WWDD241210062007013` | None reported |
@@ -58,12 +58,12 @@ All four candidates were detected together through the powered USB hub.
 Each exposed the same ATA device link as on the workstation and reported
 128,035,676,160 bytes with a 512-byte sector size and 512-byte I/O size.
 
-| Candidate | Talos device at discovery | USB device link reported by Talos |
-| --- | --- | --- |
-| 1 (Intenso) | `/dev/sda` | `/dev/disk/by-id/usb-Intenso_SSD_Sata_III_26A1EE830094-0:0` |
-| 2 (SPCC) | `/dev/sde` | `/dev/disk/by-id/usb-SPCC_Sol_id_State_Disk_26A1EE833C38-0:0` |
-| 3 (Fanxiang) | `/dev/sdb` | `/dev/disk/by-id/usb-Fanxiang_S101_128GB_26A1EE833E35-0:0` |
-| 4 (Patriot) | `/dev/sdd` | `/dev/disk/by-id/usb-Patriot_P220_128GB_26A1EE833C2F-0:0` |
+| Candidate | Talos device at discovery | Talos ATA device link | USB device link reported by Talos |
+| --- | --- | --- | --- |
+| 1 (Intenso) | `/dev/sda` | `/dev/disk/by-id/ata-Intenso_SSD_Sata_III_2025032901388` | `/dev/disk/by-id/usb-Intenso_SSD_Sata_III_26A1EE830094-0:0` |
+| 2 (SPCC) | `/dev/sde` | `/dev/disk/by-id/ata-SPCC_Solid_State_Disk_WWDD241210062007013` | `/dev/disk/by-id/usb-SPCC_Sol_id_State_Disk_26A1EE833C38-0:0` |
+| 3 (Fanxiang) | `/dev/sdb` | `/dev/disk/by-id/ata-Fanxiang_S101_128GB_26060780625001902` | `/dev/disk/by-id/usb-Fanxiang_S101_128GB_26A1EE833E35-0:0` |
+| 4 (Patriot) | `/dev/sdd` | `/dev/disk/by-id/ata-Patriot_P220_128GB_P220HHBB251201003962` | `/dev/disk/by-id/usb-Patriot_P220_128GB_26A1EE833C2F-0:0` |
 
 All four reported WWID `naa.5000000000000001`, so the WWID cannot identify
 an individual SSD. The `/dev/sd*` names are a snapshot of this boot. Use the
