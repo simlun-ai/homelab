@@ -110,7 +110,7 @@ Talos administration address. The selected endpoint is
 `https://kms.k8s-aux.simlun.se:443`, serving gRPC over TLS on TCP 443.
 Its internal A record resolved to `10.10.0.5` from both the workstation and
 the Pi during the [network rehearsal](installation/02-trust.md#experiment-record-and-acceptance-checks).
-The Pi's connection to TCP 443 timed out. A public certificate will use Cloudflare DNS-01;
+The Pi's connection to TCP 443 timed out. A public certificate will use [Cloudflare DNS-01](installation/trust-kms-cloudflare.md);
 DNS-01 issuance does not require exposing the KMS listener to the Internet. Independent public NTP endpoints and pre-STATE network/DNS/time
 configuration also remain pending. See the [draft KMS contract](security/trust-bootstrap-kms.md#proposed-readiness-tls-and-admission-behavior).
 Same-VLAN Trust/coordinator traffic requires host/switch admission consideration;

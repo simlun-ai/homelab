@@ -1,0 +1,53 @@
+- name: Install the Trust KMS Certbot rehearsal tools
+  hosts: ups-aux
+  gather_facts: false
+  become: true
+  pre_tasks:
+    - name: Check target selection before connecting
+      ansible.builtin.import_tasks: ../tasks/single-host.yaml
+
+    - name: Gather coordinator platform information
+      ansible.builtin.setup:
+        gather_subset: [min]
+
+    - name: Require a supported 64-bit Debian-based coordinator
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.os_family == 'Debian'
+          - ansible_facts.architecture == 'aarch64'
+          - ansible_facts.python.version.major == 3
+          - ansible_facts.python.version.minor in [13, 14]
+
+  tasks:
+    - name: Install Certbot and its Cloudflare DNS plugin from APT
+      ansible.builtin.apt:
+        name:
+          - certbot
+          - python3-certbot-dns-cloudflare
+        state: present
+        install_recommends: false
+        policy_rc_d: 101
+
+    - name: Create the root-owned ACME helper directory
+      ansible.builtin.file:
+        path: /usr/local/lib/trust-kms-acme
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Install the disposable Certbot rehearsal
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../../../scripts/trust_kms_acme_rehearsal.py"
+        dest: /usr/local/lib/trust-kms-acme/rehearsal.py
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Install the transient service launcher
+      ansible.builtin.copy:
+        src: ../files/trust-kms-acme-rehearse
+        dest: /usr/local/sbin/trust-kms-acme-rehearse
+        owner: root
+        group: root
+        mode: "0755"

@@ -7,6 +7,9 @@ export ANSIBLE_CONFIG := $(SCOPE)/ansible.cfg
 export ANSIBLE_LOCAL_TEMP := $(SCOPE)/.ansible/tmp
 export HOST
 export ASK_BECOME_PASS
+export ACME_EMAIL
+DNS_RECORD ?= $(abspath $(SCOPE)/../../secrets/wrapped/ups-aux-cloudflare-dns-api.json)
+export DNS_RECORD
 
 .PHONY: help system-dependencies tools check-tools inventory syntax bootstrap verify harden verify-hardening diff apply
 help:
@@ -28,6 +31,8 @@ help:
 	  'Password workflow: runbooks/coordinator-passwords.md (password-create/reveal/apply)' \
 	  'HOST must be exactly ups-aux, ups-pi, or ups-metal.' \
 	  'make -C support/ups kms-stage HOST=ups-aux (install and verify locked local service)' \
+	  'make -C support/ups kms-acme-tools HOST=ups-aux' \
+	  'make -C support/ups kms-acme-rehearse HOST=ups-aux ACME_EMAIL=...' \
 	  'For initial sudo setup only: bootstrap HOST=... ASK_BECOME_PASS=1'
 
 system-dependencies:
@@ -53,6 +58,7 @@ syntax: check-tools
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/harden.yaml"
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/verify-hardening.yaml"
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/kms-stage.yaml"
+	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/kms-acme-tools.yaml"
 
 bootstrap verify harden verify-hardening diff apply: check-tools ssh-key-check
 	@case "$$HOST" in ups-aux|ups-pi|ups-metal) ;; \
@@ -90,3 +96,13 @@ password-apply: ssh-key-check
 kms-stage: check-tools ssh-key-check
 	@test "$$HOST" = ups-aux || { printf '%s\n' 'Set HOST to ups-aux for Trust KMS staging.' >&2; exit 2; }
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --limit ups-aux --diff "$(SCOPE)/ansible/playbooks/kms-stage.yaml"
+
+.PHONY: kms-acme-tools kms-acme-rehearse
+kms-acme-tools: check-tools ssh-key-check
+	@test "$$HOST" = ups-aux || { printf '%s\n' 'Set HOST to ups-aux for Trust ACME.' >&2; exit 2; }
+	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --limit ups-aux --diff "$(SCOPE)/ansible/playbooks/kms-acme-tools.yaml"
+
+kms-acme-rehearse: ssh-key-check
+	@test "$$HOST" = ups-aux || { printf '%s\n' 'Set HOST to ups-aux for Trust ACME.' >&2; exit 2; }
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_kms_acme_operator.py" \
+	  --email "$$ACME_EMAIL" --record "$$DNS_RECORD" --unwrap "$(HSM_VENV)/bin/homelab-unwrap"

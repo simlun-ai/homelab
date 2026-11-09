@@ -1,0 +1,109 @@
+# Cloudflare DNS-01 for Trust KMS
+
+Certbot on `ups-aux` owns certificate issuance for
+`kms.k8s-aux.simlun.se`. It works independently of Trust, OpenBao, and
+cert-manager. Let’s Encrypt validates a TXT record in **public Cloudflare DNS**.
+The [separate UniFi A record](../network.md#required-dns-entries) resolves the
+service to `10.10.0.5` on the LAN. The DNS-01 challenge does not require a
+public inbound listener.
+
+## Cloudflare configuration
+
+1. Use the authoritative `simlun.se` zone in Cloudflare.
+2. Create a dedicated **API token** for the coordinator, using **Zone → DNS →
+   Edit** and **Zone Resources → Include → Specific zone → simlun.se**. That
+   grants DNS write access throughout this zone. Cloudflare's token scope is
+   the zone. Use the dedicated token with Certbot's Cloudflare plugin.
+3. [Wrap and store the coordinator token](#wrap-and-store-the-coordinator-token)
+   before running the staging rehearsal.
+4. Reserve `_acme-challenge.kms.k8s-aux.simlun.se` for Certbot. Certbot adds
+   and removes the temporary TXT value during validation. Keep the owner
+   available for that workflow.
+5. When Trust cert-manager is set up, issue a separate API token scoped to
+   `simlun.se` with **Zone → DNS → Edit** and **Zone → Zone → Read**. Give
+   cert-manager its own ACME account and renewal state. It will issue for
+   application names using distinct challenge records. Both tokens have
+   zone-wide DNS write access. Let’s Encrypt registered-domain limits apply
+   across both accounts.
+
+[Cloudflare token setup](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/) ·
+[Certbot Cloudflare plugin](https://github.com/certbot/certbot/blob/v4.0.0/certbot-dns-cloudflare/certbot_dns_cloudflare/__init__.py) ·
+[cert-manager Cloudflare solver](https://cert-manager.io/docs/configuration/acme/dns01/cloudflare/) ·
+[Let’s Encrypt rate limits](https://letsencrypt.org/docs/rate-limits/)
+
+### Wrap and store the coordinator token
+
+From the homelab repository root, install the [HSM tools](../../support/hsm/README.md)
+and prepare the private `homelab-secrets` submodule at `secrets/wrapped`.
+Use the YubiKey-backed hidden prompt to wrap and verify the real token.
+
+```sh
+git submodule update --init --recursive -- secrets/wrapped
+git -C secrets/wrapped fetch origin
+git -C secrets/wrapped switch main
+git -C secrets/wrapped pull --ff-only origin main
+
+"$HOME/.local/share/homelab/venvs/hsm/bin/homelab-wrap" \
+  --key-id homelab/v1/support-aux/dns-api/cloudflare/r1 \
+  --root-key golden-1 --output secrets/wrapped/ups-aux-cloudflare-dns-api.json
+```
+
+Review the new ciphertext record, then commit that file in the private
+submodule and push its `main` branch before updating the parent pointer.
+
+```sh
+git -C secrets/wrapped add -- ups-aux-cloudflare-dns-api.json
+git -C secrets/wrapped commit -m "Store wrapped ups-aux Cloudflare DNS token"
+git -C secrets/wrapped push origin main
+```
+
+The public [manifest](../../secrets/manifest.json) reserves the filename.
+Follow the [submodule update workflow](../security/encrypted-record-storage.md#checkout-and-updates)
+to record the new pointer in the parent. Keep the plaintext token out of
+the terminal transcript, shell history and both repositories.
+
+### Verify public DNS
+
+Record the current public DNS state before starting the rehearsal:
+
+```sh
+dig +short NS simlun.se
+dig @1.1.1.1 _acme-challenge.kms.k8s-aux.simlun.se TXT +short
+```
+
+For a closer look during validation, query one of the authoritative
+nameservers printed by the first command. Repeat the TXT query after the
+rehearsal and confirm it has returned to the original state. Public resolver
+caches can briefly retain the TXT value. If an interrupted run leaves a
+record, remove only the confirmed rehearsal record in Cloudflare after
+checking that no challenge is running.
+
+## Run the staging rehearsal
+
+This stage uses Let's Encrypt **staging** and discards the account and certificate
+after the test. The systemd job creates a private, non-swappable tmpfs, checks
+the effective mount and coordinator hardening before reading the token, and
+routes Certbot's config, work and logs into the workspace. The job reports only
+public progress and results. See the [approved coordinator exception](../security/coordinator-sessions.md#workstation-authorization).
+
+1. Complete coordinator hardening and load the shared SSH key. Install the
+   APT-packaged Certbot and Cloudflare plugin and the staging launcher:
+
+   ```sh
+   make -C support/ups kms-acme-tools HOST=ups-aux
+   ```
+
+2. Run the staging issue and renewal test with your ACME contact email.
+   The command reads the wrapped token created above by default.
+
+   ```sh
+   make -C support/ups kms-acme-rehearse HOST=ups-aux ACME_EMAIL=you@example.org
+   ```
+
+The workstation unwraps after a YubiKey touch and streams the token over
+host-verified SSH. Expect a fresh staging certificate after renewal with the
+same TLS public key, followed by workspace removal. A cached ACME authorization
+may allow renewal without a second TXT write. The existing locked KMS service
+continues to expose its local status socket throughout this test. Production
+certificates, restart recovery, the renewal timer and the TCP listener follow
+after the staging rehearsal is verified.

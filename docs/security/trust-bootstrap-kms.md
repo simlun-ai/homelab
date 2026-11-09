@@ -217,8 +217,12 @@ SAN/full certificate chain; serve gRPC over TLS on TCP 443. Cloudflare DNS-01
 is selected for certificate issuance. Internal KMS DNS resolution was verified
 from the workstation and Pi. Certificate issuance and the TCP listener remain
 pending. See the [required DNS entries](../network.md#required-dns-entries).
-**Exact Cloudflare zone/delegation and credential scope, ACME client and
-renewal/key-persistence policy remain TBD.** Initial and
+Use Debian-packaged Certbot with the stock Cloudflare plugin and a dedicated
+DNS Edit API token scoped to the `simlun.se` zone. See the
+[Cloudflare setup guide](../installation/trust-kms-cloudflare.md) for the
+separate future cert-manager token and challenge ownership. The coordinator
+rehearsal uses a verified `noswap` tmpfs and discards all Certbot state on exit.
+Production renewal and wrapped state restoration remain pending. Initial and
 expired-certificate recovery must use SSH and independent DNS/ACME access;
 existing KMS TLS cannot be their only prerequisite. A renewed certificate may
 reuse an already protected private key if supported; persisting a new key needs
