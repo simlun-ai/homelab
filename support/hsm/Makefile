@@ -5,12 +5,14 @@ HSM_REPO ?= $(ROOT)/tools/homelab-hsm
 HSM_VENV ?= $(HOME)/.local/share/homelab/venvs/hsm
 PYTHON := $(HSM_VENV)/bin/python
 
-.PHONY: help system-dependencies tools test
+.PHONY: help system-dependencies tools test kms-rehearsal-tools kms-tls-rehearse
 help:
 	@printf '%s\n' 'Application helper environment (token setup uses homelab-hsm directly):' \
 	  'make -C support/hsm system-dependencies' \
 	  'make -C support/hsm tools' \
-	  'make -C support/hsm test'
+	  'make -C support/hsm test' \
+	  'make -C support/hsm kms-rehearsal-tools (downloads test dependencies)' \
+	  'make -C support/hsm kms-tls-rehearse'
 
 system-dependencies:
 	@bash "$(SCOPE)/install-system-dependencies.sh"
@@ -25,3 +27,9 @@ tools:
 test:
 	@"$(PYTHON)" -I -B "$(ROOT)/scripts/test_helpers.py"
 	@cd "$(HSM_REPO)/homelab_secrets" && "$(PYTHON)" -I -B -m unittest discover -s tests -v
+
+kms-rehearsal-tools:
+	@"$(PYTHON)" -m pip install --only-binary=:all: -r "$(SCOPE)/kms-rehearsal-requirements.txt"
+
+kms-tls-rehearse:
+	@"$(PYTHON)" -I -B "$(SCOPE)/kms_tls_rehearsal.py"

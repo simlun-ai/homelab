@@ -15,7 +15,13 @@ COPY --link support/hsm/wheels/ ./support/hsm/wheels/
 COPY --link tools/homelab-hsm/homelab_secrets/ ./tools/homelab-hsm/homelab_secrets/
 RUN --network=none make -C support/hsm tools
 
-FROM helper-tools AS helpers
+FROM helper-tools AS kms-rehearsal-tools
+COPY --link support/hsm/kms-rehearsal-requirements.txt ./support/hsm/
+RUN --mount=type=cache,id=homelab-ci-kms-rehearsal-pip,target=/root/.cache/pip,sharing=locked \
+    make -C support/hsm kms-rehearsal-tools
+
+FROM kms-rehearsal-tools AS helpers
+COPY --link support/hsm/kms_tls_rehearsal.py ./support/hsm/
 COPY --link scripts/ ./scripts/
 COPY --link tests/ ./tests/
 COPY --link clusters/trust/ ./clusters/trust/
@@ -24,7 +30,8 @@ COPY --link tools/homelab-hsm/homelab_secrets/scripts/ ./tools/homelab-hsm/homel
 COPY --link tools/homelab-hsm/homelab_secrets/tests/ ./tools/homelab-hsm/homelab_secrets/tests/
 RUN --network=none test ! -e secrets/wrapped && \
     /opt/homelab-hsm/bin/python -m pip check && \
-    make -C support/hsm test
+    make -C support/hsm test && \
+    make -C support/hsm kms-tls-rehearse
 
 FROM base AS ups-tools
 COPY --link support/ups/Makefile support/ups/requirements.txt support/ups/check-tools.py support/ups/ansible.cfg ./support/ups/
@@ -63,7 +70,7 @@ RUN --network=none ruff check --no-cache scripts tests support ci clusters && \
 FROM node:24.19.0-bookworm-slim AS pyright-node
 RUN npm install --global pyright@1.1.414
 
-FROM helper-tools AS typecheck
+FROM kms-rehearsal-tools AS typecheck
 COPY --from=pyright-node /usr/local/bin/node /usr/local/bin/node
 COPY --from=pyright-node /usr/local/lib/node_modules/pyright /opt/pyright
 COPY --link pyproject.toml ./
