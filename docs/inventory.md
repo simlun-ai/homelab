@@ -76,8 +76,11 @@ an individual SSD. The `/dev/sd*` names are a snapshot of this boot. Use the
 `/dev/disk/by-id/ata-*` links listed above as the physical SSD identifiers
 for Trust. They include the SSD's ATA serial and matched across the
 workstation and Pi. The `usb-*` links describe the USB side of each
-connection. ATA link stability across reboots and final mirror assignments
-are pending.
+connection. On the 2026-11-09 cold-boot recheck, all four ATA links and exact
+capacities matched the first discovery. The Patriot moved from `/dev/sdd`
+to `/dev/sdc`, and the USB installer moved from `/dev/sdc` to `/dev/sdd`.
+The tables show the device names from the first discovery. Final mirror
+assignments are pending.
 
 | Boot medium | Talos device at discovery | Reported capacity (bytes) | Device link |
 | --- | --- | ---: | --- |
