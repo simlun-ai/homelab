@@ -34,5 +34,7 @@ make -C support/hsm kms-tls-rehearse
 
 The rehearsal creates its certificate and disposable key material in memory,
 binds an ephemeral port on loopback, and exercises the Talos KMS wire contract.
+It also uses a temporary Unix socket to open and revoke disposable worker
+windows and tests worker exit, idle expiry and late-response rejection.
 It requires no token, wrapped records, coordinator, or internet access at run
 time. See the [KMS contract](../../docs/security/trust-bootstrap-kms.md#disposable-loopback-transport).

@@ -172,6 +172,13 @@ class Session:
         with self._mutex:
             self._clear()
 
+    def release(self, epoch: str | None, data: bytes) -> bytes:
+        with self._mutex:
+            self._now()
+            if self._window is None or self._window.session_id != epoch:
+                raise Locked()
+            return data
+
     def restart(self) -> None:
         """Model restart: drop authority and old activation IDs; rotate instance ID."""
         with self._mutex:
@@ -212,13 +219,7 @@ class Session:
                 if sealing
                 else envelope.unseal(key, node, identifier, data)
             )
-            with self._mutex:
-                self._now()
-                if self._window is None or self._window.session_id != epoch:
-                    raise Locked()
-                # This return is the core's release boundary. A network adapter
-                # must also guard its final response handoff, not queue raw bytes.
-                return result
+            return self.release(epoch, result)
         finally:
             with self._mutex:
                 self._inflight -= 1
