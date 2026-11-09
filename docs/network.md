@@ -49,7 +49,7 @@ Individual Pi and Metal node addresses and the addresses for `ups-pi` and `ups-m
 | Type | DNS name | Value | Purpose | Status |
 | --- | --- | --- | --- | --- |
 | A | `trust-api.k8s-aux.lundmark.internal` | `10.10.0.10` | Trust Kubernetes API | Configured; resolution verified 2026-11-08 |
-| A | `kms.k8s-aux.simlun.se` | `10.10.0.5` | Trust coordinator KMS TLS endpoint | Selected 2026-11-08; configuration and resolution verification pending |
+| A | `kms.k8s-aux.simlun.se` | `10.10.0.5` | Trust coordinator KMS TLS endpoint | UniFi resolver `10.10.0.1` returned `10.10.0.5` from `simlun-x1` (2026-11-09) |
 
 ### Configure on the UniFi gateway
 
