@@ -25,20 +25,19 @@ Per-device power-return support, settings, and verification remain TBD, includin
 - **Hardware UUID (observed):** `00d03115-0000-0000-1000-000089261f6e`. Unchanged across the recorded cold boot after disabling the UEFI RAM cap on 2026-11-09. Stability across other firmware changes/reinstall remains unverified; not yet an operational KMS registration.
 - **Live memory verification:** `talosctl memory` TOTAL increased from `2848` to `7748` (about 7.6 GiB) after disabling the UEFI 3 GB cap and cold booting on 2026-11-09; AVAILABLE was `7203`. The same UUID and working Ethernet were retained. Nominal inventory RAM remains 8 GB; aggregate RAM totals are unchanged.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
-- **Disks (provisional allocation):** Four 128 GB SATA SSD candidates inspected individually over USB. See [candidate disk inventory](#candidate-disk-inventory) for the observed identities and signatures. Final disk selection and pair assignments are pending.
+- **Disks (provisional allocation):** Four 128 GB SATA SSD candidates inspected individually on the workstation and detected together on the Pi. See [candidate disk inventory](#candidate-disk-inventory) for the observed identities and signatures. Final disk selection and pair assignments are pending.
 - **OS drives:** Planned MD RAID1 using two disks (128 GB nominal usable); exact disk assignment TBD.
 - **Storage:** Planned ZFS mirror (RAID 1) using the other two disks (128 GB nominal usable); exact disk assignment TBD.
 - **Capacity accounting:** Summary totals use this provisional allocation: 512 GB raw and 256 GB nominal usable across the two mirrors. Final allocation will be confirmed after reviewing the candidate inventory.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
 - **Network:** 1 Gbit Ethernet on `k8s-aux` (VLAN 10); planned static `10.10.0.10` and node hostname `trust-cp1.k8s-aux.lundmark.internal`. Live Talos discovery uses DHCP. Observed physical interface `enabcm6e4ei0`, alternative name `enxd83add37d639`, permanent MAC `d8:3a:dd:37:d6:39`, driver `bcmgenet`, link up at 1000 Mbit/s/full duplex (2026-11-09). The provisional `eth0` patch must be corrected before apply; see the [experiment record](installation/02-trust.md#experiment-record-and-acceptance-checks).
-- **Boot configuration:** Operator completed SD-first EEPROM configuration and reached pftf/EDK2 UEFI setup from the dedicated firmware microSD card on 2026-11-08. UEFI Firmware v1.53 was confirmed on 2026-11-09, with setup reached again after a full power cycle and no settings changes. On the same date the operator manually selected the USB installer in UEFI Boot Manager and reached Talos maintenance mode. The UEFI 3 GB RAM cap was then disabled and the change remained effective after a full cold boot, with memory and Ethernet verified. Exact EEPROM version and BOOT_ORDER, other modified settings and automatic USB selection remain unverified. See the [UEFI experiment results](installation/02-trust.md#experiment-record-and-acceptance-checks). Exact card model/capacity remains pending inventory; boot media are excluded from disk totals.
+- **Boot configuration:** Operator completed SD-first EEPROM configuration and reached pftf/EDK2 UEFI setup from the dedicated firmware microSD card on 2026-11-08. UEFI Firmware v1.53 was confirmed on 2026-11-09, with setup reached again after a full power cycle and no settings changes. On the same date the operator manually selected the USB installer in UEFI Boot Manager and reached Talos maintenance mode. The UEFI 3 GB RAM cap was then disabled and the change remained effective after a full cold boot, with memory and Ethernet verified. Exact EEPROM version and BOOT_ORDER, other modified settings and automatic USB selection remain unverified. See the [UEFI experiment results](installation/02-trust.md#experiment-record-and-acceptance-checks). See the [live Talos disk inventory](#live-talos-disk-inventory) for the observed boot media. Boot media are excluded from disk totals.
 
 ### Candidate disk inventory
 
 Read-only workstation inspection on 2026-11-09. Each candidate was presented
 as `/dev/sda` and displayed `119.2G` in `lsblk`. No partitions or mountpoints
-were listed. The ATA links below were observed on `simlun-x1` and need separate
-verification on Talos with the intended adapters.
+were listed. The ATA links below were observed on `simlun-x1`.
 
 | Candidate | Reported model | ATA serial | Workstation device link | Signatures reported by `wipefs --no-act` |
 | --- | --- | --- | --- | --- |
@@ -50,9 +49,31 @@ verification on Talos with the intended adapters.
 All four observations used the same workstation USB path
 (`pci-0000:00:14.0-usb-0:2:1.0-scsi-0:0:0:0`). The operator reports four
 identical USB-to-SATA adapters. The sampled adapter enumerated on `simlun-x1`
-as ASMedia ASM1153 SATA 3Gb/s bridge, USB ID `174c:1153`. Retail make/model
-and individual adapter identifiers remain unrecorded. Pi detection with all
-four drives attached remains pending.
+as ASMedia ASM1153 SATA 3Gb/s bridge, USB ID `174c:1153`. The adapter retail make and model remain unrecorded.
+
+#### Live Talos disk inventory
+
+Read-only Talos maintenance-mode discovery on `10.10.0.246` on 2026-11-09.
+All four candidates were detected together through the powered USB hub.
+Each exposed the same ATA device link as on the workstation and reported
+128,035,676,160 bytes with a 512-byte sector size and 512-byte I/O size.
+
+| Candidate | Talos device at discovery | USB device link reported by Talos |
+| --- | --- | --- |
+| 1 (Intenso) | `/dev/sda` | `/dev/disk/by-id/usb-Intenso_SSD_Sata_III_26A1EE830094-0:0` |
+| 2 (SPCC) | `/dev/sde` | `/dev/disk/by-id/usb-SPCC_Sol_id_State_Disk_26A1EE833C38-0:0` |
+| 3 (Fanxiang) | `/dev/sdb` | `/dev/disk/by-id/usb-Fanxiang_S101_128GB_26A1EE833E35-0:0` |
+| 4 (Patriot) | `/dev/sdd` | `/dev/disk/by-id/usb-Patriot_P220_128GB_26A1EE833C2F-0:0` |
+
+All four reported WWID `naa.5000000000000001`, so the WWID cannot identify
+an individual SSD. The `/dev/sd*` names are a snapshot of this boot. The ATA
+links distinguish the four disks in this observation. Link stability across
+reboots and final mirror assignments are pending.
+
+| Boot medium | Talos device at discovery | Reported capacity (bytes) | Device link |
+| --- | --- | ---: | --- |
+| UEFI microSD | `/dev/mmcblk1` | 15,931,539,456 | `/dev/disk/by-id/mmc-SC16G_0x19739311` |
+| USB Talos installer | `/dev/sdc` | 31,037,849,600 | `/dev/disk/by-id/usb-Generic_Flash_Disk_22040353520091-0:0` |
 
 ## Backup
 
