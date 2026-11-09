@@ -4,8 +4,8 @@
 pending. No service, keys or endpoint deployment is implemented by this document.** Existing approved policy remains authoritative
 in [security.md](security.md#trust-bootstrap-kms) and
 [coordinator sessions](coordinator-sessions.md). The envelope codec and in-process session model are now implemented and
-software-tested as described below. Local transport framing, daemon/process
-isolation and gRPC error mapping remain proposals, pending implementation.
+software-tested as described below. The loopback rehearsal implements gRPC error
+mapping. Local authorization framing and daemon/process isolation remain proposed.
 This contract covers Trust only; the OpenBao transit adapter is separate.
 
 ## Walkthrough decisions (2026-11-08)
@@ -140,9 +140,9 @@ invalid tags and plaintext of any length other than 32. Never fall back to
 `homelab-wrap-v1`, another node, another generation, or generated plaintext.
 
 Implemented bound: 4 KiB for envelope data, checked before JSON decoding.
-The complete gRPC message limit (8 KiB proposed), local authorization framing
-and transport time budgets remain unimplemented and need Pi 3 measurement
-within Talos's ten-second operation timeout. Do not log request,
+The loopback transport enforces an 8 KiB gRPC message limit. Local authorization
+framing and transport time budgets still need implementation and Pi 3
+measurement within Talos's ten-second operation timeout. Do not log request,
 response, envelope or decrypted payload bytes. Errors expose only static codes.
 
 ## Proposed local authorization protocol and process boundary
@@ -316,3 +316,17 @@ Next: review the software-core evidence, then proceed with the agreed
 non-destructive Pi live-boot discovery. UUID/time/admission/recovery choices and
 the daemon/transport/process-boundary implementation remain prerequisites for
 service deployment, production keys and encrypted installation.
+
+## Disposable loopback transport
+
+The [helper rehearsal](../../support/hsm/README.md#trust-kms-loopback-rehearsal)
+runs the Talos Seal and Unseal RPCs over verified TLS on a loopback listener.
+The harness activates the existing in-process session directly using disposable
+inputs and advances a controlled clock to exercise expiry. It checks locked and
+expired requests, a successful round trip, request bounds, static error codes,
+and certificate trust. The handler checks the session epoch before returning
+the encoded response to gRPC.
+
+This stage uses one process. Production socket authorization, an expiry
+scheduler, worker termination, and a production response handoff still require
+implementation and verification before coordinator deployment.

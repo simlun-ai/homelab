@@ -21,3 +21,18 @@ the lock hash and testing offline installation on supported Python versions.
 The wheel includes upstream MIT license metadata. No source build runs during
 installation. PyYAML is used only through safe loading; native Talos tooling
 continues to own generation, signing and machine validation.
+
+## Trust KMS loopback rehearsal
+
+After the offline helper environment is installed, fetch the pinned rehearsal
+dependencies once, then run the test:
+
+```sh
+make -C support/hsm kms-rehearsal-tools
+make -C support/hsm kms-tls-rehearse
+```
+
+The rehearsal creates its certificate and disposable key material in memory,
+binds an ephemeral port on loopback, and exercises the Talos KMS wire contract.
+It requires no token, wrapped records, coordinator, or internet access at run
+time. See the [KMS contract](../../docs/security/trust-bootstrap-kms.md#disposable-loopback-transport).
