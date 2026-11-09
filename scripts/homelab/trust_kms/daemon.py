@@ -90,17 +90,23 @@ class Authority:
                 raise session.Capacity()
             if not 0 < len(grants) <= session.MAX_GRANTS:
                 raise envelope.InvalidArgument()
+            batch = tuple(grants)
             self.worker = worker.Worker(self._policies)
             try:
-                started = self.worker.activate(request_id, grants)
+                epoch, remaining = self.worker.activate(request_id, batch)
                 now = self._clock()
                 if not math.isfinite(now) or now < self._last_time:
                     raise session.Locked()
                 self._last_time = now
-                self._deadline = now + started.remaining
-                self._authorized = started.authorized
+                self._deadline = now + remaining
+                self._authorized = tuple(
+                    sorted(
+                        (envelope.node_uuid(grant.node), grant.key_id)
+                        for grant in batch
+                    )
+                )
                 self._request_id = request_id
-                self._session_id = started.session_id
+                self._session_id = epoch
                 self._seen.add(request_id)
                 return self.status()
             except BaseException:

@@ -14,6 +14,7 @@ from typing import cast
 from . import envelope, session
 
 IPC_TIMEOUT = 3.0
+MAX_REPLY_BYTES = 8192
 ERRORS = {
     "FAILED_PRECONDITION": session.Locked,
     "PERMISSION_DENIED": session.Denied,
@@ -60,6 +61,14 @@ def _result[**P, T](
         return str(exc)
 
 
+def _send(pipe: Connection, result: bytes | str) -> None:
+    # The supervisor never unpickles data from the worker.
+    if isinstance(result, bytes):
+        pipe.send_bytes(b"\x00" + result)
+    else:
+        pipe.send_bytes(b"\x01" + result.encode("ascii"))
+
+
 def _serve(pipe: Connection, parent: int, policies: dict[str, session.Policy]) -> None:
     with pipe:
         try:
@@ -72,15 +81,17 @@ def _serve(pipe: Connection, parent: int, policies: dict[str, session.Policy]) -
                 )
             finally:
                 del grants
-            pipe.send(status)
             if not isinstance(status, session.Status):
+                _send(pipe, status)
                 return
+            _send(pipe, f"{status.session_id} {status.remaining.hex()}".encode("ascii"))
             while True:
                 sealing, node, data = cast(tuple[bool, str, bytes], pipe.recv())
-                pipe.send(
+                _send(
+                    pipe,
                     _result(authority.seal, node, data)
                     if sealing
-                    else _result(authority.unseal, node, data)
+                    else _result(authority.unseal, node, data),
                 )
                 del data
         except Exception:
@@ -107,37 +118,46 @@ class Worker:
         finally:
             child.close()
 
-    def _exchange(self, request: object) -> object:
+    def _exchange(self, request: object) -> bytes:
         if self._closed:
             raise Unavailable()
         try:
             self._pipe.send(request)
             if not self._pipe.poll(IPC_TIMEOUT):
                 raise Unavailable()
-            result: object = self._pipe.recv()
+            result = self._pipe.recv_bytes(MAX_REPLY_BYTES)
         except (EOFError, OSError):
             raise Unavailable() from None
-        if isinstance(result, str) and result in ERRORS:
-            raise ERRORS[result]()
-        return result
+        if result.startswith(b"\x00"):
+            return result[1:]
+        if result.startswith(b"\x01"):
+            error = ERRORS.get(result[1:].decode("ascii", errors="replace"))
+            if error is not None:
+                raise error()
+        raise Unavailable()
 
-    def activate(self, request: str, grants: Sequence[session.Grant]) -> session.Status:
+    def activate(
+        self, request: str, grants: Sequence[session.Grant]
+    ) -> tuple[str, float]:
         with self.io:
             result = self._exchange((request, tuple(grants)))
-        if not isinstance(result, session.Status):
+        try:
+            epoch, encoded_time = result.decode("ascii").split(" ")
+            remaining = float.fromhex(encoded_time)
+            epoch = envelope.node_uuid(epoch)
+        except (ValueError, OverflowError):
+            raise Unavailable() from None
+        if not 0 < remaining <= session.WINDOW_SECONDS:
             raise Unavailable()
-        return result
+        return epoch, remaining
 
     def call(self, sealing: bool, node: str, data: bytes) -> bytes:
         if not self.io.acquire(blocking=False):
             raise session.Capacity()
         try:
-            result = self._exchange((sealing, node, data))
+            return self._exchange((sealing, node, data))
         finally:
             self.io.release()
-        if not isinstance(result, bytes):
-            raise Unavailable()
-        return result
 
     def close(self) -> None:
         if self.process.is_alive():
