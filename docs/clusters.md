@@ -18,9 +18,8 @@ Independent, single-node foundation. All other clusters depend on its services. 
 
 Backup, Pi, and Metal depend on Trust's unsealed OpenBao and KMS adapter for [Talos system-volume unlock](security/security.md#talos-kms-adapter). Trust's own system-volume unlock uses the independent [YubiKey-backed coordinator KMS](security/security.md#trust-bootstrap-kms).
 
-Trust's OS and data mirrors are planned; final disk selection, connection details
-and pair assignments will be determined during the disk inventory phase and
-recorded in the [inventory](inventory.md#trust).
+Trust's OS and data mirrors are planned. The [inventory](inventory.md#mirror-assignments)
+records the selected SSDs and their ATA device links.
 
 OpenBao storage, backups, and recovery are specified in [backup-and-restore.md](backup-and-restore.md#openbao-online-backups).
 

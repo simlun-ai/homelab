@@ -25,10 +25,10 @@ Per-device power-return support, settings, and verification remain TBD, includin
 - **Hardware UUID (observed):** `00d03115-0000-0000-1000-000089261f6e`. Unchanged across the recorded cold boot after disabling the UEFI RAM cap on 2026-11-09. Stability across other firmware changes/reinstall remains unverified; not yet an operational KMS registration.
 - **Live memory verification:** `talosctl memory` TOTAL increased from `2848` to `7748` (about 7.6 GiB) after disabling the UEFI 3 GB cap and cold booting on 2026-11-09; AVAILABLE was `7203`. The same UUID and working Ethernet were retained. Nominal inventory RAM remains 8 GB; aggregate RAM totals are unchanged.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
-- **Disks (provisional allocation):** Four 128 GB SATA SSD candidates inspected individually on the workstation and detected together on the Pi. See [candidate disk inventory](#candidate-disk-inventory) for the observed identities and signatures. Final disk selection and pair assignments are pending.
-- **OS drives:** Planned MD RAID1 using two disks (128 GB nominal usable); exact disk assignment TBD.
-- **Storage:** Planned ZFS mirror (RAID 1) using the other two disks (128 GB nominal usable); exact disk assignment TBD.
-- **Capacity accounting:** Summary totals use this provisional allocation: 512 GB raw and 256 GB nominal usable across the two mirrors. Final allocation will be confirmed after reviewing the candidate inventory.
+- **Disks (planned allocation):** Four 128 GB SATA SSD candidates inspected individually on the workstation and detected together on the Pi. See [candidate disk inventory](#candidate-disk-inventory) for the observed identities and signatures. See the [mirror assignments](#mirror-assignments) for the selected pairs.
+- **OS drives:** Planned MD RAID1 using Intenso and Silicon Power Ace A5X (128 GB nominal usable).
+- **Storage:** Planned encrypted ZFS mirror using Patriot P220 and Fanxiang S101 (128 GB nominal usable).
+- **Capacity accounting:** Summary totals use 512 GB raw and 256 GB nominal usable across the two planned mirrors.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
 - **Network:** 1 Gbit Ethernet on `k8s-aux` (VLAN 10); planned static `10.10.0.10` and node hostname `trust-cp1.k8s-aux.lundmark.internal`. Live Talos discovery uses DHCP. Observed physical interface `enabcm6e4ei0`, alternative name `enxd83add37d639`, permanent MAC `d8:3a:dd:37:d6:39`, driver `bcmgenet`, link up at 1000 Mbit/s/full duplex (2026-11-09). The provisional `eth0` patch must be corrected before apply; see the [experiment record](installation/02-trust.md#experiment-record-and-acceptance-checks).
 - **Boot configuration:** Operator completed SD-first EEPROM configuration and reached pftf/EDK2 UEFI setup from the dedicated firmware microSD card on 2026-11-08. UEFI Firmware v1.53 was confirmed on 2026-11-09, with setup reached again after a full power cycle and no settings changes. On the same date the operator manually selected the USB installer in UEFI Boot Manager and reached Talos maintenance mode. The UEFI 3 GB RAM cap was then disabled and the change remained effective after a full cold boot, with memory and Ethernet verified. Exact EEPROM version and BOOT_ORDER, other modified settings and automatic USB selection remain unverified. See the [UEFI experiment results](installation/02-trust.md#experiment-record-and-acceptance-checks). See the [live Talos disk inventory](#live-talos-disk-inventory) for the observed boot media. Boot media are excluded from disk totals.
@@ -81,13 +81,24 @@ workstation and Pi. The `usb-*` links describe the USB side of each
 connection. On the 2026-11-09 cold-boot recheck, all four ATA links and exact
 capacities matched the first discovery. The Patriot moved from `/dev/sdd`
 to `/dev/sdc`, and the USB installer moved from `/dev/sdc` to `/dev/sdd`.
-The tables show the device names from the first discovery. Final mirror
-assignments are pending.
+The tables show the device names from the first discovery.
 
 | Boot medium | Talos device at discovery | Reported capacity (bytes) | Device link |
 | --- | --- | ---: | --- |
 | UEFI microSD | `/dev/mmcblk1` | 15,931,539,456 | `/dev/disk/by-id/mmc-SC16G_0x19739311` |
 | USB Talos installer | `/dev/sdc` | 31,037,849,600 | `/dev/disk/by-id/usb-Generic_Flash_Disk_22040353520091-0:0` |
+
+#### Mirror assignments
+
+All four SSDs are brand new. The pairs below are selected for the planned
+mirrors.
+
+| Mirror | SSD | ATA device link |
+| --- | --- | --- |
+| Talos OS (MD RAID1) | Intenso SSD Sata III | `/dev/disk/by-id/ata-Intenso_SSD_Sata_III_2025032901388` |
+| Talos OS (MD RAID1) | Silicon Power Ace A5X | `/dev/disk/by-id/ata-SPCC_Solid_State_Disk_WWDD241210062007013` |
+| Encrypted ZFS data | Patriot P220 | `/dev/disk/by-id/ata-Patriot_P220_128GB_P220HHBB251201003962` |
+| Encrypted ZFS data | Fanxiang S101 | `/dev/disk/by-id/ata-Fanxiang_S101_128GB_26060780625001902` |
 
 ## Backup
 

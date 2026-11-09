@@ -12,9 +12,9 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Choose which SSDs to assign to the OS and data mirrors. All four ATA device links and exact capacities matched after a cold boot. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. Disk/adapter behavior, DNS and actual pre-STATE/KMS networking/time remain to be verified before installation; the provisional `eth0` patch must be corrected before any apply.
+- **Current next step:** Validate how Talos will select the two assigned OS disks and confirm the bootable MD RAID1 path. All four ATA device links and exact capacities matched after a cold boot. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. Disk/adapter behavior, DNS and actual pre-STATE/KMS networking/time remain to be verified before installation; the provisional `eth0` patch must be corrected before any apply.
 
-Trust's four-disk, 128 GB-per-disk allocation is provisional. Use the
+Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
 [candidate disk inventory](../inventory.md#candidate-disk-inventory) to identify
 the physical SSDs. Each link includes the SSD's ATA serial and matched on the
@@ -406,7 +406,7 @@ Do not apply configuration during discovery. Before later attaching candidate
 disks, inventory existing partition/filesystem signatures read-only on the
 workstation; an existing Talos system must be reviewed before allowing the Pi
 to boot with it attached. Do not erase it merely to obtain maintenance mode.
-The final disk selection and OS/data assignment remain undecided until inventory.
+See the [mirror assignments](../inventory.md#mirror-assignments) for the selected OS and data disks.
 
 First gate: reach UEFI setup with disks disconnected. Second gate: prepare the
 separate ISO USB medium, then boot it into maintenance mode with candidate disks
@@ -558,7 +558,7 @@ Record the repository revision, EEPROM and EDK2 versions/settings, Talos image/s
 - [x] Inspect candidate SSDs and existing signatures read-only on the workstation (2026-11-09).
 - [x] Record the sampled USB-to-SATA adapter model and verify that Talos detects all four SSDs together with matching ATA links (2026-11-09).
 - [x] Recheck all four ATA links and capacities after a cold boot (2026-11-09).
-- [ ] Record final OS/data mirror assignments in inventory.md.
+- [x] Record the selected OS and data mirror members by ATA link in [inventory.md](../inventory.md#mirror-assignments).
 - [x] Generic Talos ARM64 live environment uses the increased RAM after removing the limit: TOTAL `7748` (2026-11-09).
 - [ ] Generic Talos ARM64 live environment sees and operates with the selected disks/adapters.
 - [ ] Firmware card does not confuse Talos EFI/system-disk discovery.
@@ -650,9 +650,9 @@ signature at `0x1fe` on the Intenso and no signatures on the other three.
 The [candidate disk inventory](../inventory.md#candidate-disk-inventory) records
 the exact ATA models, serials and workstation device links.
 
-Record the intended adapters and verify detection and stable identities on the
-Pi before finalizing the OS/data assignments. Correct the provisional `eth0`
-LinkConfig before applying a machine configuration.
+Use the [mirror assignments](../inventory.md#mirror-assignments) to identify
+the intended OS targets. Correct the provisional `eth0` LinkConfig before
+applying a machine configuration.
 
 If the firmware card fails, power off and recreate it from the pinned archive; recheck SD-first EEPROM boot. Preserve the previous boot media/settings for rollback. Reverting a Talos disk installation needs its own recovery procedure before destructive installation is attempted.
 
