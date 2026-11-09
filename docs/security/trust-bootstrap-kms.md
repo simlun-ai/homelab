@@ -327,6 +327,10 @@ expired requests, a successful round trip, request bounds, static error codes,
 and certificate trust. The handler checks the session epoch before returning
 the encoded response to gRPC.
 
+The operator ran `make -C support/hsm kms-tls-rehearse` successfully on
+`simlun-x1` with Python 3.13.18 at `b2ca4e6` on 2026-11-09. See the
+[Trust runbook](../installation/02-trust.md#experiment-record-and-acceptance-checks).
+
 This stage uses one process. Production socket authorization, an expiry
 scheduler, worker termination, and a production response handoff still require
 implementation and verification before coordinator deployment.
