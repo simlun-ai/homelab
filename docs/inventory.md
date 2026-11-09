@@ -37,7 +37,9 @@ Per-device power-return support, settings, and verification remain TBD, includin
 
 Read-only workstation inspection on 2026-11-09. Each candidate was presented
 as `/dev/sda` and displayed `119.2G` in `lsblk`. No partitions or mountpoints
-were listed. The ATA links below were observed on `simlun-x1`.
+were listed. The ATA links below were observed on `simlun-x1`. Candidate 2
+was identified by the operator as a Silicon Power Ace A5X. Its reported ATA
+model is `SPCC Solid State Disk`.
 
 | Candidate | Reported model | ATA serial | Workstation ATA device link | Signatures reported by `wipefs --no-act` |
 | --- | --- | --- | --- | --- |
@@ -61,7 +63,7 @@ Each exposed the same ATA device link as on the workstation and reported a
 | Candidate | Talos device at discovery | Capacity (bytes) | Talos ATA device link | USB device link reported by Talos |
 | --- | --- | ---: | --- | --- |
 | 1 (Intenso) | `/dev/sda` | 128,035,676,160 | `/dev/disk/by-id/ata-Intenso_SSD_Sata_III_2025032901388` | `/dev/disk/by-id/usb-Intenso_SSD_Sata_III_26A1EE830094-0:0` |
-| 2 (SPCC) | `/dev/sde` | 128,035,676,160 | `/dev/disk/by-id/ata-SPCC_Solid_State_Disk_WWDD241210062007013` | `/dev/disk/by-id/usb-SPCC_Sol_id_State_Disk_26A1EE833C38-0:0` |
+| 2 (Silicon Power Ace A5X) | `/dev/sde` | 128,035,676,160 | `/dev/disk/by-id/ata-SPCC_Solid_State_Disk_WWDD241210062007013` | `/dev/disk/by-id/usb-SPCC_Sol_id_State_Disk_26A1EE833C38-0:0` |
 | 3 (Fanxiang) | `/dev/sdb` | 128,035,676,160 | `/dev/disk/by-id/ata-Fanxiang_S101_128GB_26060780625001902` | `/dev/disk/by-id/usb-Fanxiang_S101_128GB_26A1EE833E35-0:0` |
 | 4 (Patriot) | `/dev/sdd` | 128,035,676,160 | `/dev/disk/by-id/ata-Patriot_P220_128GB_P220HHBB251201003962` | `/dev/disk/by-id/usb-Patriot_P220_128GB_26A1EE833C2F-0:0` |
 
