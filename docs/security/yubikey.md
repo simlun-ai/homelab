@@ -73,13 +73,13 @@ The workflow is implemented; actual key files await local token-backed generatio
 
 ## Direct YubiKey lookup catalogue
 
-These identifiers propose coverage for the credential roles already documented in the repository.
+These identifiers cover the credential roles documented here. Entries are proposed unless the consumer is marked implemented.
 
 | Identifier suffix | Protected material | Consumer |
 | --- | --- | --- |
 | `trust/openbao-unseal/share-1/r1` | OpenBao-generated unseal share; one share, threshold one under the [unseal policy](openbao-unseal.md). | Workstation unseal/restore helper. |
 | `trust/kms/<node-id>/r1` | Random 32-byte node KMS key protecting Talos system-volume unlock payloads under the [two-layer design](helper-implementation.md#trust-kms-two-layers). Node mapping TBD. | Coordinator bootstrap KMS. |
-| `support-trust-backup/dns-api/cloudflare/r1` | DNS API credential for independent KMS DNS-01 renewal. | Coordinator ACME integration. |
+| `support-aux/dns-api/cloudflare/r1` | Cloudflare API token for Trust KMS DNS-01 under `golden-1`. The manifest reserves `wrapped/ups-aux-cloudflare-dns-api.json`. | [Certbot staging rehearsal](../installation/trust-kms-cloudflare.md#run-the-staging-rehearsal) lookup implemented. |
 | `support-trust-backup/tls-private-key/kms/r1` | Coordinator KMS TLS private key. | Coordinator TLS service. |
 | `support-trust-backup/acme-account/kms/r1` | ACME account private key and required account secrets. | Coordinator ACME integration. |
 | `recovery/r2/openbao-restore/r1` | Independently recoverable R2 download credentials. | Snapshot restore helper. |

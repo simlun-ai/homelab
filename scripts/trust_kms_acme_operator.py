@@ -10,8 +10,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import trust_talos_secrets as secrets  # noqa: E402
+from homelab.record_store import StoreUnavailable, require_store  # noqa: E402
 
-KEY_ID = "homelab/v1/support-trust-backup/dns-api/cloudflare/r1"
+KEY_ID = "homelab/v1/support-aux/dns-api/cloudflare/r1"
 COORDINATOR = "administrator@ups-aux.k8s-aux.lundmark.internal"
 IDENTITY = secrets.ROOT / "support/ups/coordinator_ed25519.pub"
 TOKEN = re.compile(rb"[A-Za-z0-9_-]{16,128}")
@@ -35,6 +36,17 @@ def main() -> int:
     ):
         parser.error("Supply one public ACME contact email.")
     try:
+        store = require_store(secrets.ROOT)
+        if record.is_symlink() or not record.resolve().is_relative_to(store):
+            parser.error(
+                "The wrapped Cloudflare record must be inside secrets/wrapped."
+            )
+        if not record.is_file():
+            print(
+                "Wrapped Cloudflare record missing. See docs/installation/trust-kms-cloudflare.md.",
+                file=sys.stderr,
+            )
+            return 1
         secrets.harden()
         print(
             "Touch the YubiKey when it flashes to recover the Cloudflare token.",
@@ -69,6 +81,9 @@ def main() -> int:
             timeout=380,
             check=True,
         )
+    except StoreUnavailable as exc:
+        print(exc, file=sys.stderr)
+        return 1
     except secrets.PreflightError as exc:
         print(f"ACME workstation preflight failed: {exc}", file=sys.stderr)
         return 1

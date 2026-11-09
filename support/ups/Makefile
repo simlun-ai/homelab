@@ -8,6 +8,7 @@ export ANSIBLE_LOCAL_TEMP := $(SCOPE)/.ansible/tmp
 export HOST
 export ASK_BECOME_PASS
 export ACME_EMAIL
+DNS_RECORD ?= $(abspath $(SCOPE)/../../secrets/wrapped/ups-aux-cloudflare-dns-api.json)
 export DNS_RECORD
 
 .PHONY: help system-dependencies tools check-tools inventory syntax bootstrap verify harden verify-hardening diff apply
@@ -31,7 +32,7 @@ help:
 	  'HOST must be exactly ups-aux, ups-pi, or ups-metal.' \
 	  'make -C support/ups kms-stage HOST=ups-aux (install and verify locked local service)' \
 	  'make -C support/ups kms-acme-tools HOST=ups-aux' \
-	  'make -C support/ups kms-acme-rehearse HOST=ups-aux ACME_EMAIL=... DNS_RECORD=/absolute/path' \
+	  'make -C support/ups kms-acme-rehearse HOST=ups-aux ACME_EMAIL=...' \
 	  'For initial sudo setup only: bootstrap HOST=... ASK_BECOME_PASS=1'
 
 system-dependencies:

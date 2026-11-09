@@ -14,10 +14,12 @@ public inbound listener.
    Edit** and **Zone Resources → Include → Specific zone → simlun.se**. That
    grants DNS write access throughout this zone. Cloudflare's token scope is
    the zone. Use the dedicated token with Certbot's Cloudflare plugin.
-3. Reserve `_acme-challenge.kms.k8s-aux.simlun.se` for Certbot. Certbot adds
+3. [Wrap and store the coordinator token](#wrap-and-store-the-coordinator-token)
+   before running the staging rehearsal.
+4. Reserve `_acme-challenge.kms.k8s-aux.simlun.se` for Certbot. Certbot adds
    and removes the temporary TXT value during validation. Keep the owner
    available for that workflow.
-4. When Trust cert-manager is set up, issue a separate API token scoped to
+5. When Trust cert-manager is set up, issue a separate API token scoped to
    `simlun.se` with **Zone → DNS → Edit** and **Zone → Zone → Read**. Give
    cert-manager its own ACME account and renewal state. It will issue for
    application names using distinct challenge records. Both tokens have
@@ -28,6 +30,37 @@ public inbound listener.
 [Certbot Cloudflare plugin](https://github.com/certbot/certbot/blob/v4.0.0/certbot-dns-cloudflare/certbot_dns_cloudflare/__init__.py) ·
 [cert-manager Cloudflare solver](https://cert-manager.io/docs/configuration/acme/dns01/cloudflare/) ·
 [Let’s Encrypt rate limits](https://letsencrypt.org/docs/rate-limits/)
+
+### Wrap and store the coordinator token
+
+From the homelab repository root, install the [HSM tools](../../support/hsm/README.md)
+and prepare the private `homelab-secrets` submodule at `secrets/wrapped`.
+Use the YubiKey-backed hidden prompt to wrap and verify the real token.
+
+```sh
+git submodule update --init --recursive -- secrets/wrapped
+git -C secrets/wrapped fetch origin
+git -C secrets/wrapped switch main
+git -C secrets/wrapped pull --ff-only origin main
+
+"$HOME/.local/share/homelab/venvs/hsm/bin/homelab-wrap" \
+  --key-id homelab/v1/support-aux/dns-api/cloudflare/r1 \
+  --root-key golden-1 --output secrets/wrapped/ups-aux-cloudflare-dns-api.json
+```
+
+Review the new ciphertext record, then commit that file in the private
+submodule and push its `main` branch before updating the parent pointer.
+
+```sh
+git -C secrets/wrapped add -- ups-aux-cloudflare-dns-api.json
+git -C secrets/wrapped commit -m "Store wrapped ups-aux Cloudflare DNS token"
+git -C secrets/wrapped push origin main
+```
+
+The public [manifest](../../secrets/manifest.json) reserves the filename.
+Follow the [submodule update workflow](../security/encrypted-record-storage.md#checkout-and-updates)
+to record the new pointer in the parent. Keep the plaintext token out of
+the terminal transcript, shell history and both repositories.
 
 ### Verify public DNS
 
@@ -60,22 +93,11 @@ public progress and results. See the [approved coordinator exception](../securit
    make -C support/ups kms-acme-tools HOST=ups-aux
    ```
 
-2. If a wrapped token is needed, use the hidden prompt and an absolute path
-   in a private location for the new ciphertext record. Keep the token itself
-   out of the terminal transcript, shell history and repository.
+2. Run the staging issue and renewal test with your ACME contact email.
+   The command reads the wrapped token created above by default.
 
    ```sh
-   "$HOME/.local/share/homelab/venvs/hsm/bin/homelab-wrap" \
-     --key-id homelab/v1/support-trust-backup/dns-api/cloudflare/r1 \
-     --root-key golden-1 --output /absolute/private/cloudflare-kms.json
-   ```
-
-3. Run the staging issue and renewal test. Use your ACME contact email and
-   the actual absolute ciphertext path.
-
-   ```sh
-   make -C support/ups kms-acme-rehearse HOST=ups-aux \
-     ACME_EMAIL=you@example.org DNS_RECORD=/absolute/private/cloudflare-kms.json
+   make -C support/ups kms-acme-rehearse HOST=ups-aux ACME_EMAIL=you@example.org
    ```
 
 The workstation unwraps after a YubiKey touch and streams the token over
