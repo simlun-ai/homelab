@@ -1,5 +1,7 @@
 """Exercise the pinned Talos KMS wire contract over local, verified TLS."""
 
+from __future__ import annotations
+
 import ipaddress
 import sys
 import unittest
