@@ -66,9 +66,12 @@ Each exposed the same ATA device link as on the workstation and reported
 | 4 (Patriot) | `/dev/sdd` | `/dev/disk/by-id/usb-Patriot_P220_128GB_26A1EE833C2F-0:0` |
 
 All four reported WWID `naa.5000000000000001`, so the WWID cannot identify
-an individual SSD. The `/dev/sd*` names are a snapshot of this boot. The ATA
-links distinguish the four disks in this observation. Link stability across
-reboots and final mirror assignments are pending.
+an individual SSD. The `/dev/sd*` names are a snapshot of this boot. Use the
+`/dev/disk/by-id/ata-*` links listed above as the physical SSD identifiers
+for Trust. They include the SSD's ATA serial and matched across the
+workstation and Pi. The `usb-*` links describe the USB side of each
+connection. ATA link stability across reboots and final mirror assignments
+are pending.
 
 | Boot medium | Talos device at discovery | Reported capacity (bytes) | Device link |
 | --- | --- | ---: | --- |
