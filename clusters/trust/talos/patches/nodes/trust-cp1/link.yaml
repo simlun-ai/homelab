@@ -1,7 +1,7 @@
-# Initial interface name must be verified on Trust Pi hardware.
+# Physical Ethernet observed on trust-cp1 (permanent MAC d8:3a:dd:37:d6:39).
 apiVersion: v1alpha1
 kind: LinkConfig
-name: eth0
+name: enabcm6e4ei0
 up: true
 addresses:
   - address: 10.10.0.10/24

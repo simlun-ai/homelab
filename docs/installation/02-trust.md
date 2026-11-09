@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Correct the provisional `eth0` patch for the observed Pi Ethernet interface and validate the public configuration offline. The standalone MD RAID1 draft passed strict offline validation with pinned `talosctl`. The maintenance-mode volume probe confirmed that both appear as whole disks. All four ATA device links and exact capacities matched after a cold boot. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. Disk/adapter behavior, DNS and actual pre-STATE/KMS networking/time remain to be verified before installation.
+- **Current next step:** Validate the corrected `enabcm6e4ei0` LinkConfig on the operator workstation before testing live pre-`STATE` networking. The standalone MD RAID1 draft passed strict offline validation with pinned `talosctl`. The maintenance-mode volume probe confirmed that both appear as whole disks. All four ATA device links and exact capacities matched after a cold boot. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. Disk/adapter behavior, DNS and actual pre-STATE/KMS networking/time remain to be verified before installation.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -620,11 +620,9 @@ resource timestamps were `2026-08-31`, while TimeStatus was subsequently updated
 at `2026-11-08T23:20:01Z`. This is consistent with a clock correction after boot;
 it does not establish when time became usable relative to encrypted STATE/TLS.
 
-**Apply blocker:** the committed public LinkConfig still names `eth0`, unlike
-the observed physical link. Correct the authored network fragment and regenerate
-the public render before applying any full configuration. No network patch was
-changed or applied in this documentation step. Bond/dummy/tunnel links in the
-output are not selected as the physical Ethernet interface.
+**Network configuration:** the public LinkConfig targets the observed physical
+link `enabcm6e4ei0`. The static address, DNS resolution and routing still
+require live verification before relying on them for KMS unlock.
 
 ### Full-memory cold-boot verification (2026-11-09)
 
@@ -656,8 +654,8 @@ The [candidate disk inventory](../inventory.md#candidate-disk-inventory) records
 the exact ATA models, serials and workstation device links.
 
 Use the [mirror assignments](../inventory.md#mirror-assignments) to identify
-the intended OS targets. Correct the provisional `eth0` LinkConfig before
-applying a machine configuration.
+the intended OS targets. Verify the physical interface and planned address
+before applying a machine configuration.
 
 If the firmware card fails, power off and recreate it from the pinned archive; recheck SD-first EEPROM boot. Preserve the previous boot media/settings for rollback. Reverting a Talos disk installation needs its own recovery procedure before destructive installation is attempted.
 

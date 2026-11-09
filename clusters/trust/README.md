@@ -65,9 +65,8 @@ applying. Never commit or persist that complete config on workstation disk.
 The [Talos secret lifecycle](../../docs/installation/02-trust.md#talos-secrets-lifecycle-point-3) requires one-time native Talos generation, authenticated YubiKey wrapping and stable recovery of the same cluster identity. An experimental bootstrap-secret helper exists below; disposable administration credential recovery is verified below; production delivery and deployment remain unimplemented.
 
 Live discovery on 2026-11-09 found physical interface `enabcm6e4ei0`, permanent
-MAC `d8:3a:dd:37:d6:39`, linked at 1 Gbit/s/full duplex. The provisional LinkConfig
-still names `eth0`; correct the authored patch and regenerate the public bundle
-before any apply. The current patch was not applied to the live Pi. The operator reached
+MAC `d8:3a:dd:37:d6:39`, linked at 1 Gbit/s/full duplex. The public LinkConfig targets this interface.
+The Pi still uses DHCP in maintenance mode. The operator reached
 UEFI setup on 2026-11-08, confirmed Firmware v1.53 with a repeat cold boot on
 2026-11-09, and then booted Talos into maintenance mode by manually selecting
 the USB installer in UEFI Boot Manager. Automatic USB selection, modified-setting
