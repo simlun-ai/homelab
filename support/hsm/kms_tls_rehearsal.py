@@ -7,6 +7,7 @@ import os
 import signal
 import socket
 import struct
+import subprocess
 import sys
 import threading
 import time
@@ -338,6 +339,63 @@ class DaemonRehearsal(unittest.TestCase):
                     self.assertEqual(
                         control.receive(peer)["error"], "PERMISSION_DENIED"
                     )
+
+
+class StagingServiceRehearsal(unittest.TestCase):
+    def test_locked_service_starts_and_restarts_without_tls(self) -> None:
+        script = Path(__file__).resolve().parents[2] / "scripts/trust_kms_service.py"
+        command = [sys.executable, "-I", "-B", str(script)]
+        with TemporaryDirectory(prefix="trust-kms-stage-") as directory:
+            path = Path(directory) / "control.sock"
+            previous: object = None
+            for _ in range(2):
+                with subprocess.Popen(
+                    [*command, "serve-locked", "--socket", str(path)]
+                ) as process:
+                    try:
+
+                        def ready() -> bool:
+                            return (
+                                path.exists()
+                                and subprocess.run(
+                                    [*command, "status", "--socket", str(path)],
+                                    check=False,
+                                    timeout=5,
+                                    capture_output=True,
+                                ).returncode
+                                == 0
+                            )
+
+                        wait_until(lambda: process.poll() is not None or ready())
+                        self.assertIsNone(process.poll())
+                        status = local(path, "status")
+                        instance = status["instance"]
+                        self.assertNotEqual(instance, previous)
+                        previous = instance
+                        self.assertEqual(
+                            local(
+                                path,
+                                "open-boot-window",
+                                expected_instance=instance,
+                                request_id=str(uuid4()),
+                                grants=[
+                                    {
+                                        "node_uuid": NODE,
+                                        "key_id": KEY_ID,
+                                        "key": envelope.b64(PUBLIC_TEST_KEY),
+                                    }
+                                ],
+                            )["error"],
+                            "PERMISSION_DENIED",
+                        )
+                    finally:
+                        process.terminate()
+                        try:
+                            self.assertEqual(process.wait(timeout=5), 0)
+                        except subprocess.TimeoutExpired:
+                            process.kill()
+                            raise
+                self.assertFalse(path.exists())
 
 
 if __name__ == "__main__":

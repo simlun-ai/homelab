@@ -24,7 +24,8 @@ SSH host identity, installation order, and recovery.
 
 Run `make -C support/ups help`. Bootstrap, hardening, and verification require exactly one
 `HOST`; the playbooks also reject multi-host execution before connecting.
-The base flow does not reboot hosts. KMS, NUT, and exporters remain unimplemented.
+The base flow does not reboot hosts. NUT and exporters remain pending. Trust KMS
+staging uses its own play and [coordinator runbook](../../docs/installation/01-main-coordinator.md#stage-the-locked-service).
 
 Dependency selection: [ansible-core release](https://pypi.org/project/ansible-core/2.21.5/),
 [Python compatibility](https://docs.ansible.com/projects/ansible/latest/reference_appendices/release_and_maintenance.html).

@@ -21,7 +21,8 @@ class Authority:
         clock: Callable[[], float] = session.boottime,
     ) -> None:
         self._policies = dict(policies)
-        session.Session(self._policies)  # Validate the public configuration at startup.
+        if self._policies:
+            session.Session(self._policies)  # Validate public policy at startup.
         self._clock = clock
         self._last_time = float("-inf")
         self._mutex = threading.RLock()
@@ -77,7 +78,7 @@ class Authority:
     ) -> session.Status:
         with self._mutex:
             self._refresh()
-            if expected_instance != self._instance:
+            if not self._policies or expected_instance != self._instance:
                 raise session.Denied()
             request_id = envelope.node_uuid(request_id)
             if (

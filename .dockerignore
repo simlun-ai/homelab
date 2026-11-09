@@ -28,6 +28,7 @@
 !support/ups/ansible/**/*.j2
 !support/ups/ansible/**/*.py
 !support/ups/ansible/files/010-homelab-administrator
+!support/ups/ansible/files/trust-kms.service
 !support/ups/ansible/roles/coordinator_hardening/files/sshd_config
 !secrets/manifest.json
 !tools/homelab-hsm/homelab_secrets/pyproject.toml

@@ -1,1 +1,1 @@
-"""Software-only Trust KMS core; transport and worker isolation are not implemented."""
+"""Trust KMS envelope, session, transport and worker components."""

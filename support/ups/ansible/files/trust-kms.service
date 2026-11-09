@@ -1,0 +1,24 @@
+[Unit]
+Description=Trust KMS locked staging service
+
+[Service]
+Type=exec
+User=trust-kms
+Group=trust-kms
+ExecStart=/usr/bin/python3 -I -B /usr/local/lib/trust-kms/trust_kms_service.py serve-locked
+Restart=on-failure
+RestartSec=2s
+TimeoutStopSec=10s
+RuntimeDirectory=trust-kms
+RuntimeDirectoryMode=0750
+UMask=0077
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+RestrictAddressFamilies=AF_UNIX
+LimitCORE=0
+
+[Install]
+WantedBy=multi-user.target
