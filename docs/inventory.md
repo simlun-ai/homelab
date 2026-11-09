@@ -83,6 +83,10 @@ capacities matched the first discovery. The Patriot moved from `/dev/sdd`
 to `/dev/sdc`, and the USB installer moved from `/dev/sdc` to `/dev/sdd`.
 The tables show the device names from the first discovery.
 
+The maintenance-mode volume probe listed the Intenso and Silicon Power Ace
+A5X as whole disks with no named filesystem or partition entries. The
+Intenso's DOS/MBR signature remains a separate workstation observation.
+
 | Boot medium | Talos device at discovery | Reported capacity (bytes) | Device link |
 | --- | --- | ---: | --- |
 | UEFI microSD | `/dev/mmcblk1` | 15,931,539,456 | `/dev/disk/by-id/mmc-SC16G_0x19739311` |
