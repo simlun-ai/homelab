@@ -25,7 +25,7 @@ Per-device power-return support, settings, and verification remain TBD, includin
 - **Hardware UUID (observed):** `00d03115-0000-0000-1000-000089261f6e`. Unchanged across the recorded cold boot after disabling the UEFI RAM cap on 2026-11-09. Stability across other firmware changes/reinstall remains unverified; not yet an operational KMS registration.
 - **Live memory verification:** `talosctl memory` TOTAL increased from `2848` to `7748` (about 7.6 GiB) after disabling the UEFI 3 GB cap and cold booting on 2026-11-09; AVAILABLE was `7203`. The same UUID and working Ethernet were retained. Nominal inventory RAM remains 8 GB; aggregate RAM totals are unchanged.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
-- **Disks (provisional allocation):** Four 128 GB SATA SSD candidates inspected individually over USB. See [candidate disk inventory](#candidate-disk-inventory) for the observed identities and signatures. Final disk selection, adapter identities and pair assignments are pending.
+- **Disks (provisional allocation):** Four 128 GB SATA SSD candidates inspected individually over USB. See [candidate disk inventory](#candidate-disk-inventory) for the observed identities and signatures. Final disk selection and pair assignments are pending.
 - **OS drives:** Planned MD RAID1 using two disks (128 GB nominal usable); exact disk assignment TBD.
 - **Storage:** Planned ZFS mirror (RAID 1) using the other two disks (128 GB nominal usable); exact disk assignment TBD.
 - **Capacity accounting:** Summary totals use this provisional allocation: 512 GB raw and 256 GB nominal usable across the two mirrors. Final allocation will be confirmed after reviewing the candidate inventory.
@@ -48,8 +48,11 @@ verification on Talos with the intended adapters.
 | 4 | Patriot P220 128GB | `P220HHBB251201003962` | `/dev/disk/by-id/ata-Patriot_P220_128GB_P220HHBB251201003962` | None reported |
 
 All four observations used the same workstation USB path
-(`pci-0000:00:14.0-usb-0:2:1.0-scsi-0:0:0:0`). Adapter make, model and
-individual assignments remain TBD.
+(`pci-0000:00:14.0-usb-0:2:1.0-scsi-0:0:0:0`). The operator reports four
+identical USB-to-SATA adapters. The sampled adapter enumerated on `simlun-x1`
+as ASMedia ASM1153 SATA 3Gb/s bridge, USB ID `174c:1153`. Retail make/model
+and individual adapter identifiers remain unrecorded. Pi detection with all
+four drives attached remains pending.
 
 ## Backup
 
