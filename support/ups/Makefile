@@ -27,6 +27,7 @@ help:
   'make -C support/ups apply HOST=ups-aux (apply bootstrap and hardening with diffs)' \
 	  'Password workflow: runbooks/coordinator-passwords.md (password-create/reveal/apply)' \
 	  'HOST must be exactly ups-aux, ups-pi, or ups-metal.' \
+	  'make -C support/ups kms-stage HOST=ups-aux (install and verify locked local service)' \
 	  'For initial sudo setup only: bootstrap HOST=... ASK_BECOME_PASS=1'
 
 system-dependencies:
@@ -51,6 +52,7 @@ syntax: check-tools
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/verify.yaml"
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/harden.yaml"
 	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/verify-hardening.yaml"
+	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --syntax-check "$(SCOPE)/ansible/playbooks/kms-stage.yaml"
 
 bootstrap verify harden verify-hardening diff apply: check-tools ssh-key-check
 	@case "$$HOST" in ups-aux|ups-pi|ups-metal) ;; \
@@ -83,3 +85,8 @@ ssh-key-check ssh-key-unload: check-tools
 	@"$(PYTHON)" -I -B "$(SCOPE)/../../scripts/coordinator_ssh_cli.py" $(patsubst ssh-key-%,%,$@)
 
 password-apply: ssh-key-check
+
+.PHONY: kms-stage
+kms-stage: check-tools ssh-key-check
+	@test "$$HOST" = ups-aux || { printf '%s\n' 'Set HOST to ups-aux for Trust KMS staging.' >&2; exit 2; }
+	@"$(ANSIBLE_PLAYBOOK)" -i "$(SCOPE)/inventory.yaml" --limit ups-aux --diff "$(SCOPE)/ansible/playbooks/kms-stage.yaml"

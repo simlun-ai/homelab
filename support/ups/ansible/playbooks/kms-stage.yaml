@@ -1,0 +1,129 @@
+- name: Stage the locked Trust KMS service on ups-aux
+  hosts: ups-aux
+  gather_facts: false
+  become: true
+  vars:
+    trust_kms_root: /usr/local/lib/trust-kms
+    trust_kms_source: "{{ playbook_dir }}/../../../../scripts"
+  pre_tasks:
+    - name: Check target selection before connecting
+      ansible.builtin.import_tasks: ../tasks/single-host.yaml
+
+    - name: Gather coordinator platform information
+      ansible.builtin.setup:
+        gather_subset: [min]
+
+    - name: Require a supported 64-bit Debian-based coordinator
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.os_family == 'Debian'
+          - ansible_facts.architecture == 'aarch64'
+          - ansible_facts.python.version.major == 3
+          - ansible_facts.python.version.minor in [13, 14]
+
+  tasks:
+    - name: Install the coordinator cryptography runtime
+      ansible.builtin.apt:
+        name: python3-cryptography
+        state: present
+        install_recommends: false
+
+    - name: Create the dedicated Trust KMS group
+      ansible.builtin.group:
+        name: trust-kms
+        system: true
+
+    - name: Create the dedicated Trust KMS service user
+      ansible.builtin.user:
+        name: trust-kms
+        group: trust-kms
+        system: true
+        create_home: false
+        shell: /usr/sbin/nologin
+
+    - name: Create root-owned service code directories
+      ansible.builtin.file:
+        path: "{{ trust_kms_root }}{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop:
+        - ""
+        - /homelab
+        - /homelab/trust_kms
+
+    - name: Install the locked service entry point
+      ansible.builtin.copy:
+        src: "{{ trust_kms_source }}/trust_kms_service.py"
+        dest: "{{ trust_kms_root }}/trust_kms_service.py"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Trust KMS staging service
+
+    - name: Install the local KMS service modules
+      ansible.builtin.copy:
+        src: "{{ trust_kms_source }}/homelab/{{ item }}"
+        dest: "{{ trust_kms_root }}/homelab/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - __init__.py
+        - trust_kms/__init__.py
+        - trust_kms/control.py
+        - trust_kms/daemon.py
+        - trust_kms/envelope.py
+        - trust_kms/session.py
+        - trust_kms/worker.py
+      notify: Restart Trust KMS staging service
+
+    - name: Install the Trust KMS staging unit
+      ansible.builtin.copy:
+        src: ../files/trust-kms.service
+        dest: /etc/systemd/system/trust-kms.service
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Trust KMS staging service
+
+    - name: Verify the installed systemd unit
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/systemd-analyze
+          - verify
+          - /etc/systemd/system/trust-kms.service
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Load the installed service before verification
+      ansible.builtin.meta: flush_handlers
+
+    - name: Enable and start the locked service
+      ansible.builtin.systemd_service:
+        name: trust-kms.service
+        enabled: true
+        state: started
+
+    - name: Verify the service reports clean locked startup
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/python3
+          - -I
+          - -B
+          - "{{ trust_kms_root }}/trust_kms_service.py"
+          - status
+      register: trust_kms_status
+      changed_when: false
+      until: trust_kms_status.rc == 0
+      retries: 5
+      delay: 1
+      when: not ansible_check_mode
+
+  handlers:
+    - name: Restart Trust KMS staging service
+      ansible.builtin.systemd_service:
+        name: trust-kms.service
+        daemon_reload: true
+        state: restarted

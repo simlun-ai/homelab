@@ -351,7 +351,10 @@ Retrying it cannot open another window.
 
 The test uses a disposable certificate, public fixture keys, and a controlled
 clock. The operator ran the expanded rehearsal on `simlun-x1` on 2026-11-09.
-All three tests passed. See the [Trust runbook](../installation/02-trust.md#experiment-record-and-acceptance-checks). Coordinator service startup, SSH/YubiKey delivery, production TLS,
+All three tests passed. See the [Trust runbook](../installation/02-trust.md#experiment-record-and-acceptance-checks). The [locked staging play](../installation/01-main-coordinator.md#stage-the-locked-service)
+installs a systemd unit that starts with an empty key policy. The staging unit
+allows Unix sockets only. Its runtime socket accepts the service UID and root.
+Staged startup on the coordinator, SSH/YubiKey delivery, production TLS,
 and paging and dump protections for the coordinator process remain pending.
 The supervisor handles a transient activation payload. The worker lifetime
 bounds retained key authority and does not establish Python memory zeroization.
