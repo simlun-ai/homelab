@@ -12,13 +12,12 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Inventory candidate disks and adapters read-only on the workstation, including existing partition/filesystem signatures, before connecting them to the Pi. Final disk and OS/data pair selection remains open. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. Disk/adapter behavior, DNS and actual pre-STATE/KMS networking/time remain to be verified before installation; the provisional `eth0` patch must be corrected before any apply.
+- **Current next step:** Identify the intended USB-to-SATA adapters and review the completed workstation disk inspection before Pi disk discovery. Final disk and OS/data pair selection remains open. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core tests passed on the workstation; daemon/process/transport integration, production identity creation and live-node authentication remain pending. Disk/adapter behavior, DNS and actual pre-STATE/KMS networking/time remain to be verified before installation; the provisional `eth0` patch must be corrected before any apply.
 
-Trust's four-disk, 128 GB-per-disk allocation is provisional. The upcoming disk
-inventory phase will gather each disk's brand, model, capacity, serial and
-connection/adapter details, then determine final selection and OS/data pair
-assignments. Record those details in [inventory.md](../inventory.md#trust)
-before selecting disks for installation.
+Trust's four-disk, 128 GB-per-disk allocation is provisional. The workstation
+inspection recorded each candidate's model, serial, reported capacity and ATA
+device link. Adapter identities and final OS/data pair assignments are pending.
+See the [candidate disk inventory](../inventory.md#candidate-disk-inventory).
 
 ### Milestone tracker
 
@@ -28,7 +27,7 @@ before selecting disks for installation.
 | 1 | Provisioning contract and scoped tools | Agree on declarative node/disk schema, `clusters/trust/` layout, version pins, `make` entry points and safe secret-handling approach; implement the minimum needed | Pending |
 | 2 | KMS protocol and recovery decisions | Specify per-node wrapped key context, seal/unseal envelope, TLS endpoint and certificate handling, session authorization, early boot DNS/NTP, admission restrictions, and independent loss recovery | Payload/session behavior, endpoint and sequence approved; wire details proposed; UUID/time/admission/recovery choices pending |
 | 3 | `ups-aux` KMS implementation | Service and Ansible configuration deployed; authorized `Seal`/`Unseal`, expiry, restart and fail-closed checks verified independently of Kubernetes/OpenBao | Pending |
-| 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | In progress — UEFI/Talos maintenance boot, full memory and UUID/link continuity across the RAM-cap cold boot verified; disk discovery pending |
+| 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | In progress — UEFI/Talos maintenance boot, full memory and UUID/link continuity across the RAM-cap cold boot verified; workstation disk inspection complete, Pi disk discovery pending |
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
 | 6 | Install encrypted Talos | Deliberately install onto assigned OS disks only; cold boot with the independent KMS authorized; encrypted volume coverage verified | Pending |
 | 7 | Bootstrap Kubernetes | Bootstrap the single control-plane node; verify API, node readiness, system pods, DNS and Flannel networking | Pending |
@@ -355,6 +354,7 @@ YubiKey session authorization, Pi boot or disk-unlock verification.
 | 2026-11-09 | Talos live boot — operator verification | Manually selected USB installer in UEFI Boot Manager; reached maintenance mode at DHCP `10.10.0.246`; automatic USB selection and hardware/API inspection not yet verified | Run read-only UUID, network, memory and time discovery; preserve discovery-only scope |
 | 2026-11-09 | Pi live baseline — operator verification | Scoped read-only queries confirmed Talos v1.14.5 ARM64, observed UUID, Ethernet/MAC at 1 Gbit/s, limited RAM and synchronized time; provisional `eth0` mismatch identified | Disable RAM limit and cold boot; repeat UUID/link/memory/time queries; correct network patch before any apply |
 | 2026-11-09 | Pi full-memory cold boot — operator verification | Disabled UEFI RAM cap; TOTAL increased to `7748`; UUID, physical interface/MAC, 1 Gbit/s link and synchronized time retained at DHCP `10.10.0.246` | Inventory disks/adapters read-only; resolve `eth0` mismatch before any apply |
+| 2026-11-09 | Trust disks — workstation inspection | Four candidate SATA SSDs inventoried with ATA serials and device links. Intenso showed a DOS/MBR signature. No partitions or mountpoints were listed | Identify adapters, verify Pi detection and finalize disk assignments |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 
@@ -549,7 +549,8 @@ Record the repository revision, EEPROM and EDK2 versions/settings, Talos image/s
 - [x] Record initial node UUID, running Talos version, Ethernet/MAC/link, limited-memory baseline and synchronized-time status (2026-11-09).
 - [x] Repeat UUID, physical interface/MAC, Ethernet link, memory and synchronized-time observations after disabling the RAM cap and cold booting (2026-11-09).
 - [ ] Verify DNS and actual pre-STATE networking/time separately; UUID stability across other firmware/reinstall changes remains unverified.
-- [ ] Inventory candidate disks/adapter identities and existing signatures read-only; decide final OS/data assignments in inventory.md.
+- [x] Inspect candidate SSDs and existing signatures read-only on the workstation (2026-11-09).
+- [ ] Record intended adapter identities, verify disk detection on the Pi and decide final OS/data assignments in inventory.md.
 - [x] Generic Talos ARM64 live environment uses the increased RAM after removing the limit: TOTAL `7748` (2026-11-09).
 - [ ] Generic Talos ARM64 live environment sees and operates with the selected disks/adapters.
 - [ ] Firmware card does not confuse Talos EFI/system-disk discovery.
@@ -632,11 +633,18 @@ this observed settings change; this does not establish UUID stability across
 firmware upgrades or reinstall. Successful live Ethernet/time checks do not
 establish pre-STATE/KMS readiness or disk/adapter compatibility.
 
-Next, inventory candidate disks/adapter identities and existing signatures
-read-only on the workstation before booting the Pi with them attached. Select
-the final disks and pairs only after inventory. The `eth0` apply blocker above
-remains unresolved. Production KMS registration/keys, formatting and installation
-remain out of scope.
+### Workstation disk inspection (2026-11-09)
+
+The operator inspected four candidate SATA SSDs individually on `simlun-x1`.
+Each appeared as `/dev/sda` with `119.2G` displayed by `lsblk`, and the output
+listed no partitions or mountpoints. `wipefs --no-act` reported a DOS/MBR
+signature at `0x1fe` on the Intenso and no signatures on the other three.
+The [candidate disk inventory](../inventory.md#candidate-disk-inventory) records
+the exact ATA models, serials and workstation device links.
+
+Record the intended adapters and verify detection and stable identities on the
+Pi before finalizing the OS/data assignments. Correct the provisional `eth0`
+LinkConfig before applying a machine configuration.
 
 If the firmware card fails, power off and recreate it from the pinned archive; recheck SD-first EEPROM boot. Preserve the previous boot media/settings for rollback. Reverting a Talos disk installation needs its own recovery procedure before destructive installation is attempted.
 
