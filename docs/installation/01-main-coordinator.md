@@ -14,7 +14,7 @@ acceptance criteria. It is documentation, not a deployed or verified service.
 
 - [x] Implement disposable software-only envelope/session tests for the approved behavior, with a fixed public vector. This verifies the envelope and session core.
 - [x] Verify the [loopback gRPC-over-TLS rehearsal](../../support/hsm/README.md#trust-kms-loopback-rehearsal) on the operator workstation (Python 3.13.18, 2026-11-09).
-- [ ] Verify the [local authorization and worker rehearsal](../../support/hsm/README.md#trust-kms-loopback-rehearsal) before coordinator deployment.
+- [x] Verify the [local authorization and worker rehearsal](../../support/hsm/README.md#trust-kms-loopback-rehearsal) on the operator workstation (three tests passed, 2026-11-09).
 - [ ] Settle UUID mapping, early-boot NTP/networking, admission rules and independent recovery inputs. The public TLS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`. The [UniFi DNS record](../network.md#required-dns-entries) resolved to `10.10.0.5` from the workstation and the Pi. The Pi's TCP probe timed out. Certificate and listener deployment remain pending.
 - [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
 - [ ] Implement the Python helpers and Ansible configuration for KMS, TLS/ACME, and local wrapped-record deployment.

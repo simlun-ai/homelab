@@ -350,7 +350,8 @@ The supervisor stores the successful request ID before sending its acknowledgmen
 Retrying it cannot open another window.
 
 The test uses a disposable certificate, public fixture keys, and a controlled
-clock. Coordinator service startup, SSH/YubiKey delivery, production TLS,
+clock. The operator ran the expanded rehearsal on `simlun-x1` on 2026-11-09.
+All three tests passed. See the [Trust runbook](../installation/02-trust.md#experiment-record-and-acceptance-checks). Coordinator service startup, SSH/YubiKey delivery, production TLS,
 and paging and dump protections for the coordinator process remain pending.
 The supervisor handles a transient activation payload. The worker lifetime
 bounds retained key authority and does not establish Python memory zeroization.
