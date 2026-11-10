@@ -33,6 +33,7 @@ help:
 	  'make -C support/ups kms-stage HOST=ups-aux (install and verify locked local service)' \
 	  'make -C support/ups kms-acme-tools HOST=ups-aux' \
 	  'make -C support/ups kms-acme-rehearse HOST=ups-aux ACME_EMAIL=...' \
+	  'make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=... [ACME_STATE_MODE=init|recover|recreate]' \
 	  'For initial sudo setup only: bootstrap HOST=... ASK_BECOME_PASS=1'
 
 system-dependencies:
@@ -106,3 +107,12 @@ kms-acme-rehearse: ssh-key-check
 	@test "$$HOST" = ups-aux || { printf '%s\n' 'Set HOST to ups-aux for Trust ACME.' >&2; exit 2; }
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_kms_acme_operator.py" \
 	  --email "$$ACME_EMAIL" --record "$$DNS_RECORD" --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
+
+# This command only issues staging certificates. Recovery is the default.
+ACME_STATE_MODE ?= recover
+.PHONY: kms-acme-state
+kms-acme-state: ssh-key-check
+	@test "$$HOST" = ups-aux || { printf '%s\n' 'Set HOST to ups-aux for Trust ACME.' >&2; exit 2; }
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_kms_acme_state_operator.py" \
+	  --mode "$(ACME_STATE_MODE)" --email "$$ACME_EMAIL" \
+	  --wrap "$(HSM_VENV)/bin/homelab-wrap" --unwrap "$(HSM_VENV)/bin/homelab-unwrap"

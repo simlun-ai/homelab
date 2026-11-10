@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+# Mount a fresh RAM filesystem visible only to this transient service.
+exec /usr/bin/systemd-run --unit=trust-kms-acme-state --quiet --pipe --wait --collect \
+    --property=DynamicUser=yes \
+    --property=ProtectSystem=strict \
+    --property=ProtectHome=yes \
+    --property=InaccessiblePaths=-/etc/letsencrypt \
+    --property=PrivateDevices=yes \
+    --property=NoNewPrivileges=yes \
+    --property=LimitCORE=0 \
+    --property=RuntimeMaxSec=6min \
+    --property=TimeoutStopSec=10s \
+    --property=TemporaryFileSystem=/run/trust-kms-acme:rw,noswap,nosuid,nodev,noexec,mode=1777,size=32M \
+    /usr/bin/python3 -I -B /usr/local/lib/trust-kms-acme/trust_kms_acme_state_remote.py "$@"

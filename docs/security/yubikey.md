@@ -80,6 +80,7 @@ These identifiers cover the credential roles documented here. Entries are propos
 | `trust/openbao-unseal/share-1/r1` | OpenBao-generated unseal share; one share, threshold one under the [unseal policy](openbao-unseal.md). | Workstation unseal/restore helper. |
 | `trust/kms/<node-id>/r1` | Random 32-byte node KMS key protecting Talos system-volume unlock payloads under the [two-layer design](helper-implementation.md#trust-kms-two-layers). Node mapping TBD. | Coordinator bootstrap KMS. |
 | `support-aux/dns-api/cloudflare/r1` | Cloudflare API token for Trust KMS DNS-01 under `golden-1`. The manifest reserves `wrapped/ups-aux-cloudflare-dns-api.json`. | [Certbot staging rehearsal](../installation/trust-kms-cloudflare.md#run-the-staging-rehearsal) lookup implemented. |
+| `support-aux/acme/staging/r1` | Combined disposable Certbot account, TLS key/certificate and renewal state. Manifest reserves `wrapped/ups-aux-acme-staging.json`; previous generations are archived on replacement. | Staging state lifecycle implemented; operator validation pending. |
 | `support-trust-backup/tls-private-key/kms/r1` | Coordinator KMS TLS private key. | Coordinator TLS service. |
 | `support-trust-backup/acme-account/kms/r1` | ACME account private key and required account secrets. | Coordinator ACME integration. |
 | `recovery/r2/openbao-restore/r1` | Independently recoverable R2 download credentials. | Snapshot restore helper. |

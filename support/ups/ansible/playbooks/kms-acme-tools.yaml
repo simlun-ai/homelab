@@ -51,3 +51,23 @@
         owner: root
         group: root
         mode: "0755"
+
+    - name: Install the staging state helpers
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../../../scripts/{{ item }}"
+        dest: "/usr/local/lib/trust-kms-acme/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - trust_kms_acme_state.py
+        - trust_kms_acme_state_remote.py
+        - trust_kms_acme_rehearsal.py
+
+    - name: Install the isolated staging state launcher
+      ansible.builtin.copy:
+        src: ../files/trust-kms-acme-state
+        dest: /usr/local/sbin/trust-kms-acme-state
+        owner: root
+        group: root
+        mode: "0755"

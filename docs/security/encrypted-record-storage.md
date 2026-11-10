@@ -95,3 +95,19 @@ normal account hash; SSH deployment installs only the public key.
 
 Git history retains old ciphertext in the private repository.
 Retention, rotation and rollback policy belongs to [rotation and rollback](rotation-and-rollback.md).
+
+## ACME state replacement
+
+Normal ACME startup recovers wrapped state. Initialization refuses an existing
+record; explicit recreation creates new ACME/TLS identity material. Missing or
+corrupt state is never an implicit recreation request. Verify the newly wrapped
+replacement before archiving and atomically replacing the previous ciphertext.
+An archive failure prevents replacement. If the old state is unavailable,
+explicit recreation reports that no archive can be made. Node KMS keys and Talos
+authority are outside this operation.
+
+The [staging implementation](../installation/trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate)
+uses the private records checkout and retains old ciphertext in `archive/`.
+Coordinator-local deployment and production integration remain pending. No raw
+HMAC response or wrapping key is retained for unattended record updates; each
+state publication requires fresh workstation/YubiKey operations.
