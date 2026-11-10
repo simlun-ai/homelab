@@ -137,8 +137,8 @@ host-verified SSH. Expect a fresh staging certificate after renewal with the
 same TLS public key, followed by workspace removal. A cached ACME authorization
 may allow renewal without a second TXT write. The existing locked KMS service
 continues to expose its local status socket throughout this test. Production
-certificates, restart recovery, the renewal timer and the TCP listener follow
-after the staging rehearsal is verified.
+certificates, restart recovery, the renewal timer and the TCP listener
+remain pending after the verified staging rehearsal.
 
 The manual rehearsal disables Certbot's randomized renewal delay, which can
 otherwise last up to eight minutes. Each Certbot operation has a 150-second
@@ -147,3 +147,16 @@ or renewal and reports a timeout, an exit status, or a launch failure. Certbot's
 stdout/stderr remain suppressed; its private logs are removed with the
 disposable RAM workspace. After updating the helper, rerun `kms-acme-tools`
 before retrying `kms-acme-rehearse`.
+
+## Verified staging result (2026-11-10)
+
+The operator completed the rehearsal on `ups-aux` using the wrapped
+`homelab-ups-aux-dns` token and contact email `acme@simlun.se`. The helper
+reported successful staging issuance and renewal with the same TLS key,
+followed by removal of the disposable ACME workspace. The subsequent command
+`dig @1.1.1.1 _acme-challenge.kms.k8s-aux.simlun.se TXT +short` returned no
+records. The earlier renewal failure was followed by a successful rerun after
+[PR #23](https://github.com/simlun-ai/homelab/pull/23).
+
+This acceptance covers staging only. Durable wrapped ACME state recovery,
+production issuance, scheduled renewal and the TLS listener remain pending.

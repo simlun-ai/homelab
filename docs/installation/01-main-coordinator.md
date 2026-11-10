@@ -18,7 +18,7 @@ acceptance criteria. It is documentation, not a deployed or verified service.
 - [ ] Settle UUID mapping, early-boot NTP/networking, admission rules and independent recovery inputs. The public TLS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`. The [UniFi DNS record](../network.md#required-dns-entries) resolved to `10.10.0.5` from the workstation and the Pi. The Pi's TCP probe timed out. Certificate and listener deployment remain pending.
 - [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
 - [x] Stage the locked service on `ups-aux` and verify it reports an empty authorization window (2026-11-09).
-- [ ] Run the [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) on `ups-aux`.
+- [x] Verify the [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) on `ups-aux`: issuance, renewal with the same TLS key, RAM workspace cleanup and the post-run public DNS check passed (2026-11-10).
 - [ ] Implement durable wrapped ACME state recovery, scheduled production renewal and the locked TLS listener.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).
 - [ ] Verify startup without Trust/OpenBao, the one-hour KMS window, expiry/lock/restart behaviour, and certificate renewal.
@@ -32,10 +32,14 @@ Operator results (2026-11-10): the dedicated `homelab-ups-aux-dns` token was
 created with DNS Edit access to `simlun.se`, wrapped and committed in the private
 records repository, and the parent submodule pointer updated. The
 `kms-acme-tools` play completed with `ok=7`, `changed=4`, and no failures. With
-contact email `acme@simlun.se`, staging issuance and local certificate inspection
-completed; the subsequent renewal failed. The full rehearsal remains pending.
-Reinstall the helper containing [PR #23](https://github.com/simlun-ai/homelab/pull/23)
-and retry using the [Cloudflare guide](trust-kms-cloudflare.md#run-the-staging-rehearsal).
+contact email `acme@simlun.se`, the first attempt completed staging issuance but
+failed during renewal. After the correction in
+[PR #23](https://github.com/simlun-ai/homelab/pull/23), the operator reran the
+rehearsal successfully: issuance and renewal retained the same TLS key, and the
+disposable RAM workspace was removed. A subsequent TXT query to `1.1.1.1` for
+`_acme-challenge.kms.k8s-aux.simlun.se` returned no records. This verifies the
+staging rehearsal; durable wrapped ACME state recovery, production renewal and
+the TLS listener remain pending.
 
 ## Stage the locked service
 
