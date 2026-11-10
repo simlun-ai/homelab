@@ -16,6 +16,7 @@ from trust_kms_acme_state import LIMIT, WORKSPACE, restore, snapshot  # noqa: E4
 
 
 def main() -> int:
+    created = False
     try:
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
         os.umask(0o077)
@@ -37,6 +38,7 @@ def main() -> int:
         if not acme.TOKEN.fullmatch(token):
             raise ValueError()
         WORKSPACE.mkdir(mode=0o700)
+        created = True
         accounts: dict[Path, bytes] = {}
         recovered = request["state"] is not None
         if recovered:
@@ -109,7 +111,7 @@ def main() -> int:
         return 1
     finally:
         # The transient service's private mount is destroyed even on termination.
-        if WORKSPACE.exists():
+        if created:
             shutil.rmtree(WORKSPACE)
     return 0
 
