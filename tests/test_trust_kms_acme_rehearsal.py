@@ -1,9 +1,11 @@
 """Regression checks for the Trust ACME staging boundary."""
 
+import io
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import trust_kms_acme_rehearsal as acme
 
@@ -28,6 +30,47 @@ class CertbotRehearsalTests(unittest.TestCase):
         self.assertIn(
             "--force-renewal", acme.certbot_command(workspace, "", renew=True)
         )
+        self.assertIn(
+            "--no-random-sleep-on-renew",
+            acme.certbot_command(workspace, "", renew=True),
+        )
+
+    def test_child_failures_report_action_without_secret_output(self) -> None:
+        secret = b"private-token-and-child-output"
+        for failure, diagnostic in (
+            (
+                subprocess.TimeoutExpired(
+                    "certbot", acme.CERTBOT_TIMEOUT, secret, secret
+                ),
+                "renewal timed out after 150 seconds",
+            ),
+            (
+                subprocess.CalledProcessError(1, "certbot", secret, secret),
+                "renewal exited with status 1",
+            ),
+            (OSError(secret.decode()), "renewal could not be started"),
+        ):
+            with (
+                self.subTest(failure=type(failure).__name__),
+                tempfile.TemporaryDirectory() as directory,
+                patch.object(acme.sys, "stdin", Mock(buffer=io.BytesIO(secret))),
+                patch.object(
+                    acme, "inspect_certificate", return_value=(b"cert", b"key")
+                ),
+                patch.object(
+                    acme.subprocess, "run", side_effect=[None, failure]
+                ) as run,
+                patch("builtins.print") as output,
+                self.assertRaises(acme.RehearsalError) as caught,
+            ):
+                acme.rehearse(Path(directory), "test@example.org")
+            self.assertIn(diagnostic, str(caught.exception))
+            self.assertNotIn(secret.decode(), str(caught.exception))
+            self.assertNotIn(secret.decode(), str(output.call_args_list))
+            self.assertEqual(run.call_count, 2)
+            for call in run.call_args_list:
+                self.assertEqual(call.kwargs["stdout"], subprocess.DEVNULL)
+                self.assertEqual(call.kwargs["stderr"], subprocess.DEVNULL)
 
     def test_mount_check_requires_noswap_on_the_held_tmpfs(self) -> None:
         for entries in (
