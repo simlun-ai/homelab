@@ -31,6 +31,38 @@ public inbound listener.
 [cert-manager Cloudflare solver](https://cert-manager.io/docs/configuration/acme/dns01/cloudflare/) ·
 [Let’s Encrypt rate limits](https://letsencrypt.org/docs/rate-limits/)
 
+### Coordinator token policy reference
+
+The coordinator token is named `homelab-ups-aux-dns`. The following Terraform
+example was supplied by Cloudflare's UI when the operator created it. It
+records the account, zone and DNS Edit permission identifiers; it contains
+no token value and is safe to keep in this public repository. This is a
+reference example, not a managed Terraform deployment. Applying it would
+create another token.
+
+```hcl
+resource "cloudflare_account_token" "example_account_token" {
+  account_id = "e6d011dde11a8647d3d5566992b4663c"
+  name       = "homelab-ups-aux-dns"
+
+  policies = [{
+    effect = "allow"
+    permission_groups = [{
+      id = "4755a26eedb94da69e1066d98aa820be"
+    }]
+    resources = jsonencode({
+      "com.cloudflare.api.account.zone.a74ff6069ccd972dde8045f939b14427" = "*"
+    })
+  }]
+}
+```
+
+The provider's generated [`value` attribute](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/account_token)
+is the secret. Do not publish that value or Terraform state/plan files.
+[Marking a value sensitive](https://developer.hashicorp.com/terraform/language/manage-sensitive-data)
+does not remove it from Terraform state. Any future Terraform implementation
+must meet the existing secret-storage policy before managing tokens.
+
 ### Wrap and store the coordinator token
 
 From the homelab repository root, install the [HSM tools](../../support/hsm/README.md)
@@ -107,3 +139,11 @@ may allow renewal without a second TXT write. The existing locked KMS service
 continues to expose its local status socket throughout this test. Production
 certificates, restart recovery, the renewal timer and the TCP listener follow
 after the staging rehearsal is verified.
+
+The manual rehearsal disables Certbot's randomized renewal delay, which can
+otherwise last up to eight minutes. Each Certbot operation has a 150-second
+deadline; the systemd job has a six-minute limit. A failure identifies issuance
+or renewal and reports a timeout, an exit status, or a launch failure. Certbot's
+stdout/stderr remain suppressed; its private logs are removed with the
+disposable RAM workspace. After updating the helper, rerun `kms-acme-tools`
+before retrying `kms-acme-rehearse`.

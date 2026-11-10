@@ -17,6 +17,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 RAM_ROOT = Path("/run/trust-kms-acme")
 HOSTNAME = "kms.k8s-aux.simlun.se"
 STAGING_CA = "https://acme-staging-v02.api.letsencrypt.org/directory"
+CERTBOT_TIMEOUT = 150
 TOKEN = re.compile(rb"[A-Za-z0-9_-]{16,128}")
 EMAIL = re.compile(r"[A-Za-z0-9_.+%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}")
 
@@ -77,7 +78,9 @@ def certbot_command(workspace: Path, email: str, *, renew: bool) -> list[str]:
         "--reuse-key",
     ]
     if renew:
-        return [*command, "renew", "--force-renewal"]
+        # Certbot otherwise sleeps for up to eight minutes on noninteractive
+        # renewal, exceeding this bounded, operator-started rehearsal.
+        return [*command, "renew", "--force-renewal", "--no-random-sleep-on-renew"]
     return [
         *command,
         "certonly",
@@ -149,12 +152,22 @@ def rehearse(workspace: Path, email: str) -> None:
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
-                timeout=150,
+                timeout=CERTBOT_TIMEOUT,
                 check=True,
             )
-        except (OSError, subprocess.SubprocessError):
+        except subprocess.TimeoutExpired:
             raise RehearsalError(
-                f"Certbot staging {action} failed. Check public DNS, time, and token scope."
+                f"Certbot staging {action} timed out after {CERTBOT_TIMEOUT} seconds."
+            ) from None
+        except subprocess.CalledProcessError as exc:
+            raise RehearsalError(
+                f"Certbot staging {action} exited with status {exc.returncode}. "
+                "Check public DNS, time, and token scope."
+            ) from None
+        except OSError:
+            raise RehearsalError(
+                f"Certbot staging {action} could not be started. "
+                "Check the installed coordinator tools."
             ) from None
         return inspect_certificate(workspace)
 
