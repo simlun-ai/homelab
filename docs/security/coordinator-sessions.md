@@ -50,6 +50,12 @@ Opening a new window requires fresh workstation/YubiKey authorization.
 Coordinator restart or power loss discards all supplied secrets and
 requires authorization again. SSH disconnection does not end a session.
 
+ACME/TLS ciphertext and archives stay on the coordinator. The workstation
+retrieves and unwraps them in memory, then streams the result back over verified
+SSH during authorization. The DNS token retains its private-repository recovery
+copy. Lost coordinator state is explicitly recreated; it never implicitly
+regenerates node KMS keys or Talos authority.
+
 Certificate renewal may use DNS and ACME credentials already in memory.
 Wrapping a newly generated private key or updating a secret record
 requires fresh token operations; do not retain HMAC responses for

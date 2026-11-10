@@ -39,7 +39,7 @@ Use the [YubiKey or offline golden-key path](security/security.md#core-secret-fo
 | Talos bootstrap/administration material | Rebuild Trust before its control plane or OpenBao is usable. |
 | Helpers, protocol metadata, compatible tools | Obtainable without the failed homelab. |
 
-Wrapped credential records live in the private `homelab-secrets` submodule; coordinator records are also deployed locally under the [storage policy](security/encrypted-record-storage.md). Exact record mappings and other recovery artifacts remain TBD. Proposed credential lookups belong in [yubikey.md](security/yubikey.md); secret custody and handling in [security.md](security/security.md).
+Wrapped credential records live in the private `homelab-secrets` submodule; coordinator records are also deployed locally under the [storage policy](security/encrypted-record-storage.md). Recreatable coordinator ACME/TLS state is an exception: its ciphertext and archives live only on the coordinator; SD-card loss uses explicit recreation with the preserved Cloudflare credential. Exact mappings for other recovery artifacts remain TBD. Proposed credential lookups belong in [yubikey.md](security/yubikey.md); secret custody and handling in [security.md](security/security.md).
 
 ## Required recovery targets
 

@@ -163,61 +163,92 @@ production issuance, scheduled renewal and the TLS listener remain pending.
 
 ## Wrapped staging state: initialize, recover and recreate
 
-Implemented for operator validation; not yet verified on `ups-aux`. This stage
-uses Let's Encrypt staging only. It does not enable production issuance, a
-listener, or a renewal timer. The existing disposable rehearsal is unchanged.
+The coordinator is the sole durable home for ACME/TLS ciphertext and its
+archives. The Cloudflare token remains in the private `homelab-secrets`
+repository. Losing the Pi SD card means explicitly recreating the ACME/TLS
+identity using that token and working DNS/ACME services; these records do not
+need Git backups. Node KMS keys and Talos authority keep their existing custody.
 
-Install the updated helpers with `make -C support/ups kms-acme-tools HOST=ups-aux`.
-Initialize the private records checkout and load the SSH key as above. Then:
+The earlier checkout-based staging lifecycle was verified by the operator on
+2026-11-11: initialization, recovery/renewal, explicit recreation and recovery
+of the replacement all passed, with three previous ciphertexts archived. The
+revised coordinator-local workflow is implemented but requires fresh operator
+validation. Production issuance, a listener and a renewal timer remain pending.
+
+Install the updated helpers:
 
 ```sh
-# Once: refuses an existing record.
+make -C support/ups kms-acme-tools HOST=ups-aux
+```
+
+### Move the existing staging record to the Pi
+
+From the homelab root, import the existing record after YubiKey verification.
+This refuses an existing coordinator record, preserves the exact ciphertext,
+and does not contact ACME, modify local files, or commit anything:
+
+```sh
+make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=acme@simlun.se \
+  ACME_STATE_MODE=import \
+  ACME_IMPORT_RECORD="$PWD/secrets/wrapped/ups-aux-acme-staging.json"
+```
+
+Only the current record is imported; old workstation archives remain unchanged.
+Do not commit those obsolete ACME staging files to the private repository.
+After coordinator recovery succeeds, review and remove the old local staging
+copies deliberately. The helper never deletes local files or rewrites Git
+history. If previously committed, removing current files does not erase history;
+no history rewrite is needed for these already wrapped staging records.
+
+### Validate coordinator-local recovery and recreation
+
+If there is no existing record to import, initialize once instead:
+
+```sh
 make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=acme@simlun.se ACME_STATE_MODE=init
+```
 
-# Default: recover the existing account/key, renew, and wrap the updated state.
+Then run default recovery, explicit recreation, and recovery of the replacement:
+
+```sh
 make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=acme@simlun.se
-
-# Explicit recovery option: issue a new account/key/certificate.
 make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=acme@simlun.se ACME_STATE_MODE=recreate
-
-# Verify that recovery of the replacement also works.
 make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=acme@simlun.se
 ```
 
 Expect fresh YubiKey touches for state recovery, DNS token recovery, wrapping
-and independent unwrap verification. Recovery validates the existing certificate
-and requires it to remain valid for this staging test. It verifies that renewal
-keeps both the ACME account key and TLS key. Initialization/recreation create new
-keys. Missing or corrupt state never silently triggers recreation.
+and independent unwrap verification. Each operation fetches the Pi's ciphertext
+over host-verified SSH. Unwrapped state travels back over SSH to protected Pi
+RAM; newly wrapped state goes back to the Pi after verification. No ACME state
+files are written in the workstation checkout and no submodule pointer update
+is needed. The private checkout is still required for the separate DNS token.
+Recovery verifies renewal retains both account and TLS keys. For this staging
+acceptance, the recovered certificate must still be valid. Missing or corrupt
+state never silently triggers recreation. Recreate explicitly replaces identity;
+if no old record exists, it reports that there is nothing to archive.
 
-Only Certbot's config tree is wrapped; the separate Cloudflare credential,
-work files and logs are excluded. A fixed path inside the private `noswap` RAM
-mount preserves Certbot's absolute renewal paths. Snapshots have a format/size
-boundary and reject escaping paths and symlinks. Plaintext crosses SSH through
-anonymous workstation RAM descriptors and is never printed. Each invocation
-removes the coordinator RAM workspace; the next invocation reconstructs it.
+### Storage and failure handling
 
-The authoritative ciphertext is `secrets/wrapped/ups-aux-acme-staging.json`, under
-`homelab/v1/support-aux/acme/staging/r1` and root `golden-1`. Before replacing an
-existing record, the helper wraps and independently unwraps the candidate,
-compares the plaintext, and archives the old ciphertext byte-for-byte under
-`secrets/wrapped/archive/ups-aux-acme-staging-<generation>.json`. This happens on
-normal refreshed-state publication as well as recreation. Archive failure
-prevents replacement; issuance or verification failure leaves the old record
-untouched. The current record is replaced atomically and operations are locked.
-A failed replacement can leave an extra archive copy. Inspect current/archive
-state after an interrupted operation before retrying.
+The tools play provisions root-owned mode `0700`
+`/var/lib/trust-kms/acme-staging/`. The current file is
+`ups-aux-acme-staging.json`; previous ciphertexts are retained byte-for-byte in
+`archive/ups-aux-acme-staging-<generation>.json`. The staging wrapping context
+remains `homelab/v1/support-aux/acme/staging/r1`, root `golden-1`.
 
-Recreation with no current record explicitly reports that there is nothing to
-archive. When replacing a coordinator, first recover surviving wrapped state
-from the private repository; recreate only when that state is unavailable or
-when deliberately choosing a new ACME/TLS identity. This never rotates node KMS
-keys or Talos authority.
+The workstation wraps and independently unwraps the replacement before sending
+it to the Pi. The Pi locks its store and compares the current record with the
+one fetched at the start, rejecting stale workstation updates. It validates
+record structure/context, archives the previous ciphertext, fsyncs, and replaces
+the current record atomically. It holds neither a wrapping key nor HMAC response.
+Archive failure prevents replacement. Failed issuance or verification never
+publishes. If publication acknowledgement is lost or storage fails after the
+atomic replacement, inspect the coordinator before retrying; an extra archive
+copy can remain. There is no automatic archive pruning.
 
-After successful validation, review and commit the current record and new
-archives in the private repository, push its `main`, then update the parent
-submodule pointer using the existing workflow. Do not use these disposable
-staging records for production. Coordinator-local ciphertext deployment under
-`/var/lib/trust-kms/`, production state, long-running renewal/reload, and startup
-integration remain future work. Startup must ultimately use deployed ciphertext
-without fetching GitHub or OpenBao. No automatic Git commits or pushes occur.
+Only Certbot's config tree is wrapped. The separate Cloudflare credential,
+work files and logs are excluded. A fixed directory inside the private `noswap`
+RAM mount preserves Certbot's absolute renewal paths. Snapshot size/format and
+link/path checks still apply. The transient service removes plaintext state at
+the end; the next invocation reconstructs it from coordinator-local ciphertext.
+This model supports the future process-lifetime authorization flow, without
+requiring GitHub or OpenBao for local ACME-state retrieval.

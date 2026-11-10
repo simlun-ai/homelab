@@ -60,6 +60,7 @@
         group: root
         mode: "0644"
       loop:
+        - trust_kms_acme_record.py
         - trust_kms_acme_state.py
         - trust_kms_acme_state_remote.py
         - trust_kms_acme_rehearsal.py
@@ -68,6 +69,22 @@
       ansible.builtin.copy:
         src: ../files/trust-kms-acme-state
         dest: /usr/local/sbin/trust-kms-acme-state
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Create the coordinator-local ciphertext directory
+      ansible.builtin.file:
+        path: /var/lib/trust-kms/acme-staging
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    - name: Install the ciphertext storage launcher
+      ansible.builtin.copy:
+        src: ../files/trust-kms-acme-record
+        dest: /usr/local/sbin/trust-kms-acme-record
         owner: root
         group: root
         mode: "0755"

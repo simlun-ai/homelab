@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import trust_kms_acme_record as records
 import trust_kms_acme_state as state
 import trust_kms_acme_state_operator as operator
 
@@ -56,7 +57,7 @@ class StateTests(unittest.TestCase):
             record, candidate = root / "current.json", root / "candidate.json"
             record.write_bytes(b"old-ciphertext")
             candidate.write_bytes(b"new-verified-ciphertext")
-            operator.publish(record, candidate, b"old-ciphertext")
+            records.publish(record, candidate, b"old-ciphertext")
             self.assertEqual(record.read_bytes(), b"new-verified-ciphertext")
             self.assertEqual(
                 [p.read_bytes() for p in (root / "archive").iterdir()],
@@ -76,16 +77,16 @@ class StateTests(unittest.TestCase):
                 if failure == "archive":
                     (root / "archive").symlink_to(root)
                     with self.assertRaises(ValueError):
-                        operator.publish(record, candidate, b"old")
+                        records.publish(record, candidate, b"old")
                 else:
                     with (
-                        patch.object(operator.os, "replace", side_effect=OSError()),
+                        patch.object(records.os, "replace", side_effect=OSError()),
                         self.assertRaises(OSError),
                     ):
-                        operator.publish(record, candidate, b"old")
+                        records.publish(record, candidate, b"old")
                 self.assertEqual(record.read_bytes(), b"old")
 
-    def test_modes_fail_closed_and_verified_recreation(self) -> None:
+    def test_modes_use_coordinator_state_and_never_write_private_checkout(self) -> None:
         for mode, existing, succeeds in [
             ("recover", False, False),
             ("init", True, False),
@@ -99,14 +100,17 @@ class StateTests(unittest.TestCase):
                 tempfile.TemporaryDirectory() as directory,
             ):
                 root = Path(directory)
-                record = root / operator.FILENAME
-                if existing:
-                    record.write_bytes(b"old")
+                previous = b"old" if existing else None
+                fetched = json.dumps(
+                    {
+                        "record": None
+                        if previous is None
+                        else base64.b64encode(previous).decode()
+                    }
+                ).encode()
 
-                def wrap(
-                    payload: bytes, _cli: str, *, record: Path, key_id: str
-                ) -> None:
-                    record.write_bytes(base64.b64encode(payload))
+                def crypt(_tool: str, _data: bytes, *, wrap: bool) -> bytes:
+                    return b"wrapped" if wrap else b"new-state"
 
                 with (
                     patch.object(operator, "require_store", return_value=root),
@@ -115,40 +119,44 @@ class StateTests(unittest.TestCase):
                         "recover_bundle",
                         return_value=b"public-dummy-token",
                     ),
-                    patch.object(operator.secrets, "wrap_bundle", side_effect=wrap),
                     patch.object(
-                        operator, "remote", return_value=b"public-dummy-token"
+                        operator,
+                        "crypt",
+                        side_effect=crypt,
+                    ),
+                    patch.object(
+                        operator, "exchange", side_effect=[fetched, b"ok\n"]
+                    ) as exchange,
+                    patch.object(
+                        operator, "remote", return_value=b"new-state"
                     ) as remote,
                     patch("builtins.print"),
                 ):
                     if succeeds:
                         operator.operate(mode, "test@example.org", "/wrap", "/unwrap")
+                        request = json.loads(exchange.call_args.args[1])
+                        self.assertEqual(request["expected"], records.digest(previous))
                         self.assertEqual(
-                            record.read_bytes(), base64.b64encode(b"public-dummy-token")
+                            base64.b64decode(request["record"]), b"wrapped"
                         )
-                        self.assertEqual((root / "archive").exists(), existing)
                     else:
                         with self.assertRaises(ValueError):
                             operator.operate(
                                 mode, "test@example.org", "/wrap", "/unwrap"
                             )
                         remote.assert_not_called()
+                self.assertEqual(list(root.iterdir()), [])
 
-    def test_failed_issuance_or_verification_never_replaces_record(self) -> None:
+    def test_failed_issuance_or_verification_never_publishes(self) -> None:
         for failure in ("issue", "verify"):
             with (
                 self.subTest(failure=failure),
                 tempfile.TemporaryDirectory() as directory,
             ):
                 root = Path(directory)
-                record = root / operator.FILENAME
-                record.write_bytes(b"old")
-
-                def wrap(
-                    _payload: bytes, _cli: str, *, record: Path, key_id: str
-                ) -> None:
-                    record.write_bytes(b"candidate")
-
+                fetched = json.dumps(
+                    {"record": base64.b64encode(b"old").decode()}
+                ).encode()
                 with (
                     patch.object(operator, "require_store", return_value=root),
                     patch.object(
@@ -156,7 +164,12 @@ class StateTests(unittest.TestCase):
                         "recover_bundle",
                         return_value=b"public-dummy-token",
                     ),
-                    patch.object(operator.secrets, "wrap_bundle", side_effect=wrap),
+                    patch.object(
+                        operator, "crypt", side_effect=[b"wrapped", b"wrong-plaintext"]
+                    ),
+                    patch.object(
+                        operator, "exchange", return_value=fetched
+                    ) as exchange,
                     patch.object(
                         operator,
                         "remote",
@@ -167,9 +180,43 @@ class StateTests(unittest.TestCase):
                     self.assertRaises(ValueError),
                 ):
                     operator.operate("recreate", "test@example.org", "/wrap", "/unwrap")
-                self.assertEqual(record.read_bytes(), b"old")
-                self.assertFalse((root / "archive").exists())
-                self.assertEqual(list(root.glob(".acme-staging-pending-*")), [])
+                self.assertEqual(exchange.call_count, 1)
+                self.assertEqual(list(root.iterdir()), [])
+
+    def test_import_verifies_and_uploads_without_issuance_or_deleting_source(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "old.json"
+            source.write_bytes(b"wrapped-existing")
+            with (
+                patch.object(operator, "require_store", return_value=root),
+                patch.object(
+                    operator,
+                    "crypt",
+                    return_value=b'{"format":"trust-acme-staging-v1"}',
+                ) as crypt,
+                patch.object(
+                    operator, "exchange", side_effect=[b'{"record":null}', b"ok\n"]
+                ) as exchange,
+                patch.object(operator, "remote") as remote,
+                patch.object(operator.secrets, "recover_bundle") as dns,
+                patch("builtins.print"),
+            ):
+                operator.operate(
+                    "import", "test@example.org", "/wrap", "/unwrap", source
+                )
+                crypt.assert_called_once_with(
+                    "/unwrap", b"wrapped-existing", wrap=False
+                )
+                remote.assert_not_called()
+                dns.assert_not_called()
+                self.assertEqual(
+                    base64.b64decode(json.loads(exchange.call_args.args[1])["record"]),
+                    source.read_bytes(),
+                )
+            self.assertEqual(source.read_bytes(), b"wrapped-existing")
 
 
 class RemoteStateTests(unittest.TestCase):
@@ -218,3 +265,116 @@ class RemoteStateTests(unittest.TestCase):
                 self.assertIn("renew", run.call_args.args[0])
             self.assertFalse(workspace.exists())
             self.assertEqual(result.getvalue(), encoded)
+
+
+class CoordinatorRecordTests(unittest.TestCase):
+    def fixture(self) -> bytes:
+        return json.dumps(
+            {
+                "format": "homelab-wrap-v1",
+                "root_key": "golden-1",
+                "key_id": records.KEY_ID,
+                "revision": 1,
+                "salt": base64.b64encode(b"s" * 32).decode(),
+                "nonce": base64.b64encode(b"n" * 12).decode(),
+                "ciphertext": base64.b64encode(b"public-test-data" * 2).decode(),
+            }
+        ).encode()
+
+    def test_compare_and_replace_rejects_stale_workstation_and_archives(self) -> None:
+        from types import SimpleNamespace
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with (
+                patch.object(records, "STORE", root),
+                patch.object(
+                    records.os,
+                    "fstat",
+                    return_value=SimpleNamespace(st_uid=0, st_mode=0o40700),
+                ),
+            ):
+                self.assertIsNone(json.loads(records.access("get", b""))["record"])
+                first = self.fixture()
+                request = json.dumps(
+                    {"expected": None, "record": base64.b64encode(first).decode()}
+                ).encode()
+                self.assertEqual(records.access("put", request), b"ok\n")
+                self.assertEqual(
+                    base64.b64decode(json.loads(records.access("get", b""))["record"]),
+                    first,
+                )
+                second = first + b"\n"
+                update = json.dumps(
+                    {
+                        "expected": records.digest(first),
+                        "record": base64.b64encode(second).decode(),
+                    }
+                ).encode()
+                self.assertEqual(records.access("put", update), b"ok\n")
+                with self.assertRaises(ValueError):
+                    records.access("put", update)
+                self.assertEqual((root / records.FILENAME).read_bytes(), second)
+                self.assertEqual(
+                    [p.read_bytes() for p in (root / "archive").iterdir()], [first]
+                )
+                self.assertEqual(list(root.glob(".pending-*")), [])
+
+    def test_corrupt_empty_record_is_distinct_from_missing(self) -> None:
+        from types import SimpleNamespace
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / records.FILENAME).write_bytes(b"")
+            with (
+                patch.object(records, "STORE", root),
+                patch.object(
+                    records.os,
+                    "fstat",
+                    return_value=SimpleNamespace(st_uid=0, st_mode=0o40700),
+                ),
+            ):
+                self.assertEqual(json.loads(records.access("get", b""))["record"], "")
+                request = json.dumps(
+                    {
+                        "expected": None,
+                        "record": base64.b64encode(self.fixture()).decode(),
+                    }
+                ).encode()
+                with self.assertRaises(ValueError):
+                    records.access("put", request)
+
+    def test_persistence_rejects_plaintext_wrong_context_and_directory_links(
+        self,
+    ) -> None:
+        from types import SimpleNamespace
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for data in (
+                b"plaintext",
+                self.fixture().replace(b"golden-1", b"wrong-root"),
+            ):
+                with (
+                    patch.object(records, "STORE", root),
+                    patch.object(
+                        records.os,
+                        "fstat",
+                        return_value=SimpleNamespace(st_uid=0, st_mode=0o40700),
+                    ),
+                    self.assertRaises(ValueError),
+                ):
+                    records.access(
+                        "put",
+                        json.dumps(
+                            {
+                                "expected": None,
+                                "record": base64.b64encode(data).decode(),
+                            }
+                        ).encode(),
+                    )
+            self.assertEqual(list(root.iterdir()), [])
+            link = root / "link"
+            link.symlink_to(root, target_is_directory=True)
+            with patch.object(records, "STORE", link), self.assertRaises(OSError):
+                records.access("get", b"")
