@@ -160,3 +160,64 @@ records. The earlier renewal failure was followed by a successful rerun after
 
 This acceptance covers staging only. Durable wrapped ACME state recovery,
 production issuance, scheduled renewal and the TLS listener remain pending.
+
+## Wrapped staging state: initialize, recover and recreate
+
+Implemented for operator validation; not yet verified on `ups-aux`. This stage
+uses Let's Encrypt staging only. It does not enable production issuance, a
+listener, or a renewal timer. The existing disposable rehearsal is unchanged.
+
+Install the updated helpers with `make -C support/ups kms-acme-tools HOST=ups-aux`.
+Initialize the private records checkout and load the SSH key as above. Then:
+
+```sh
+# Once: refuses an existing record.
+make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=acme@simlun.se ACME_STATE_MODE=init
+
+# Default: recover the existing account/key, renew, and wrap the updated state.
+make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=acme@simlun.se
+
+# Explicit recovery option: issue a new account/key/certificate.
+make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=acme@simlun.se ACME_STATE_MODE=recreate
+
+# Verify that recovery of the replacement also works.
+make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=acme@simlun.se
+```
+
+Expect fresh YubiKey touches for state recovery, DNS token recovery, wrapping
+and independent unwrap verification. Recovery validates the existing certificate
+and requires it to remain valid for this staging test. It verifies that renewal
+keeps both the ACME account key and TLS key. Initialization/recreation create new
+keys. Missing or corrupt state never silently triggers recreation.
+
+Only Certbot's config tree is wrapped; the separate Cloudflare credential,
+work files and logs are excluded. A fixed path inside the private `noswap` RAM
+mount preserves Certbot's absolute renewal paths. Snapshots have a format/size
+boundary and reject escaping paths and symlinks. Plaintext crosses SSH through
+anonymous workstation RAM descriptors and is never printed. Each invocation
+removes the coordinator RAM workspace; the next invocation reconstructs it.
+
+The authoritative ciphertext is `secrets/wrapped/ups-aux-acme-staging.json`, under
+`homelab/v1/support-aux/acme/staging/r1` and root `golden-1`. Before replacing an
+existing record, the helper wraps and independently unwraps the candidate,
+compares the plaintext, and archives the old ciphertext byte-for-byte under
+`secrets/wrapped/archive/ups-aux-acme-staging-<generation>.json`. This happens on
+normal refreshed-state publication as well as recreation. Archive failure
+prevents replacement; issuance or verification failure leaves the old record
+untouched. The current record is replaced atomically and operations are locked.
+A failed replacement can leave an extra archive copy. Inspect current/archive
+state after an interrupted operation before retrying.
+
+Recreation with no current record explicitly reports that there is nothing to
+archive. When replacing a coordinator, first recover surviving wrapped state
+from the private repository; recreate only when that state is unavailable or
+when deliberately choosing a new ACME/TLS identity. This never rotates node KMS
+keys or Talos authority.
+
+After successful validation, review and commit the current record and new
+archives in the private repository, push its `main`, then update the parent
+submodule pointer using the existing workflow. Do not use these disposable
+staging records for production. Coordinator-local ciphertext deployment under
+`/var/lib/trust-kms/`, production state, long-running renewal/reload, and startup
+integration remain future work. Startup must ultimately use deployed ciphertext
+without fetching GitHub or OpenBao. No automatic Git commits or pushes occur.

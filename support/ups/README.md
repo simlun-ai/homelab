@@ -68,3 +68,9 @@ The [SSH key runbook](../../runbooks/coordinator-ssh-key.md) covers one-time
 selects `coordinator_ed25519.pub` and requires its private half in the local
 agent. Bootstrap replaces the administrator authorized keys with this one key;
 follow the migration procedure before bootstrapping existing hosts.
+
+Wrapped ACME staging state: `make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=...`
+defaults to recovery. Use `ACME_STATE_MODE=init` once or explicitly select
+`ACME_STATE_MODE=recreate` to issue replacement identity material and archive
+existing ciphertext. See the [staging state instructions](../../docs/installation/trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate).
+Coordinator-local record deployment and production integration remain pending.

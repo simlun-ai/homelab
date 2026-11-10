@@ -19,7 +19,8 @@ acceptance criteria. It is documentation, not a deployed or verified service.
 - [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
 - [x] Stage the locked service on `ups-aux` and verify it reports an empty authorization window (2026-11-09).
 - [x] Verify the [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) on `ups-aux`: issuance, renewal with the same TLS key, RAM workspace cleanup and the post-run public DNS check passed (2026-11-10).
-- [ ] Implement durable wrapped ACME state recovery, scheduled production renewal and the locked TLS listener.
+- [ ] Validate the [wrapped staging state lifecycle](trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate): initialization, default recovery, explicit recreation and archival. Implemented; operator validation pending.
+- [ ] Implement coordinator-local wrapped-state deployment, production issuance, scheduled renewal and the locked TLS listener.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).
 - [ ] Verify startup without Trust/OpenBao, the one-hour KMS window, expiry/lock/restart behaviour, and certificate renewal.
 
