@@ -8,11 +8,11 @@
 
 ### Current position
 
-- **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is not yet implemented.
+- **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is staged and verified locked; production TLS and live-node authorization remain pending.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Validate the [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) on `ups-aux` before enabling production renewal and the locked TLS listener. The operator verified the local service starts locked with the [dedicated staging play](01-main-coordinator.md#stage-the-locked-service). The Pi's network-only rehearsal confirmed the planned static address, route and DNS, followed by DHCP rollback. The KMS TCP probe timed out. The corrected `enabcm6e4ei0` LinkConfig passed offline validation on the operator workstation. The standalone MD RAID1 draft passed strict offline validation with pinned `talosctl`. The maintenance-mode volume probe confirmed that both appear as whole disks. All four ATA device links and exact capacities matched after a cold boot. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core and loopback gRPC-over-TLS tests passed on the workstation. The operator also verified the local authorization socket, worker lifecycle and late-response rejection. Coordinator TCP/TLS deployment, production identity creation and live-node authentication remain pending. Disk/adapter behavior and actual pre-STATE/KMS networking, DNS and time remain to be verified on the Pi before installation.
+- **Current next step:** Reinstall the corrected helper and complete the [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) on `ups-aux` before enabling production renewal and the locked TLS listener. The operator verified the local service starts locked with the [dedicated staging play](01-main-coordinator.md#stage-the-locked-service). The Pi's network-only rehearsal confirmed the planned static address, route and DNS, followed by DHCP rollback. The KMS TCP probe timed out. The corrected `enabcm6e4ei0` LinkConfig passed offline validation on the operator workstation. The standalone MD RAID1 draft passed strict offline validation with pinned `talosctl`. The maintenance-mode volume probe confirmed that both appear as whole disks. All four ATA device links and exact capacities matched after a cold boot. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core and loopback gRPC-over-TLS tests passed on the workstation. The operator also verified the local authorization socket, worker lifecycle and late-response rejection. Coordinator TCP/TLS deployment, production identity creation and live-node authentication remain pending. Disk/adapter behavior and actual pre-STATE/KMS networking, DNS and time remain to be verified on the Pi before installation.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -22,6 +22,20 @@ workstation and the Pi. The Pi also reported USB-side links and the same WWID
 for all four SSDs. A cold boot confirmed that the ATA links and exact
 capacities matched the first discovery. Validate the Talos disk-selection
 mechanism separately before installation.
+
+### Coordinator ACME verification (2026-11-10)
+
+The operator created and wrapped `homelab-ups-aux-dns`, committed the token's
+ciphertext in the private repository and updated the parent submodule pointer.
+The coordinator tools play passed (`ok=7`, `changed=4`, no failures). With
+`acme@simlun.se`, staging issuance and local certificate inspection completed,
+but renewal failed. **Full staging rehearsal acceptance remains pending.**
+[PR #23](https://github.com/simlun-ai/homelab/pull/23) disables Certbot's random
+renewal sleep, which can exceed the helper's deadline, and distinguishes failure
+types. The suppressed original error does not establish its exact cause.
+After merging, reinstall the helper and retry the full rehearsal as described in
+[step 01](01-main-coordinator.md#prepare-cloudflare-and-rehearse-acme) and the
+[Cloudflare guide](trust-kms-cloudflare.md#run-the-staging-rehearsal).
 
 ### Milestone tracker
 
