@@ -28,6 +28,15 @@ acceptance criteria. It is documentation, not a deployed or verified service.
 Follow the [standalone Cloudflare configuration guide](trust-kms-cloudflare.md)
 to create the scoped DNS token and exercise Certbot issuance and renewal in RAM.
 
+Operator results (2026-11-10): the dedicated `homelab-ups-aux-dns` token was
+created with DNS Edit access to `simlun.se`, wrapped and committed in the private
+records repository, and the parent submodule pointer updated. The
+`kms-acme-tools` play completed with `ok=7`, `changed=4`, and no failures. With
+contact email `acme@simlun.se`, staging issuance and local certificate inspection
+completed; the subsequent renewal failed. The full rehearsal remains pending.
+Reinstall the helper containing [PR #23](https://github.com/simlun-ai/homelab/pull/23)
+and retry using the [Cloudflare guide](trust-kms-cloudflare.md#run-the-staging-rehearsal).
+
 ## Stage the locked service
 
 After base hardening and SSH setup, run the dedicated play from the workstation:
