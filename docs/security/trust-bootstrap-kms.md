@@ -234,8 +234,9 @@ additional containment. Both hosts are on VLAN 10, so router rules alone cannot
 isolate same-VLAN peers. UUID and source IP checks do not prevent an attacker
 already inside the trusted network from impersonating a node. The TLS slice adds a host input allowlist for the configured Trust node and
 existing management networks, plus a dedicated service UID and bind capability.
-Workstation TLS and locked RPC checks passed; Pi-side reachability and additional switch/gateway restrictions
-and their tests remain TBD.
+Workstation TLS and locked RPC checks passed. Pi-side TCP reachability passed
+from `10.10.0.10` in maintenance try mode. Native Talos TLS and KMS RPCs, and
+additional switch/gateway restrictions and their tests, remain pending.
 
 Choose the same public NTP service for coordinator and Trust, with working
 pre-STATE addressing, DNS and time synchronization. Exact boot-level mechanism,

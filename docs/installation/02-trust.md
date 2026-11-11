@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Repeat the non-destructive Pi network rehearsal at `10.10.0.10` and verify that it can reach the now-deployed KMS listener. Live Talos authentication, encrypted unlock, and actual production certificate renewal and expiry remain pending.
+- **Current next step:** Prepare a non-destructive native Talos KMS rehearsal. The Pi reached the deployed listener from `10.10.0.10` in try mode and returned to DHCP afterward. Live Talos authentication, encrypted unlock, and actual production certificate renewal and expiry remain pending.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -455,6 +455,7 @@ YubiKey session authorization, Pi boot or disk-unlock verification.
 | 2026-11-09 | Trust KMS — operator loopback TLS rehearsal | On `simlun-x1` at `b2ca4e6`, `make -C support/hsm kms-tls-rehearse` passed on Python 3.13.18 (`Ran 1 test`, `OK`). The untrusted client produced the expected self-signed certificate verification error. | Implement the local authorization socket, expiry scheduler and isolated key worker before coordinator deployment. |
 | 2026-11-09 | Trust KMS — operator daemon rehearsal | On `simlun-x1`, `make -C support/hsm kms-tls-rehearse` passed all three tests (`Ran 3 tests`, `OK`). The run covered Unix socket authorization, worker lock, expiry and exit, rejection of a late response, and the TLS Seal/Unseal round trip. The untrusted-certificate rejection was expected. | Prepare coordinator service packaging and locked startup. |
 | 2026-11-09 | Trust KMS — locked staging on `ups-aux` | `make -C support/ups kms-stage HOST=ups-aux` finished with `ok=14`, `changed=8`, `unreachable=0`, `failed=0`. The play verified the installed systemd unit and clean locked Unix-socket status. Enabling the UniFi device's **Local DNS Record** restored the coordinator SSH hostname. | Design and stage certificate issuance and the locked TLS listener. |
+| 2026-11-11 | Trust networking — KMS TCP probe and rollback | In five-minute try mode, `trust-cp1` at `10.10.0.10` reported `success: true` and an empty `lastError` for `tcp:kms.k8s-aux.simlun.se:443`. The operator confirmed the Pi returned to its maintenance DHCP address `10.10.0.246` after rollback. | Prepare a native Talos TLS and authorized Seal/Unseal rehearsal before encrypted installation. |
 
 Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include cluster Python in lint/type/syntax checks, verify the private Git submodule, and bound secret subprocess capture before releasing recovered bytes. Native public-bundle validation was subsequently implemented in Point 4.
 
@@ -464,7 +465,7 @@ Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include clu
 
 Install the independent Trust cluster after the [main coordinator](01-main-coordinator.md) is ready. Firmware-card preparation can be tried separately while the coordinator/KMS work is pending.
 
-Use `10.10.0.10/24` with gateway `10.10.0.1` on `k8s-aux` (VLAN 10) for the installed `trust-cp1` node (`trust-cp1.k8s-aux.lundmark.internal`). Plan for this address to be available before Talos loads encrypted `STATE`, so the node can reach the coordinator's KMS on `10.10.0.5`. The KMS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; workstation verification passed, and preboot configuration and Pi-side endpoint verification remain pending. See the [network overview](../network.md) for the Trust load balancer pool and proposed Kubernetes CIDRs.
+Use `10.10.0.10/24` with gateway `10.10.0.1` on `k8s-aux` (VLAN 10) for the installed `trust-cp1` node (`trust-cp1.k8s-aux.lundmark.internal`). Plan for this address to be available before Talos loads encrypted `STATE`, so the node can reach the coordinator's KMS on `10.10.0.5`. The KMS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; workstation verification passed, and the Pi's maintenance-mode TCP probe passed, and native TLS and actual pre-`STATE` boot remain to be verified. See the [network overview](../network.md) for the Trust load balancer pool and proposed Kubernetes CIDRs.
 
 ## First installation experiment: Pi 4 UEFI
 
