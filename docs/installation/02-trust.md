@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Reboot the disposable QEMU VM from the same disk with KMS locked for a controlled confirmation. Native Talos KMS unlock and locked rejection have already been observed on the VM. Pi-side encrypted `STATE` boot and actual production certificate renewal and expiry remain pending.
+- **Current next step:** Remove the runtime QEMU rehearsal policy from `ups-aux`, restart the service, and reauthorize and verify the normal locked TLS listener. The controlled QEMU reboot confirmed locked Unseal rejection. Pi-side encrypted `STATE` boot and actual production certificate renewal and expiry remain pending.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -131,6 +131,11 @@ and Talos retried. The workstation separately verified trusted TLS and
 locked Seal and Unseal. The operator had not yet initiated a deliberate
 reboot for the locked test when that log was collected. The sequence does
 not establish that locking KMS closed an already-mounted volume.
+
+The operator then deliberately rebooted the VM from the same virtual disk
+with KMS locked. The fresh boot log showed Unseal in slot 0 return
+`FailedPrecondition: KMS locked`. `EPHEMERAL` on `/dev/vda6` moved from
+waiting to failed, and subsequent retries received the same response.
 
 ### Milestone tracker
 
