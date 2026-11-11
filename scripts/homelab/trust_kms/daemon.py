@@ -19,7 +19,11 @@ class Authority:
         policies: Mapping[str, session.Policy],
         *,
         clock: Callable[[], float] = session.boottime,
+        max_window_seconds: int = session.WINDOW_SECONDS,
     ) -> None:
+        if not 0 < max_window_seconds <= session.WINDOW_SECONDS:
+            raise ValueError("Invalid KMS window limit")
+        self._max_window_seconds = max_window_seconds
         self._policies = dict(policies)
         if self._policies:
             session.Session(self._policies)  # Validate public policy at startup.
@@ -99,7 +103,7 @@ class Authority:
                 if not math.isfinite(now) or now < self._last_time:
                     raise session.Locked()
                 self._last_time = now
-                self._deadline = now + remaining
+                self._deadline = now + min(remaining, self._max_window_seconds)
                 self._authorized = tuple(
                     sorted(
                         (envelope.node_uuid(grant.node), grant.key_id)
