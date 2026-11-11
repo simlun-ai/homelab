@@ -24,9 +24,23 @@
   tasks:
     - name: Install the coordinator cryptography runtime
       ansible.builtin.apt:
-        name: python3-cryptography
+        name: [python3-cryptography, python3-grpcio, python3-protobuf, openssl, ca-certificates]
         state: present
         install_recommends: false
+
+    - name: Require management networks for the shared firewall template
+      ansible.builtin.assert:
+        that: coordinator_hardening_management_networks | length > 0
+
+    - name: Configure the scoped KMS firewall rule
+      ansible.builtin.template:
+        src: ../roles/coordinator_hardening/templates/nftables.conf.j2
+        dest: /etc/nftables.conf
+        owner: root
+        group: root
+        mode: "0644"
+        validate: /usr/sbin/nft -c -f %s
+      notify: Reload coordinator firewall
 
     - name: Create the dedicated Trust KMS group
       ansible.builtin.group:
@@ -62,6 +76,22 @@
         mode: "0644"
       notify: Restart Trust KMS staging service
 
+    - name: Install the root TLS control helper
+      ansible.builtin.copy:
+        src: "{{ trust_kms_source }}/trust_kms_tls.py"
+        dest: "{{ trust_kms_root }}/trust_kms_tls.py"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Install the root TLS control launcher
+      ansible.builtin.copy:
+        src: ../files/trust-kms-tls
+        dest: /usr/local/sbin/trust-kms-tls
+        owner: root
+        group: root
+        mode: "0755"
+
     - name: Install the local KMS service modules
       ansible.builtin.copy:
         src: "{{ trust_kms_source }}/homelab/{{ item }}"
@@ -73,6 +103,8 @@
         - __init__.py
         - trust_kms/__init__.py
         - trust_kms/control.py
+        - trust_kms/transport.py
+        - trust_kms/tls.py
         - trust_kms/daemon.py
         - trust_kms/envelope.py
         - trust_kms/session.py
@@ -122,6 +154,11 @@
       when: not ansible_check_mode
 
   handlers:
+    - name: Reload coordinator firewall
+      ansible.builtin.systemd_service:
+        name: nftables
+        state: reloaded
+
     - name: Restart Trust KMS staging service
       ansible.builtin.systemd_service:
         name: trust-kms.service

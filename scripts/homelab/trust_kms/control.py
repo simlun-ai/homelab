@@ -9,7 +9,7 @@ import stat
 import struct
 import threading
 import time
-from collections.abc import Collection, Generator
+from collections.abc import Callable, Collection, Generator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import cast
@@ -37,10 +37,15 @@ def _read(peer: socket.socket, count: int, deadline: float) -> bytes:
     return bytes(data)
 
 
-def receive(peer: socket.socket) -> dict[str, object]:
-    deadline = time.monotonic() + READ_TIMEOUT
+def receive(
+    peer: socket.socket,
+    *,
+    frame_limit: int = FRAME_LIMIT,
+    timeout: float = READ_TIMEOUT,
+) -> dict[str, object]:
+    deadline = time.monotonic() + timeout
     length = cast(int, _HEADER.unpack(_read(peer, _HEADER.size, deadline))[0])
-    if not 0 < length <= FRAME_LIMIT:
+    if not 0 < length <= frame_limit:
         raise envelope.InvalidArgument()
     try:
         message: object = json.loads(
@@ -54,9 +59,11 @@ def receive(peer: socket.socket) -> dict[str, object]:
     return cast(dict[str, object], message)
 
 
-def send(peer: socket.socket, message: dict[str, object]) -> None:
+def send(
+    peer: socket.socket, message: dict[str, object], *, frame_limit: int = FRAME_LIMIT
+) -> None:
     data = json.dumps(message, separators=(",", ":")).encode("utf-8")
-    if not 0 < len(data) <= FRAME_LIMIT:
+    if not 0 < len(data) <= frame_limit:
         raise envelope.InvalidArgument()
     peer.settimeout(READ_TIMEOUT)
     peer.sendall(_HEADER.pack(len(data)) + data)
@@ -131,7 +138,11 @@ def _dispatch(
 
 
 def _handle(
-    peer: socket.socket, authority: daemon.Authority, allowed_uids: Collection[int]
+    peer: socket.socket,
+    authority: daemon.Authority,
+    allowed_uids: Collection[int],
+    handler: Callable[[dict[str, object]], dict[str, object]] | None = None,
+    frame_limit: int = FRAME_LIMIT,
 ) -> None:
     response: dict[str, object]
     try:
@@ -143,7 +154,10 @@ def _handle(
         )
         if uid not in allowed_uids:
             raise session.Denied()
-        response = _dispatch(authority, receive(peer))
+        request = receive(peer, frame_limit=frame_limit)
+        response = (
+            _dispatch(authority, request) if handler is None else handler(request)
+        )
     except (
         session.Locked,
         session.Denied,
@@ -158,7 +172,7 @@ def _handle(
     except Exception:
         response = {"protocol": PROTOCOL, "error": "INTERNAL"}
     try:
-        send(peer, response)
+        send(peer, response, frame_limit=frame_limit)
     except OSError:
         pass  # A lost acknowledgment must not restart an activated window.
 
@@ -169,6 +183,8 @@ def listen(
     path: Path,
     *,
     allowed_uids: Collection[int],
+    handler: Callable[[dict[str, object]], dict[str, object]] | None = None,
+    frame_limit: int = FRAME_LIMIT,
 ) -> Generator[None]:
     """Use a pre-existing, owner-controlled directory and a fresh socket path."""
     info = path.parent.lstat()
@@ -195,7 +211,7 @@ def listen(
                     except TimeoutError:
                         continue
                     with peer:
-                        _handle(peer, authority, uids)
+                        _handle(peer, authority, uids, handler, frame_limit)
 
             server = threading.Thread(target=serve, name="kms-local-control")
             server.start()

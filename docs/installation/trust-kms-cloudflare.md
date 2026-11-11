@@ -354,7 +354,8 @@ ciphertext is archived on the Pi before replacement; missing state reports that
 there is nothing to archive. The existing failure and stale-publication rules
 apply. Avoid repeated production recreation because issuance rate limits apply.
 
-After these checks pass, the next slice connects recovered identity material to
-the locked KMS TLS listener. Scheduled renewal/reload and process-lifetime
+The [TLS-only authorization implementation](01-main-coordinator.md#authorize-and-verify-the-locked-tls-listener)
+connects recovered identity material to the locked KMS TLS listener; operator
+deployment and validation are pending. Scheduled renewal/reload and process-lifetime
 service authorization follow; this transient command removes its plaintext RAM
 workspace at the end. No node KMS keys or Talos authority are created here.
