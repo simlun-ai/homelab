@@ -14,7 +14,7 @@ The logical key-value store consists of:
 - A YubiKey response used to derive its wrapping key.
 - An authenticated encrypted record containing the credential.
 
-The token stores the golden key. Credential records live in the private `homelab-secrets` submodule under the [storage policy](encrypted-record-storage.md). Retrieving a wrapped credential requires both a working token and its encrypted record.
+The token stores the golden key. Credential records follow the [storage policy](encrypted-record-storage.md): the private `homelab-secrets` submodule holds durable bootstrap credentials; recreatable coordinator ACME/TLS state stays on the coordinator. Retrieving a wrapped credential requires both a working token and its encrypted record.
 
 [HMAC-SHA1 challenge-response](https://developers.yubico.com/Developer_Program/Guides/Touch_triggered_OTP.html) accepts challenges up to 64 bytes and returns a deterministic response for the same challenge and secret. It does not itself encrypt or store arbitrary credential values.
 
@@ -80,7 +80,7 @@ These identifiers cover the credential roles documented here. Entries are propos
 | `trust/openbao-unseal/share-1/r1` | OpenBao-generated unseal share; one share, threshold one under the [unseal policy](openbao-unseal.md). | Workstation unseal/restore helper. |
 | `trust/kms/<node-id>/r1` | Random 32-byte node KMS key protecting Talos system-volume unlock payloads under the [two-layer design](helper-implementation.md#trust-kms-two-layers). Node mapping TBD. | Coordinator bootstrap KMS. |
 | `support-aux/dns-api/cloudflare/r1` | Cloudflare API token for Trust KMS DNS-01 under `golden-1`. The manifest reserves `wrapped/ups-aux-cloudflare-dns-api.json`. | [Certbot staging rehearsal](../installation/trust-kms-cloudflare.md#run-the-staging-rehearsal) lookup implemented. |
-| `support-aux/acme/staging/r1` | Combined disposable Certbot account, TLS key/certificate and renewal state. Manifest reserves `wrapped/ups-aux-acme-staging.json`; previous generations are archived on replacement. | Staging state lifecycle implemented; operator validation pending. |
+| `support-aux/acme/staging/r1` | Combined disposable Certbot account, TLS key/certificate and renewal state. Coordinator-local `ups-aux-acme-staging.json`; archives stay on the Pi. No private-repository record is required. | Checkout-based lifecycle verified 2026-11-11; revised coordinator-local lifecycle requires validation. |
 | `support-trust-backup/tls-private-key/kms/r1` | Coordinator KMS TLS private key. | Coordinator TLS service. |
 | `support-trust-backup/acme-account/kms/r1` | ACME account private key and required account secrets. | Coordinator ACME integration. |
 | `recovery/r2/openbao-restore/r1` | Independently recoverable R2 download credentials. | Snapshot restore helper. |

@@ -65,6 +65,7 @@ Use a consistent vocabulary and capitalization for cluster names and components.
 - `secrets/wrapped` is the private `simlun-ai/homelab-secrets` Git submodule; never commit ciphertext directly to the parent repository.
 - Pin public code submodules only to commits on their upstream `main` branch after the corresponding PR is merged; never pin an unmerged feature-branch commit.
 - `tools/homelab-hsm` is the separate `simlun-ai/homelab-hsm` code submodule. Its `homelab_secrets/` Python project owns shared record cryptography, token programming/verification, dependency pins, and the `homelab-hsm`, `homelab-wrap` and `homelab-unwrap` CLIs. Parent helpers import it; keep application-specific delivery in the parent. Standalone step 00 uses the separately imported HSM checkout. Preserve record-format compatibility when refactoring.
+- Coordinator ACME/TLS state and archives live solely on the coordinator as wrapped ciphertext; no private Git copy is required. Lost state is explicitly recreated using the separately preserved Cloudflare token. Keep node KMS keys and Talos authority under their existing durable-record rules.
 - Keep the public manifest at `secrets/manifest.json`, with paths relative to `secrets/`; do not add checksums. Public SSH keys remain in the parent repository.
 - Require an initialized private submodule before generating or recovering credentials. Code installation, token setup, and tests must work without the private records checkout.
 

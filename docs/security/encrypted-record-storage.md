@@ -4,7 +4,8 @@
 
 ## Authoritative records
 
-Keep authenticated `homelab-wrap-v1` JSON records in the **private**
+Except for coordinator-local ACME/TLS state described below, keep authenticated
+`homelab-wrap-v1` JSON records in the **private**
 `simlun-ai/homelab-secrets` repository, mounted at `secrets/wrapped`.
 Shared cryptography, read-only token access, the CLI, dependency pins, offline
 bundles, and tests live separately in `simlun-ai/homelab-hsm`, mounted at
@@ -86,8 +87,8 @@ changes before switching versions.
 
 ## Coordinator deployment
 
-Deploy required wrapped KMS, DNS, TLS and ACME records to coordinator-local
-persistent storage. Startup must not fetch GitHub or OpenBao. Base Ansible is
+Deploy required wrapped KMS and DNS records to coordinator-local persistent
+storage. ACME/TLS state is generated and retained locally as described below. Startup must not fetch GitHub or OpenBao. Base Ansible is
 implemented; record deployment remains pending under
 [01 - Main coordinator](../installation/01-main-coordinator.md).
 The password helper instead streams a password to the Pi, which stores its
@@ -107,7 +108,17 @@ explicit recreation reports that no archive can be made. Node KMS keys and Talos
 authority are outside this operation.
 
 The [staging implementation](../installation/trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate)
-uses the private records checkout and retains old ciphertext in `archive/`.
-Coordinator-local deployment and production integration remain pending. No raw
-HMAC response or wrapping key is retained for unattended record updates; each
-state publication requires fresh workstation/YubiKey operations.
+keeps current ciphertext and archives solely under the coordinator's root-owned
+`/var/lib/trust-kms/acme-staging/`. The workstation fetches ciphertext over
+verified SSH, unwraps in memory with the YubiKey, and streams recovered state
+back to protected coordinator RAM. Updated state is wrapped/verified on the
+workstation, then sent back as ciphertext. Compare-and-replace publication on
+the Pi rejects stale sessions. There are no ACME records in the public manifest
+or required Git copies. Losing the SD card is handled by explicit recreation
+using the separately preserved Cloudflare token. Old local staging copies may
+be imported; no automatic deletion or history rewrite occurs.
+
+This coordinator-local custody decision applies to ACME/TLS identity material,
+not node KMS keys or Talos authority. Production integration remains pending.
+No raw HMAC response or wrapping key is retained for unattended record updates;
+each state publication requires fresh workstation/YubiKey operations.
