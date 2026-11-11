@@ -222,7 +222,7 @@ DNS Edit API token scoped to the `simlun.se` zone. See the
 [Cloudflare setup guide](../installation/trust-kms-cloudflare.md) for the
 separate future cert-manager token and challenge ownership. The coordinator
 rehearsal uses a verified `noswap` tmpfs and discards all Certbot state on exit.
-The checkout-based wrapped state lifecycle passed on 2026-11-11. The full coordinator-local lifecycle also passed that day: import, recovery/renewal, explicit recreation and recovery/renewal of the replacement, with reported local archival. Production renewal and the TLS listener remain pending. ACME/TLS ciphertext is not backed up in Git; SD-card loss uses explicit recreation with the preserved DNS token. Initial and
+The checkout-based wrapped state lifecycle passed on 2026-11-11. The full coordinator-local lifecycle also passed that day: import, recovery/renewal, explicit recreation and recovery/renewal of the replacement, with reported local archival. Production certificate initialization/recovery is implemented with a separate profile, due-only renewal and system-trust validation, but live production validation and the TLS listener remain pending. ACME/TLS ciphertext is not backed up in Git; SD-card loss uses explicit recreation with the preserved DNS token. Initial and
 expired-certificate recovery must use SSH and independent DNS/ACME access;
 existing KMS TLS cannot be their only prerequisite. A renewed certificate may
 reuse an already protected private key if supported; persisting a new key needs

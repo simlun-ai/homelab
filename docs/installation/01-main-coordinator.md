@@ -20,7 +20,8 @@ acceptance criteria. It is documentation, not a deployed or verified service.
 - [x] Stage the locked service on `ups-aux` and verify it reports an empty authorization window (2026-11-09).
 - [x] Verify the [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) on `ups-aux`: issuance, renewal with the same TLS key, RAM workspace cleanup and the post-run public DNS check passed (2026-11-10).
 - [x] Validate the [wrapped staging state lifecycle](trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate): coordinator-local import/initialization, default recovery, explicit recreation and archival. Coordinator-local import, default recovery/renewal, explicit recreation and recovery/renewal of the replacement passed on 2026-11-11. The helper reported coordinator-local archival on publication.
-- [ ] Implement production issuance, scheduled renewal and the locked TLS listener. The coordinator-local staging state lifecycle is verified; production integration remains pending.
+- [ ] Validate [production certificate initialization and recovery](trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery). Helpers implemented with separate profiles, due-only production renewal and system-trust verification; operator validation pending.
+- [ ] Integrate process-lifetime authorization, the locked TLS listener and scheduled renewal/reload. The coordinator-local staging state lifecycle is verified.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).
 - [ ] Verify startup without Trust/OpenBao, the one-hour KMS window, expiry/lock/restart behaviour, and certificate renewal.
 

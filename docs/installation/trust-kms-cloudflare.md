@@ -260,3 +260,74 @@ link/path checks still apply. The transient service removes plaintext state at
 the end; the next invocation reconstructs it from coordinator-local ciphertext.
 This model supports the future process-lifetime authorization flow, without
 requiring GitHub or OpenBao for local ACME-state retrieval.
+
+## Production certificate provisioning and recovery
+
+Implemented; operator installation and live production issuance/recovery remain
+unverified. This step provisions the certificate identity only. It does not
+start the KMS TCP listener, keep an authorized RAM workspace alive, or install
+an automatic renewal timer. The existing locked local service stays in place.
+
+Staging remains the default for `kms-acme-state` and the disposable rehearsal.
+Production requires `ACME_ENVIRONMENT=production` explicitly. Profiles have
+fixed CA URLs, different snapshot formats and YubiKey contexts, and separate
+coordinator-local records:
+
+| Environment | Directory under `/var/lib/trust-kms/` | Current file | Wrapping key ID under `homelab/v1/` |
+| --- | --- | --- | --- |
+| staging | `acme-staging/` | `ups-aux-acme-staging.json` | `support-aux/acme/staging/r1` |
+| production | `acme-production/` | `ups-aux-acme-production.json` | `support-aux/acme/production/r1` |
+
+Both use root `golden-1` and archives inside their own directories. Neither
+record belongs in Git or the private manifest. Staging data is never promoted
+into production; importing a record requires the selected wrapping context and
+snapshot format. The shared Cloudflare token still comes from the private
+records repository. The profile has no caller-supplied CA URL or storage path.
+
+From the homelab root, after loading the coordinator SSH identity:
+
+```sh
+make -C support/ups kms-acme-tools HOST=ups-aux
+
+# Once: explicitly issue the real certificate, refusing existing production state.
+make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=acme@simlun.se \
+  ACME_ENVIRONMENT=production ACME_STATE_MODE=init
+
+# Recover the same production account/key and check renewal only when due.
+make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=acme@simlun.se \
+  ACME_ENVIRONMENT=production
+```
+
+Expect a production certificate verification PASS, followed by verified wrapped
+publication on initialization. On immediate recovery, expect reuse of the
+existing certificate because renewal is not yet due. If the resulting snapshot
+is identical, the workstation reports no state changes to publish and skips
+extra wrapping and archival. If Certbot updates the state, fresh YubiKey
+wrapping/independent recovery and coordinator-local archival still precede
+publication. Do not force production reissuance for testing.
+
+Verification checks the exact hostname `kms.k8s-aux.simlun.se`, validity, matching
+private key, and correspondence of `fullchain.pem` to the leaf plus chain. Native
+OpenSSL checks TLS server usage, the hostname and chain against Debian's
+`/etc/ssl/certs/ca-certificates.crt`, with alternate default CA paths/stores
+disabled. Staging or untrusted certificates are rejected. Recovered renewal
+configuration must match the selected CA, Cloudflare authenticator and fixed
+RAM credentials path, without saved hooks. The ACME account and TLS key must
+remain unchanged during ordinary recovery/renewal.
+
+Expired production certificates may be restored for renewal: their key, name,
+configuration and signature chain are checked first while ignoring old chain
+expiry, then the resulting certificate must pass current-time validity and
+system trust checks before publication. Future-dated certificates still fail.
+Staging retains its forced-renewal acceptance test and requires valid input.
+
+For actual production identity loss or deliberate replacement, explicitly use
+`ACME_STATE_MODE=recreate` together with `ACME_ENVIRONMENT=production`. Previous
+ciphertext is archived on the Pi before replacement; missing state reports that
+there is nothing to archive. The existing failure and stale-publication rules
+apply. Avoid repeated production recreation because issuance rate limits apply.
+
+After these checks pass, the next slice connects recovered identity material to
+the locked KMS TLS listener. Scheduled renewal/reload and process-lifetime
+service authorization follow; this transient command removes its plaintext RAM
+workspace at the end. No node KMS keys or Talos authority are created here.

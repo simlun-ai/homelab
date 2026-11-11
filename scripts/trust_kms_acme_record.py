@@ -10,10 +10,13 @@ import sys
 from pathlib import Path
 from uuid import uuid4
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from trust_kms_acme_profile import profile  # noqa: E402
+
 LIMIT = 1024 * 1024
-KEY_ID = "homelab/v1/support-aux/acme/staging/r1"
-STORE = Path("/var/lib/trust-kms/acme-staging")
-FILENAME = "ups-aux-acme-staging.json"
+KEY_ID = profile("staging").key_id
+STORE = profile("staging").directory
+FILENAME = profile("staging").filename
 
 
 def current_bytes(record: Path) -> bytes | None:
@@ -61,7 +64,7 @@ def digest(data: bytes | None) -> str | None:
     return None if data is None else hashlib.sha256(data).hexdigest()
 
 
-def validate_record(data: bytes) -> None:
+def validate_record(data: bytes, *, environment: str = "staging") -> None:
     # Structural/context guard only. AEAD and plaintext verification are performed
     # by the workstation with the YubiKey before publication, never on the Pi.
     if not data or len(data) > 2 * LIMIT:
@@ -79,7 +82,7 @@ def validate_record(data: bytes) -> None:
         raise ValueError("Invalid record fields")
     if (
         value["format"] != "homelab-wrap-v1"
-        or value["key_id"] != KEY_ID
+        or value["key_id"] != profile(environment).key_id
         or value["root_key"] != "golden-1"
     ):
         raise ValueError("Unexpected record context")
@@ -98,10 +101,12 @@ def validate_record(data: bytes) -> None:
             raise ValueError("Invalid encoded field")
 
 
-def access(action: str, request: bytes) -> bytes:
-    record = STORE / FILENAME
+def access(action: str, request: bytes, *, environment: str = "staging") -> bytes:
+    selected = profile(environment)
+    directory = STORE if environment == "staging" else selected.directory
+    record = directory / selected.filename
     # The tools play provisions this directory; never follow a substituted link.
-    fd = os.open(STORE, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     try:
         info = os.fstat(fd)
         if info.st_uid != 0 or stat.S_IMODE(info.st_mode) != 0o700:
@@ -122,8 +127,8 @@ def access(action: str, request: bytes) -> bytes:
         if message["expected"] != digest(previous):
             raise ValueError("State changed; retry from recovery")
         replacement = base64.b64decode(message["record"], validate=True)
-        validate_record(replacement)
-        candidate = STORE / f".pending-{uuid4().hex}.json"
+        validate_record(replacement, environment=environment)
+        candidate = directory / f".pending-{uuid4().hex}.json"
         try:
             with candidate.open("xb") as stream:
                 stream.write(replacement)
@@ -138,10 +143,12 @@ def access(action: str, request: bytes) -> bytes:
 def main() -> int:
     try:
         os.umask(0o077)
-        if len(sys.argv) != 2 or sys.argv[1] not in ("get", "put"):
+        if len(sys.argv) not in (2, 3) or sys.argv[1] not in ("get", "put"):
             raise ValueError()
+        environment = sys.argv[2] if len(sys.argv) == 3 else "staging"
+        profile(environment)
         request = b"" if sys.argv[1] == "get" else sys.stdin.buffer.read(3 * LIMIT + 1)
-        sys.stdout.buffer.write(access(sys.argv[1], request))
+        sys.stdout.buffer.write(access(sys.argv[1], request, environment=environment))
         sys.stdout.buffer.flush()
     except Exception:
         print(

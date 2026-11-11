@@ -1,4 +1,4 @@
-"""Authorize coordinator-local wrapped staging ACME state over verified SSH."""
+"""Authorize coordinator-local wrapped ACME state over verified SSH."""
 
 import argparse
 import base64
@@ -15,7 +15,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import trust_kms_acme_operator as dns  # noqa: E402
 import trust_talos_secrets as secrets  # noqa: E402
 from homelab.record_store import require_store  # noqa: E402
-from trust_kms_acme_record import KEY_ID, current_bytes, digest  # noqa: E402
+from trust_kms_acme_profile import profile  # noqa: E402
+from trust_kms_acme_record import current_bytes, digest  # noqa: E402
 from trust_kms_acme_state import LIMIT  # noqa: E402
 
 
@@ -57,7 +58,7 @@ def exchange(command: list[str], request: bytes, *, limit: int = LIMIT) -> bytes
         os.close(outgoing)
 
 
-def crypt(tool: str, data: bytes, *, wrap: bool) -> bytes:
+def crypt(tool: str, data: bytes, *, wrap: bool, environment: str = "staging") -> bytes:
     # The pinned CLIs require pipes on their secret-bearing streams. Their own
     # record/plaintext limits bound output; no filesystem paths are supplied.
     output = subprocess.run(
@@ -66,7 +67,7 @@ def crypt(tool: str, data: bytes, *, wrap: bool) -> bytes:
             "--stdin",
             "--stdout",
             "--key-id",
-            KEY_ID,
+            profile(environment).key_id,
             "--root-key",
             secrets.ROOT_KEY,
         ],
@@ -81,7 +82,9 @@ def crypt(tool: str, data: bytes, *, wrap: bool) -> bytes:
     return output
 
 
-def remote(email: str, token: bytes, state: bytes | None) -> bytes:
+def remote(
+    email: str, token: bytes, state: bytes | None, *, environment: str = "staging"
+) -> bytes:
     request = json.dumps(
         {
             "email": email,
@@ -89,31 +92,48 @@ def remote(email: str, token: bytes, state: bytes | None) -> bytes:
             "state": None if state is None else base64.b64encode(state).decode(),
         }
     ).encode()
-    result = exchange(["/usr/local/sbin/trust-kms-acme-state"], request)
+    result = exchange(["/usr/local/sbin/trust-kms-acme-state", environment], request)
     if not result:
         raise ValueError("Empty state")
     return result
 
 
-def publish_remote(encoded: bytes, previous: bytes | None) -> None:
+def publish_remote(
+    encoded: bytes, previous: bytes | None, *, environment: str = "staging"
+) -> None:
     request = json.dumps(
         {"expected": digest(previous), "record": base64.b64encode(encoded).decode()}
     ).encode()
     if (
-        exchange(["/usr/local/sbin/trust-kms-acme-record", "put"], request, limit=64)
+        exchange(
+            ["/usr/local/sbin/trust-kms-acme-record", "put", environment],
+            request,
+            limit=64,
+        )
         != b"ok\n"
     ):
         raise ValueError("Publication not acknowledged")
 
 
 def operate(
-    mode: str, email: str, wrap: str, unwrap: str, import_record: Path | None = None
+    mode: str,
+    email: str,
+    wrap: str,
+    unwrap: str,
+    import_record: Path | None = None,
+    *,
+    environment: str = "staging",
 ) -> None:
+    selected = profile(environment)
     # Only the DNS credential belongs to the private repository.
     store = require_store(secrets.ROOT)
-    print("Fetching coordinator-local wrapped staging state.", flush=True)
+    print(f"Fetching coordinator-local wrapped {environment} state.", flush=True)
     fetched = json.loads(
-        exchange(["/usr/local/sbin/trust-kms-acme-record", "get"], b"", limit=3 * LIMIT)
+        exchange(
+            ["/usr/local/sbin/trust-kms-acme-record", "get", environment],
+            b"",
+            limit=3 * LIMIT,
+        )
     )["record"]
     previous = None if fetched is None else base64.b64decode(fetched, validate=True)
     if mode in ("init", "import") and previous is not None:
@@ -126,11 +146,11 @@ def operate(
         encoded = current_bytes(import_record)
         if encoded is None:
             raise ValueError("Import record missing")
-        print("Touch the YubiKey to verify the imported staging record.", flush=True)
-        plaintext = crypt(unwrap, encoded, wrap=False)
-        if json.loads(plaintext)["format"] != "trust-acme-staging-v1":
+        print("Touch the YubiKey to verify the imported ACME record.", flush=True)
+        plaintext = crypt(unwrap, encoded, wrap=False, environment=environment)
+        if json.loads(plaintext)["format"] != selected.format:
             raise ValueError("Unexpected imported state")
-        publish_remote(encoded, previous)
+        publish_remote(encoded, previous, environment=environment)
         print(
             "PASS: verified existing ciphertext imported to the coordinator; local files unchanged.",
             flush=True,
@@ -139,9 +159,10 @@ def operate(
     state = None
     if mode == "recover":
         print(
-            "Touch the YubiKey to recover the coordinator's staging state.", flush=True
+            "Touch the YubiKey to recover the coordinator's selected ACME state.",
+            flush=True,
         )
-        state = crypt(unwrap, previous or b"", wrap=False)
+        state = crypt(unwrap, previous or b"", wrap=False, environment=environment)
     print("Touch the YubiKey to recover the Cloudflare token.", flush=True)
     token = secrets.recover_bundle(
         unwrap, record=store / "ups-aux-cloudflare-dns-api.json", key_id=dns.KEY_ID
@@ -155,14 +176,24 @@ def operate(
             else "Explicit recreation: previous state unavailable; nothing to archive.",
             flush=True,
         )
-    result = remote(email, token, state)
+    result = remote(email, token, state, environment=environment)
+    if (
+        environment == "production"
+        and state is not None
+        and hmac.compare_digest(result, state)
+    ):
+        print(
+            "PASS: production certificate verified; no state changes to publish.",
+            flush=True,
+        )
+        return
     print("Touch the YubiKey to wrap and verify the updated state.", flush=True)
-    encoded = crypt(wrap, result, wrap=True)
+    encoded = crypt(wrap, result, wrap=True, environment=environment)
     print("Touch the YubiKey to verify independent state recovery.", flush=True)
-    recovered = crypt(unwrap, encoded, wrap=False)
+    recovered = crypt(unwrap, encoded, wrap=False, environment=environment)
     if not hmac.compare_digest(result, recovered):
         raise ValueError("State verification failed")
-    publish_remote(encoded, previous)
+    publish_remote(encoded, previous, environment=environment)
     print(
         "PASS: verified ciphertext stored on the coordinator; previous ciphertext archived there when present.",
         flush=True,
@@ -178,6 +209,9 @@ def main() -> int:
         "--import-record",
         type=Path,
         default=os.environ.get("ACME_IMPORT_RECORD") or None,
+    )
+    parser.add_argument(
+        "--environment", choices=("staging", "production"), default="staging"
     )
     parser.add_argument("--email", required=True)
     parser.add_argument("--wrap", type=Path, required=True)
@@ -198,10 +232,11 @@ def main() -> int:
             secrets.executable(args.wrap),
             secrets.executable(args.unwrap),
             args.import_record,
+            environment=args.environment,
         )
     except (Exception, KeyboardInterrupt):
         print(
-            "Staging state operation failed; private details suppressed. Existing state is not implicitly recreated. Inspect the record/archive before retrying.",
+            "ACME state operation failed; private details suppressed. Existing state is not implicitly recreated. Inspect the record/archive before retrying.",
             file=sys.stderr,
         )
         return 1

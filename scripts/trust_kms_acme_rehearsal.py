@@ -95,7 +95,9 @@ def certbot_command(workspace: Path, email: str, *, renew: bool) -> list[str]:
     ]
 
 
-def inspect_certificate(workspace: Path) -> tuple[bytes, bytes]:
+def inspect_certificate(
+    workspace: Path, *, allow_expired: bool = False
+) -> tuple[bytes, bytes]:
     lineage = workspace / "config/live" / HOSTNAME
     certificate = x509.load_pem_x509_certificate((lineage / "cert.pem").read_bytes())
     key = serialization.load_pem_private_key(
@@ -107,10 +109,11 @@ def inspect_certificate(workspace: Path) -> tuple[bytes, bytes]:
     now = datetime.now(UTC)
     if (
         names != [HOSTNAME]
-        or not certificate.not_valid_before_utc <= now < certificate.not_valid_after_utc
+        or certificate.not_valid_before_utc > now
+        or (not allow_expired and certificate.not_valid_after_utc <= now)
     ):
         raise RehearsalError(
-            "The staging certificate has an unexpected name or validity period."
+            "The certificate has an unexpected name or validity period."
         )
     certificate_key = certificate.public_key().public_bytes(
         serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo
@@ -119,7 +122,7 @@ def inspect_certificate(workspace: Path) -> tuple[bytes, bytes]:
         serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo
     )
     if certificate_key != private_key_public:
-        raise RehearsalError("The staging certificate and private key do not match.")
+        raise RehearsalError("The certificate and private key do not match.")
     return certificate.fingerprint(hashes.SHA256()), certificate_key
 
 

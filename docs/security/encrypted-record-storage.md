@@ -109,7 +109,11 @@ authority are outside this operation.
 
 The [staging implementation](../installation/trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate)
 keeps current ciphertext and archives solely under the coordinator's root-owned
-`/var/lib/trust-kms/acme-staging/`. The workstation fetches ciphertext over
+`/var/lib/trust-kms/acme-staging/`. The explicit production profile uses
+`/var/lib/trust-kms/acme-production/`, a separate current filename and wrapping
+context. Production initialization/recovery is implemented but not yet verified
+on the coordinator. Neither environment has a private manifest entry. The
+workstation fetches ciphertext over
 verified SSH, unwraps in memory with the YubiKey, and streams recovered state
 back to protected coordinator RAM. Updated state is wrapped/verified on the
 workstation, then sent back as ciphertext. Compare-and-replace publication on
@@ -119,6 +123,6 @@ using the separately preserved Cloudflare token. Old local staging copies may
 be imported; no automatic deletion or history rewrite occurs.
 
 This coordinator-local custody decision applies to ACME/TLS identity material,
-not node KMS keys or Talos authority. Production integration remains pending.
+not node KMS keys or Talos authority. Production listener and process-lifetime integration remain pending.
 No raw HMAC response or wrapping key is retained for unattended record updates;
 each state publication requires fresh workstation/YubiKey operations.
