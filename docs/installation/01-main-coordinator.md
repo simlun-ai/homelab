@@ -196,6 +196,59 @@ NUT and Prometheus exporter setup will extend the shared base runbook later.
 References: [hardware](../inventory.md#shared-infrastructure), [coordinator layout](../layout.md#ups-shutdown-coordinators), [helper design](../security/helper-implementation.md), [wrapped-record deployment](../security/encrypted-record-storage.md#coordinator-deployment).
 
 
+## Enable the disposable QEMU KMS policy
+
+Use this only for the disposable Talos VM with system UUID
+`5c73da99-dfe7-48b3-8687-5d0b46dbe647`. The UUID scopes the key policy;
+it is a caller-supplied identifier, so the existing trusted-network boundary
+still applies. The VM must use a virtual disk dedicated to the rehearsal.
+
+Stage the updated service first with `make -C support/ups kms-stage HOST=ups-aux`.
+On `ups-aux`, install a runtime-only systemd drop-in and restart:
+
+```sh
+sudo install -d -m 0755 /run/systemd/system/trust-kms.service.d
+sudo tee /run/systemd/system/trust-kms.service.d/90-vm-rehearsal.conf >/dev/null <<'UNIT'
+[Service]
+ExecStart=
+ExecStart=/usr/bin/python3 -I -B /usr/local/lib/trust-kms/trust_kms_service.py serve-locked --vm-rehearsal
+UNIT
+sudo systemctl daemon-reload
+sudo systemctl restart trust-kms.service
+```
+
+From the workstation, run `kms-tls-authorize` as above to recover the
+production TLS identity for the restarted service. Verify locked TLS with
+`kms-tls-check`. When ready to create and reopen the VM's encrypted volume,
+open the key window on `ups-aux`:
+
+```sh
+sudo /usr/bin/python3 -I -B /usr/local/lib/trust-kms/trust_kms_service.py vm-open
+```
+
+This generates one random key in memory and admits only the rehearsal UUID and
+key ID. The supervisor limits the window to ten minutes. Complete both Seal and
+the first reboot/Unseal during the same window. Locking, expiry or a service
+restart discards the key. A later `vm-open` creates a different key, so start
+over with a fresh virtual disk if the positive test needs to be repeated.
+
+After the positive check, lock KMS on `ups-aux` and confirm a fresh VM boot
+cannot unlock the encrypted volume while TLS still responds:
+
+```sh
+sudo /usr/bin/python3 -I -B /usr/local/lib/trust-kms/trust_kms_service.py vm-lock
+```
+
+Finish by removing the rehearsal override and restoring the normal locked unit:
+
+```sh
+sudo rm -f /run/systemd/system/trust-kms.service.d/90-vm-rehearsal.conf
+sudo systemctl daemon-reload
+sudo systemctl restart trust-kms.service
+```
+
+Reauthorize production TLS and rerun `kms-tls-check` if leaving the listener active.
+
 ## Final follow-up: coordinator memory review
 
 - [ ] Once the coordinator services are in place, review all homelab code that

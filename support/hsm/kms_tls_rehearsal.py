@@ -219,7 +219,7 @@ class DaemonRehearsal(unittest.TestCase):
     def test_local_authorization_and_worker_lifecycle(self) -> None:
         now = 0.0
         policy = {NODE: session.Policy(frozenset({KEY_ID}), KEY_ID)}
-        authority = daemon.Authority(policy, clock=lambda: now)
+        authority = daemon.Authority(policy, clock=lambda: now, max_window_seconds=600)
         key, cert = disposable_tls()
         wire = request(PUBLIC_PAYLOAD)
 
@@ -307,7 +307,7 @@ class DaemonRehearsal(unittest.TestCase):
                 current = authority.worker
                 assert current is not None and current.process.pid is not None
                 process = Path(f"/proc/{current.process.pid}")
-                now += session.WINDOW_SECONDS
+                now += 600
                 # Observe reaping before calling any status or RPC that could expire it.
                 wait_until(lambda: not process.exists())
                 self.assertEqual(local(path, "status")["state"], "locked")

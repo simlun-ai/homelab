@@ -8,12 +8,16 @@ import socket
 import sys
 import threading
 from pathlib import Path
+from uuid import uuid4
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from homelab.trust_kms import control, daemon, envelope, tls  # noqa: E402
+from homelab.trust_kms import control, daemon, envelope, session, tls  # noqa: E402
 
 DEFAULT_SOCKET = Path("/run/trust-kms/control.sock")
+VM_NODE = "5c73da99-dfe7-48b3-8687-5d0b46dbe647"
+VM_KEY_ID = "homelab/v1/trust/kms/qemu-rehearsal/r1"
+VM_WINDOW_SECONDS = 600
 
 
 def serve_locked(
@@ -22,6 +26,7 @@ def serve_locked(
     tls_path: Path | None = None,
     address: str = tls.ADDRESS,
     ca_file: Path = tls.CA_FILE,
+    vm_rehearsal: bool = False,
 ) -> None:
     tls.harden_process()
     stop = threading.Event()
@@ -31,7 +36,14 @@ def serve_locked(
 
     signal.signal(signal.SIGTERM, request_stop)
     signal.signal(signal.SIGINT, request_stop)
-    authority = daemon.Authority({})
+    authority = (
+        daemon.Authority(
+            {VM_NODE: session.Policy(frozenset({VM_KEY_ID}), VM_KEY_ID)},
+            max_window_seconds=VM_WINDOW_SECONDS,
+        )
+        if vm_rehearsal
+        else daemon.Authority({})
+    )
     listener = tls.Listener(authority, address=address, ca_file=ca_file)
     with (
         authority.run(),
@@ -51,12 +63,54 @@ def serve_locked(
             listener.close()
 
 
-def check_locked(path: Path) -> None:
+def request(
+    path: Path, action: str, *, timeout: float = control.READ_TIMEOUT, **fields: object
+) -> dict[str, object]:
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as peer:
         peer.settimeout(control.READ_TIMEOUT)
         peer.connect(str(path))
-        control.send(peer, {"protocol": control.PROTOCOL, "action": "status"})
-        status = control.receive(peer)
+        control.send(peer, {"protocol": control.PROTOCOL, "action": action, **fields})
+        return control.receive(peer, timeout=timeout)
+
+
+def vm_window(path: Path, *, open_window: bool) -> None:
+    if os.geteuid() != 0:
+        raise ValueError("VM rehearsal control requires root")
+    if not open_window:
+        result = request(path, "lock-KMS")
+        if result.get("state") != "locked" or result.get("authorized") != []:
+            raise ValueError("KMS lock was not confirmed")
+        print("PASS: KMS locked.")
+        return
+
+    tls.harden_process()
+    tls.require_memory_policy()
+    status = tls.local("status", socket_path=path.with_name("tls.sock"))
+    if status.get("tls_state") != "active" or status.get("kms_state") != "locked":
+        raise ValueError("Expected active TLS and locked KMS")
+    result = request(
+        path,
+        "open-boot-window",
+        timeout=10,
+        expected_instance=envelope.node_uuid(status.get("instance")),
+        request_id=str(uuid4()),
+        grants=[
+            {
+                "node_uuid": VM_NODE,
+                "key_id": VM_KEY_ID,
+                "key": envelope.b64(os.urandom(32)),
+            }
+        ],
+    )
+    if result.get("state") != "active" or result.get("authorized") != [
+        [VM_NODE, VM_KEY_ID]
+    ]:
+        raise ValueError("VM KMS window was not confirmed")
+    print(f"PASS: disposable VM key authorized for up to {VM_WINDOW_SECONDS} seconds.")
+
+
+def check_locked(path: Path) -> None:
+    status = request(path, "status")
     if (
         status.get("protocol") != control.PROTOCOL
         or status.get("state") != "locked"
@@ -88,17 +142,24 @@ def check_locked(path: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("serve-locked", "status"))
+    parser.add_argument(
+        "action", choices=("serve-locked", "status", "vm-open", "vm-lock")
+    )
     parser.add_argument("--socket", type=Path, default=DEFAULT_SOCKET)
+    parser.add_argument("--vm-rehearsal", action="store_true")
     args = parser.parse_args()
+    if args.vm_rehearsal and args.action != "serve-locked":
+        parser.error("--vm-rehearsal requires serve-locked")
     path: Path = args.socket
     try:
         if args.action == "serve-locked":
-            serve_locked(path)
-        else:
+            serve_locked(path, vm_rehearsal=args.vm_rehearsal)
+        elif args.action == "status":
             check_locked(path)
+        else:
+            vm_window(path, open_window=args.action == "vm-open")
     except (OSError, ValueError):
-        print("Trust KMS service or locked status check failed.", file=sys.stderr)
+        print("Trust KMS command failed. Check service state.", file=sys.stderr)
         return 1
     return 0
 
