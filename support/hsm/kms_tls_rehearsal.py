@@ -173,7 +173,7 @@ class TLSRehearsal(unittest.TestCase):
                     b"x" * (transport.MAX_MESSAGE_BYTES + 1),
                 )
 
-                now += 600
+                now += session.WINDOW_SECONDS
                 self.assert_rpc_error(
                     grpc.StatusCode.FAILED_PRECONDITION, unseal, request(sealed_data)
                 )
@@ -307,7 +307,7 @@ class DaemonRehearsal(unittest.TestCase):
                 current = authority.worker
                 assert current is not None and current.process.pid is not None
                 process = Path(f"/proc/{current.process.pid}")
-                now += session.WINDOW_SECONDS
+                now += 600
                 # Observe reaping before calling any status or RPC that could expire it.
                 wait_until(lambda: not process.exists())
                 self.assertEqual(local(path, "status")["state"], "locked")
