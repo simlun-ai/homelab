@@ -21,7 +21,7 @@ RUN --mount=type=cache,id=homelab-ci-kms-rehearsal-pip,target=/root/.cache/pip,s
     make -C support/hsm kms-rehearsal-tools
 
 FROM kms-rehearsal-tools AS helpers
-COPY --link support/hsm/kms_tls_rehearsal.py ./support/hsm/
+COPY --link support/hsm/kms_tls_rehearsal.py support/hsm/kms_tls_listener_rehearsal.py ./support/hsm/
 COPY --link scripts/ ./scripts/
 COPY --link tests/ ./tests/
 COPY --link clusters/trust/ ./clusters/trust/

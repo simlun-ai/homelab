@@ -173,7 +173,7 @@ arguments, environment variables, named files, or echoed payloads.
 Workstation expected identifiers/root generations come from independently
 selected local configuration, not solely the manifest offered by the remote
 host. TLS/DNS/ACME secret delivery is a separately validated action with its own
-schema; it cannot implicitly open a KMS window. Its payload details are **TBD**.
+schema; it cannot implicitly open a KMS window. The TLS-only implementation is described under [coordinator sessions](coordinator-sessions.md#tls-only-listener-authorization); it has its own peer-restricted socket and daemon-instance binding. DNS/ACME lifetime integration remains pending.
 
 Propose rejecting activation while a session is active. To replace one, explicitly
 lock and authorize again with fresh touch. Repeating an activation after a lost
@@ -216,7 +216,7 @@ Use `kms.k8s-aux.simlun.se`, resolving internally to `10.10.0.5`, with a matchin
 SAN/full certificate chain; serve gRPC over TLS on TCP 443. Cloudflare DNS-01
 is selected for certificate issuance. Internal KMS DNS resolution was verified
 from the workstation and Pi. Production certificate issuance and certificate-reuse
-recovery are verified; TCP listener deployment remains pending. See the [required DNS entries](../network.md#required-dns-entries).
+recovery are verified; The TLS listener/authorization implementation is ready; coordinator deployment and validation remain pending. See the [required DNS entries](../network.md#required-dns-entries).
 Use Debian-packaged Certbot with the stock Cloudflare plugin and a dedicated
 DNS Edit API token scoped to the `simlun.se` zone. See the
 [Cloudflare setup guide](../installation/trust-kms-cloudflare.md) for the
@@ -232,8 +232,10 @@ Bind only the selected coordinator address/port. Propose coordinator nftables
 admission from `trust-cp1`'s address, with inter-VLAN gateway restrictions as
 additional containment. Both hosts are on VLAN 10, so router rules alone cannot
 isolate same-VLAN peers. UUID and source IP checks do not prevent an attacker
-already inside the trusted network from impersonating a node. Exact switch,
-gateway and host rules, service-user restrictions, and their tests remain TBD.
+already inside the trusted network from impersonating a node. The TLS slice adds a host input allowlist for the configured Trust node and
+existing management networks, plus a dedicated service UID and bind capability.
+Operator validation remains pending; additional switch/gateway restrictions
+and their tests remain TBD.
 
 Choose the same public NTP service for coordinator and Trust, with working
 pre-STATE addressing, DNS and time synchronization. Exact boot-level mechanism,

@@ -113,10 +113,10 @@ def _handler(
 
 
 @contextmanager
-def listen_loopback(
-    authority: _Authority, *, private_key: bytes, certificate: bytes
+def listen_tls(
+    authority: _Authority, *, private_key: bytes, certificate: bytes, address: str
 ) -> Generator[str]:
-    """Serve only on localhost using caller-supplied PEM TLS material."""
+    """Bind only the caller-selected address, using in-memory TLS material."""
     with ThreadPoolExecutor(max_workers=session.MAX_INFLIGHT) as executor:
         server = grpc.server(
             executor,
@@ -148,13 +148,28 @@ def listen_loopback(
                 ),
             )
         )
-        credentials = grpc.ssl_server_credentials([(private_key, certificate)])
-        port = server.add_secure_port("127.0.0.1:0", credentials)
-        server.start()
         try:
-            yield f"127.0.0.1:{port}"
+            credentials = grpc.ssl_server_credentials([(private_key, certificate)])
+            port = server.add_secure_port(address, credentials)
+            if port == 0:
+                raise ValueError("TLS bind failed")
+            server.start()
+            yield address.rsplit(":", 1)[0] + f":{port}"
         finally:
             try:
                 authority.lock()
             finally:
                 server.stop(0).wait()
+
+
+@contextmanager
+def listen_loopback(
+    authority: _Authority, *, private_key: bytes, certificate: bytes
+) -> Generator[str]:
+    with listen_tls(
+        authority,
+        private_key=private_key,
+        certificate=certificate,
+        address="127.0.0.1:0",
+    ) as endpoint:
+        yield endpoint

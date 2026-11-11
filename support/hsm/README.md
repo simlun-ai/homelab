@@ -38,3 +38,10 @@ It also uses a temporary Unix socket to open and revoke disposable worker
 windows and tests worker exit, idle expiry and late-response rejection.
 It requires no token, wrapped records, coordinator, or internet access at run
 time. See the [KMS contract](../../docs/security/trust-bootstrap-kms.md#disposable-loopback-transport).
+
+
+The TLS rehearsal also runs `kms_tls_listener_rehearsal.py` with public disposable
+identities. It covers native in-memory identity verification, locked RPCs,
+expiry, peer-UID denial, snapshot extraction, daemon-instance binding and process
+restart without restoring TLS authority. These require Linux Unix sockets and
+loopback TCP; they do not contact the coordinator or a public CA.

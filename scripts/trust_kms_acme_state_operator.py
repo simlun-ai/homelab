@@ -18,6 +18,7 @@ from homelab.record_store import require_store  # noqa: E402
 from trust_kms_acme_profile import profile  # noqa: E402
 from trust_kms_acme_record import current_bytes, digest  # noqa: E402
 from trust_kms_acme_state import LIMIT  # noqa: E402
+from trust_kms_tls_payload import payload  # noqa: E402
 
 
 def exchange(command: list[str], request: bytes, *, limit: int = LIMIT) -> bytes:
@@ -115,6 +116,32 @@ def publish_remote(
         raise ValueError("Publication not acknowledged")
 
 
+def tls_status() -> dict[str, object]:
+    return json.loads(
+        exchange(["/usr/local/sbin/trust-kms-tls", "status"], b"", limit=4096)
+    )
+
+
+def activate_tls(encoded: bytes, expected: dict[str, object]) -> None:
+    instance = expected["instance"]
+    if not isinstance(instance, str):
+        raise ValueError()
+    result = json.loads(
+        exchange(
+            ["/usr/local/sbin/trust-kms-tls", "authorize"],
+            payload(encoded, instance),
+            limit=4096,
+        )
+    )
+    if (
+        result.get("instance") != instance
+        or result.get("tls_state") != "active"
+        or result.get("kms_state") != "locked"
+    ):
+        raise ValueError()
+    print("PASS: production TLS listener authorized; KMS remains locked.", flush=True)
+
+
 def operate(
     mode: str,
     email: str,
@@ -123,8 +150,19 @@ def operate(
     import_record: Path | None = None,
     *,
     environment: str = "staging",
+    authorize_tls: bool = False,
 ) -> None:
     selected = profile(environment)
+    expected: dict[str, object] = {}
+    if authorize_tls:
+        if environment != "production" or mode != "recover":
+            raise ValueError("TLS requires production recovery")
+        expected = tls_status()
+        if (
+            expected.get("tls_state") != "disabled"
+            or expected.get("kms_state") != "locked"
+        ):
+            raise ValueError("TLS authorization requires disabled TLS and locked KMS")
     # Only the DNS credential belongs to the private repository.
     store = require_store(secrets.ROOT)
     print(f"Fetching coordinator-local wrapped {environment} state.", flush=True)
@@ -182,6 +220,8 @@ def operate(
         and state is not None
         and hmac.compare_digest(result, state)
     ):
+        if authorize_tls:
+            activate_tls(result, expected)
         print(
             "PASS: production certificate verified; no state changes to publish.",
             flush=True,
@@ -194,6 +234,8 @@ def operate(
     if not hmac.compare_digest(result, recovered):
         raise ValueError("State verification failed")
     publish_remote(encoded, previous, environment=environment)
+    if authorize_tls:
+        activate_tls(result, expected)
     print(
         "PASS: verified ciphertext stored on the coordinator; previous ciphertext archived there when present.",
         flush=True,
@@ -213,10 +255,15 @@ def main() -> int:
     parser.add_argument(
         "--environment", choices=("staging", "production"), default="staging"
     )
+    parser.add_argument("--activate-tls", action="store_true")
     parser.add_argument("--email", required=True)
     parser.add_argument("--wrap", type=Path, required=True)
     parser.add_argument("--unwrap", type=Path, required=True)
     args = parser.parse_args()
+    if args.activate_tls and (
+        args.environment != "production" or args.mode != "recover"
+    ):
+        parser.error("TLS activation requires production recovery")
     if (args.mode == "import") != (args.import_record is not None):
         parser.error("Only import mode requires --import-record")
     if len(args.email) > 254 or not dns.re.fullmatch(
@@ -233,6 +280,7 @@ def main() -> int:
             secrets.executable(args.unwrap),
             args.import_record,
             environment=args.environment,
+            authorize_tls=args.activate_tls,
         )
     except (Exception, KeyboardInterrupt):
         print(

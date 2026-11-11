@@ -11,6 +11,10 @@ all:
         ansible_python_interpreter: /usr/bin/python3
       hosts:
         ups-aux:
+          coordinator_hardening_firewall_services:
+            - sources: "{{ coordinator_hardening_management_networks + ['10.10.0.10/32'] }}"
+              protocol: tcp
+              port: 443
           ansible_host: ups-aux.k8s-aux.lundmark.internal
         ups-pi:
         ups-metal:

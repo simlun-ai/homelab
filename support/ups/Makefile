@@ -31,6 +31,10 @@ help:
 	  'Password workflow: runbooks/coordinator-passwords.md (password-create/reveal/apply)' \
 	  'HOST must be exactly ups-aux, ups-pi, or ups-metal.' \
 	  'make -C support/ups kms-stage HOST=ups-aux (install and verify locked local service)' \
+	  'make -C support/ups kms-tls-authorize HOST=ups-aux ACME_EMAIL=...' \
+	  'make -C support/ups kms-tls-status HOST=ups-aux' \
+	  'make -C support/ups kms-tls-check HOST=ups-aux' \
+	  'make -C support/ups kms-restart HOST=ups-aux (drops all in-memory authorization)' \
 	  'make -C support/ups kms-acme-tools HOST=ups-aux' \
 	  'make -C support/ups kms-acme-rehearse HOST=ups-aux ACME_EMAIL=...' \
 	  'make -C support/ups kms-acme-state HOST=ups-aux ACME_EMAIL=... [ACME_ENVIRONMENT=staging|production] [ACME_STATE_MODE=init|recover|recreate|import]' \
@@ -119,3 +123,26 @@ kms-acme-state: ssh-key-check
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_kms_acme_state_operator.py" \
 	  --environment "$(ACME_ENVIRONMENT)" --mode "$(ACME_STATE_MODE)" --email "$$ACME_EMAIL" \
 	  --wrap "$(HSM_VENV)/bin/homelab-wrap" --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
+
+.PHONY: kms-tls-authorize kms-tls-status kms-tls-check kms-restart
+kms-tls-authorize: ssh-key-check
+	@test "$$HOST" = ups-aux || { printf '%s\n' 'Set HOST to ups-aux for Trust TLS.' >&2; exit 2; }
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_kms_acme_state_operator.py" \
+	  --environment production --mode recover --activate-tls --email "$$ACME_EMAIL" \
+	  --wrap "$(HSM_VENV)/bin/homelab-wrap" --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
+
+kms-tls-status: ssh-key-check
+	@test "$$HOST" = ups-aux || { printf '%s\n' 'Set HOST to ups-aux for Trust TLS.' >&2; exit 2; }
+	@/usr/bin/ssh -T -o BatchMode=yes -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
+	  -o ForwardAgent=no -i "$(SCOPE)/coordinator_ed25519.pub" administrator@ups-aux.k8s-aux.lundmark.internal \
+	  sudo -n /usr/local/sbin/trust-kms-tls status
+
+kms-tls-check:
+	@test "$$HOST" = ups-aux || { printf '%s\n' 'Set HOST to ups-aux for Trust TLS.' >&2; exit 2; }
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_kms_tls_check.py"
+
+kms-restart: ssh-key-check
+	@test "$$HOST" = ups-aux || { printf '%s\n' 'Set HOST to ups-aux for Trust KMS restart.' >&2; exit 2; }
+	@/usr/bin/ssh -T -o BatchMode=yes -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
+	  -o ForwardAgent=no -i "$(SCOPE)/coordinator_ed25519.pub" administrator@ups-aux.k8s-aux.lundmark.internal \
+	  sudo -n /usr/bin/systemctl restart trust-kms.service

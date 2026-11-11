@@ -21,7 +21,8 @@ acceptance criteria. It is documentation, not a deployed or verified service.
 - [x] Verify the [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) on `ups-aux`: issuance, renewal with the same TLS key, RAM workspace cleanup and the post-run public DNS check passed (2026-11-10).
 - [x] Validate the [wrapped staging state lifecycle](trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate): coordinator-local import/initialization, default recovery, explicit recreation and archival. Coordinator-local import, default recovery/renewal, explicit recreation and recovery/renewal of the replacement passed on 2026-11-11. The helper reported coordinator-local archival on publication.
 - [x] Validate [production certificate initialization and recovery](trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery). Production initialization and recovery with system-trust verification passed on 2026-11-11; recovery reused the existing certificate and published no unchanged state. Actual due renewal remains unverified.
-- [ ] Integrate process-lifetime authorization, the locked TLS listener and scheduled renewal/reload. The coordinator-local staging state lifecycle is verified.
+- [ ] Validate [process-lifetime TLS authorization and the locked listener](#authorize-and-verify-the-locked-tls-listener). Implemented; deployment and operator validation pending.
+- [ ] Implement scheduled renewal/reload and integration of process-lifetime DNS/ACME authorization.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).
 - [ ] Verify startup without Trust/OpenBao, the one-hour KMS window, expiry/lock/restart behaviour, and certificate renewal.
 
@@ -96,8 +97,97 @@ Expect `state: locked`, a daemon instance ID, and `listener: disabled`.
 On 2026-11-09 the operator ran the staging play successfully on `ups-aux`.
 See the [Trust experiment record](02-trust.md#experiment-record-and-acceptance-checks). The
 staged service has an empty key policy and rejects activation. It listens
-only on the local Unix socket. Production TLS, remote admission, and
-SSH/YubiKey delivery are separate acceptance checks.
+only on the local Unix socket at that verified stage. The TLS authorization
+extension above is implemented but not yet validated on the coordinator.
+
+
+## Authorize and verify the locked TLS listener
+
+Implemented; operator deployment and validation pending. This slice keeps the
+KMS node policy empty and locked. No node keys or Talos installation are involved.
+A service restart starts locked with TLS disabled and requires fresh workstation
+YubiKey authorization before accepting TCP connections.
+
+From the homelab root, load the SSH identity, then update both code installations:
+
+```sh
+make -C support/ups kms-acme-tools HOST=ups-aux
+make -C support/ups kms-stage HOST=ups-aux
+make -C support/ups kms-tls-status HOST=ups-aux
+```
+
+The KMS play installs Debian's `python3-grpcio`, `python3-protobuf`, cryptography,
+OpenSSL and CA bundle. The dedicated unit permits Internet sockets and only
+`CAP_NET_BIND_SERVICE` for the fixed `10.10.0.5:443` listener. It retains its
+filesystem/core restrictions. The shared nftables template allows TCP 443 on
+`ups-aux` from the existing management networks (currently `192.168.254.0/24`)
+and `trust-cp1`'s configured `10.10.0.10/32`, plus the existing loopback rule.
+Other coordinators receive no KMS port rule. Reapplying normal hardening retains
+this host-specific rule. This does not authenticate peers by UUID or IP; the
+approved trusted-network boundary still applies. The Pi's temporary DHCP
+maintenance address is not added to the allowlist.
+
+Expect `kms_state: locked`, `tls_state: disabled`, and a daemon `instance` ID.
+Then authorize TLS using the existing coordinator-local production record:
+
+```sh
+make -C support/ups kms-tls-authorize HOST=ups-aux ACME_EMAIL=acme@simlun.se
+make -C support/ups kms-tls-status HOST=ups-aux
+```
+
+The workstation checks that TLS is disabled and KMS locked, captures the daemon
+instance, and runs production recovery/verification with the existing due-only
+renewal behavior. Changed state is wrapped/verified/published first; unchanged
+state needs no new wrapping. The workstation extracts only the TLS key and full
+chain from the authenticated production snapshot in memory and streams them
+over verified SSH to the root TLS helper. No ACME account or DNS token is sent
+to the daemon. The helper/daemon recheck memory policy, and the daemon verifies
+key, name, validity and system trust using anonymous public-certificate memory
+descriptors. It receives no raw HMAC response or wrapping key.
+
+The separate `/run/trust-kms/tls.sock` uses bounded framing and peer-UID checks;
+only root and the service UID may call it. It does not use the boot-window
+activation schema. A stale daemon instance, invalid identity, already-active
+TLS listener or unsafe swap fails closed. Authorization returns public status
+only. If interrupted, inspect status: activation may already have succeeded.
+There is no replacement/reload operation in this slice; restart and reauthorize
+explicitly if TLS is already active.
+
+After authorization expect `tls_state: active`, endpoint `10.10.0.5:443`, public
+certificate fingerprint/expiry, and `kms_state: locked`. Verify from the
+operator workstation on the allowed management network:
+
+```sh
+# Once if the pinned gRPC rehearsal dependencies are not already installed:
+make -C support/hsm kms-rehearsal-tools
+make -C support/ups kms-tls-check HOST=ups-aux
+```
+
+The check uses the normal hostname and system CA bundle, with no hostname or
+trust override. It must report successful TLS validation and both Seal/Unseal
+returning `FAILED_PRECONDITION` (KMS locked). Its UUID and payload are public test
+values, not actual unlock material. A failure can indicate DNS, routing/firewall,
+missing TLS authorization, certificate validity or unexpected unlocked state.
+
+Finally, verify that process restart discards TLS authorization:
+
+```sh
+make -C support/ups kms-restart HOST=ups-aux
+make -C support/ups kms-tls-status HOST=ups-aux
+```
+
+Expect a new daemon instance, TLS disabled, and KMS locked. The TCP listener
+must no longer be available. Reauthorize and rerun `kms-tls-check` to finish with
+the verified listener active. The daemon closes TLS when certificate validity
+ends or the clock moves before its validity window; renewal/reload remains a
+later slice. All TLS secret material stays in process memory and is discarded
+on restart/exit. The dedicated process disables dumping and rejects non-zram
+swap or zram writeback before private-key acceptance; base hardening still applies.
+
+Rollback: restart to drop in-memory TLS immediately. If reverting the feature,
+restore the earlier code/unit and remove the `ups-aux` TCP-443 firewall entry,
+then reapply hardening. Preserve coordinator-local ciphertext for later recovery;
+no key or certificate recreation is required.
 
 NUT and Prometheus exporter setup will extend the shared base runbook later.
 

@@ -91,3 +91,25 @@ implemented and tested; local delivery framing remains proposed;
 do not give the coordinator raw HMAC responses or
 indefinite KMS authority.
 
+
+## TLS-only listener authorization
+
+The [TLS authorization slice](../installation/01-main-coordinator.md#authorize-and-verify-the-locked-tls-listener)
+is implemented; operator deployment/validation remains pending. It recovers the
+existing production record, verifies it, and streams only the TLS key/full chain
+to the root SSH helper and the restricted `/run/trust-kms/tls.sock`. A captured
+daemon instance must still match; TLS must be disabled and KMS locked. The
+bounded request schema is separate from `open-boot-window`. It cannot supply
+node keys or open KMS authority. Root and the service UID are the only accepted
+local peers. Public status reports instance, TLS/KMS state, endpoint and public
+certificate fingerprint/expiry, never PEMs.
+
+The service retains TLS material in memory until exit or certificate invalidity.
+It disables dumping and checks non-swappable/zram-only coordinator paging
+before accepting private keys. It revalidates hostname, key and system trust
+using anonymous memory descriptors containing public certificates only.
+Certificate expiry or a clock rollback before validity closes the listener.
+Restart clears authorization and requires new workstation/YubiKey delivery;
+there is no automatic recovery of plaintext or wrapping authority. A lost
+activation acknowledgment requires status inspection before retrying. Automatic
+renewal/reload and long-lived DNS/ACME authorization integration remain pending.

@@ -91,3 +91,10 @@ also fail the build. There is no baseline ignore file or blanket rule skip.
 Network access is disabled during linting, and offline mode prevents dependency
 installation and schema refreshes. The existing UPS inventory and four playbook
 syntax checks remain independent checks; linting does not execute playbooks.
+
+The `helpers` target also executes both TLS rehearsals. The listener rehearsal
+uses disposable public fixtures to test identity validation, locked TLS RPCs,
+Unix peer denial, expiry and an actual authorized-service restart that drops
+TLS and rejects the previous daemon instance. It requires Unix and loopback
+sockets in the CI container; no operator credentials or production certificates
+are used.

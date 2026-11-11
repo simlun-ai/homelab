@@ -33,3 +33,4 @@ kms-rehearsal-tools:
 
 kms-tls-rehearse:
 	@"$(PYTHON)" -I -B "$(SCOPE)/kms_tls_rehearsal.py"
+	@"$(PYTHON)" -I -B "$(SCOPE)/kms_tls_listener_rehearsal.py"
