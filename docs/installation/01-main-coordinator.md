@@ -239,6 +239,9 @@ cannot unlock the encrypted volume while TLS still responds:
 sudo /usr/bin/python3 -I -B /usr/local/lib/trust-kms/trust_kms_service.py vm-lock
 ```
 
+The [QEMU rehearsal record](02-trust.md#native-talos-kms-rehearsal-in-qemu-2026-11-11)
+captures the successful native unlock and the locked Unseal rejection.
+
 Finish by removing the rehearsal override and restoring the normal locked unit:
 
 ```sh

@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Prepare a non-destructive native Talos KMS rehearsal. The Pi reached the deployed listener from `10.10.0.10` in try mode and returned to DHCP afterward. Live Talos authentication, encrypted unlock, and actual production certificate renewal and expiry remain pending.
+- **Current next step:** Reboot the disposable QEMU VM from the same disk with KMS locked for a controlled confirmation. Native Talos KMS unlock and locked rejection have already been observed on the VM. Pi-side encrypted `STATE` boot and actual production certificate renewal and expiry remain pending.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -108,6 +108,29 @@ daemon instance with KMS locked, TLS disabled and no endpoint. The workstation
 check failed as expected while TLS was disabled. Reauthorization restored the
 listener with the same certificate, and both RPCs again reported KMS locked.
 The certificate expires at `2027-02-08T23:55:15Z`.
+
+### Native Talos KMS rehearsal in QEMU (2026-11-11)
+
+Talos v1.14.5 booted in maintenance mode from the verified amd64 ISO and
+reported QEMU UUID `5c73da99-dfe7-48b3-8687-5d0b46dbe647`. The guest TCP
+probe reached `kms.k8s-aux.simlun.se:443` through QEMU user networking.
+The `EPHEMERAL` encryption patch and full VM machine config passed strict
+metal validation. The installation used the disposable 16 GiB VirtIO disk
+`/dev/vda`.
+
+With the rehearsal key authorized, Talos opened the encrypted `EPHEMERAL`
+volume with `KMSKeyHandler` in slot 0, marked `/dev/vda6` ready, and mounted
+its mapper device at `/var`. The authenticated Talos API provided the boot
+log. The attached log shows the successful open of the encrypted volume;
+the initial Seal RPC was not separately captured.
+
+With KMS locked, a later boot log showed Talos attempting to reopen
+`EPHEMERAL` on the same partition. Unseal returned
+`FailedPrecondition: KMS locked`, the volume entered the failed state,
+and Talos retried. The workstation separately verified trusted TLS and
+locked Seal and Unseal. The operator had not yet initiated a deliberate
+reboot for the locked test when that log was collected. The sequence does
+not establish that locking KMS closed an already-mounted volume.
 
 ### Milestone tracker
 
