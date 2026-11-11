@@ -158,8 +158,9 @@ followed by removal of the disposable ACME workspace. The subsequent command
 records. The earlier renewal failure was followed by a successful rerun after
 [PR #23](https://github.com/simlun-ai/homelab/pull/23).
 
-This acceptance covers staging only. Durable wrapped ACME state recovery,
-production issuance, scheduled renewal and the TLS listener remain pending.
+This acceptance covered the disposable staging test. The subsequent wrapped-state
+and production initialization/recovery results are recorded below; scheduled
+renewal and the TLS listener remain pending.
 
 ## Wrapped staging state: initialize, recover and recreate
 
@@ -263,8 +264,9 @@ requiring GitHub or OpenBao for local ACME-state retrieval.
 
 ## Production certificate provisioning and recovery
 
-Implemented; operator installation and live production issuance/recovery remain
-unverified. This step provisions the certificate identity only. It does not
+Production initialization and certificate-reuse recovery were verified on
+2026-11-11. Actual production renewal/expiry remains unverified. This step
+provisions the certificate identity only. It does not
 start the KMS TCP listener, keep an authorized RAM workspace alive, or install
 an automatic renewal timer. The existing locked local service stays in place.
 
@@ -275,15 +277,23 @@ native Certbot 4.0.0 reproduction exposed an INI-parser mismatch: Certbot writes
 lineage metadata before `[renewalparams]`, which the original check rejected.
 The corrected check handles that native layout; failures now identify the stage
 without printing private parser/child output. The original suppressed error
-does not independently establish its exact cause. Production acceptance remains
-pending a retry with the corrected helper.
+does not independently establish its exact cause. The corrected-helper follow-up
+below subsequently passed production initialization and recovery.
 
-Reinstall `kms-acme-tools` after pulling this fix, then retry production `init`
-once using the commands below. Do not use `recreate` to bypass an existing
-record; use recovery if initialization reports one already exists. A failed
-post-issuance check can still consume a production issuance even though no
-wrapped record is published. The transient RAM workspace is removed on failure,
-so this attempt's private state cannot be recovered from persistent files.
+Production follow-up (2026-11-11): the updated tools play passed with `ok=11`,
+`changed=1`, `unreachable=0`, `failed=0`. Production initialization verified the
+certificate name, key, validity and system-trusted chain, then wrapped and
+independently recovered state before storing ciphertext on the coordinator.
+Default recovery passed all certificate checks, reused the existing certificate
+because renewal was not due, and reported no state changes to publish. This
+verified reuse without unnecessary wrapping, publication or archival. A live
+due renewal and expired-state recovery remain separate acceptance checks.
+
+For future failures, reinstall the current helper before a controlled retry;
+recover an existing wrapped record rather than bypassing it with recreation.
+A failed post-issuance check can consume an issuance without publishing wrapped
+state. The transient RAM workspace is removed on failure; it cannot be recovered
+from persistent plaintext files.
 
 Staging remains the default for `kms-acme-state` and the disposable rehearsal.
 Production requires `ACME_ENVIRONMENT=production` explicitly. Profiles have

@@ -215,14 +215,14 @@ requirements. UPS processes must not share the KMS worker's lifetime.
 Use `kms.k8s-aux.simlun.se`, resolving internally to `10.10.0.5`, with a matching
 SAN/full certificate chain; serve gRPC over TLS on TCP 443. Cloudflare DNS-01
 is selected for certificate issuance. Internal KMS DNS resolution was verified
-from the workstation and Pi. Certificate issuance and the TCP listener remain
-pending. See the [required DNS entries](../network.md#required-dns-entries).
+from the workstation and Pi. Production certificate issuance and certificate-reuse
+recovery are verified; TCP listener deployment remains pending. See the [required DNS entries](../network.md#required-dns-entries).
 Use Debian-packaged Certbot with the stock Cloudflare plugin and a dedicated
 DNS Edit API token scoped to the `simlun.se` zone. See the
 [Cloudflare setup guide](../installation/trust-kms-cloudflare.md) for the
 separate future cert-manager token and challenge ownership. The coordinator
 rehearsal uses a verified `noswap` tmpfs and discards all Certbot state on exit.
-The checkout-based wrapped state lifecycle passed on 2026-11-11. The full coordinator-local lifecycle also passed that day: import, recovery/renewal, explicit recreation and recovery/renewal of the replacement, with reported local archival. Production certificate initialization/recovery is implemented with a separate profile, due-only renewal and system-trust validation, but live production validation and the TLS listener remain pending. ACME/TLS ciphertext is not backed up in Git; SD-card loss uses explicit recreation with the preserved DNS token. Initial and
+The checkout-based wrapped state lifecycle passed on 2026-11-11. The full coordinator-local lifecycle also passed that day: import, recovery/renewal, explicit recreation and recovery/renewal of the replacement, with reported local archival. Production initialization and certificate-reuse recovery passed on 2026-11-11 with the separate production profile and system-trust checks. Recovery reused the existing certificate without republishing unchanged state. Actual production renewal/expiry, process-lifetime authorization and the TLS listener remain pending. ACME/TLS ciphertext is not backed up in Git; SD-card loss uses explicit recreation with the preserved DNS token. Initial and
 expired-certificate recovery must use SSH and independent DNS/ACME access;
 existing KMS TLS cannot be their only prerequisite. A renewed certificate may
 reuse an already protected private key if supported; persisting a new key needs

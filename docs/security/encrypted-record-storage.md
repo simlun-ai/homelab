@@ -111,8 +111,8 @@ The [staging implementation](../installation/trust-kms-cloudflare.md#wrapped-sta
 keeps current ciphertext and archives solely under the coordinator's root-owned
 `/var/lib/trust-kms/acme-staging/`. The explicit production profile uses
 `/var/lib/trust-kms/acme-production/`, a separate current filename and wrapping
-context. Production initialization/recovery is implemented but not yet verified
-on the coordinator. Neither environment has a private manifest entry. The
+context. Production initialization and certificate-reuse recovery were verified
+on the coordinator on 2026-11-11; actual renewal/expiry remains unverified. Neither environment has a private manifest entry. The
 workstation fetches ciphertext over
 verified SSH, unwraps in memory with the YubiKey, and streams recovered state
 back to protected coordinator RAM. Updated state is wrapped/verified on the

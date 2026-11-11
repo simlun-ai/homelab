@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Validate [production certificate initialization and recovery](trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery) on `ups-aux`. The implementation separates staging/production state and wrapping contexts, checks production trust, and renews production only when due; installation and live validation are pending. The [coordinator-local staging lifecycle](trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate) passed on 2026-11-11: import, recovery/renewal, explicit recreation and recovery/renewal of the replacement, with reported local archival. Production renewal and the locked TLS listener follow. The [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) passed: issuance, renewal with the same TLS key, workspace removal and the post-run public DNS check. The operator verified the local service starts locked with the [dedicated staging play](01-main-coordinator.md#stage-the-locked-service). The Pi's network-only rehearsal confirmed the planned static address, route and DNS, followed by DHCP rollback. The KMS TCP probe timed out. The corrected `enabcm6e4ei0` LinkConfig passed offline validation on the operator workstation. The standalone MD RAID1 draft passed strict offline validation with pinned `talosctl`. The maintenance-mode volume probe confirmed that both appear as whole disks. All four ATA device links and exact capacities matched after a cold boot. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core and loopback gRPC-over-TLS tests passed on the workstation. The operator also verified the local authorization socket, worker lifecycle and late-response rejection. Coordinator TCP/TLS deployment, production identity creation and live-node authentication remain pending. Disk/adapter behavior and actual pre-STATE/KMS networking, DNS and time remain to be verified on the Pi before installation.
+- **Current next step:** Plan process-lifetime TLS authorization and the locked KMS listener on `ups-aux` at `10.10.0.5:443`. [Production certificate initialization and recovery](trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery) passed on 2026-11-11: system-trust checks, wrapped publication, and reuse of the recovered certificate without republishing unchanged state. Actual production renewal and live listener validation remain pending. The [coordinator-local staging lifecycle](trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate) passed on 2026-11-11: import, recovery/renewal, explicit recreation and recovery/renewal of the replacement, with reported local archival. Production renewal and the locked TLS listener follow. The [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) passed: issuance, renewal with the same TLS key, workspace removal and the post-run public DNS check. The operator verified the local service starts locked with the [dedicated staging play](01-main-coordinator.md#stage-the-locked-service). The Pi's network-only rehearsal confirmed the planned static address, route and DNS, followed by DHCP rollback. The KMS TCP probe timed out. The corrected `enabcm6e4ei0` LinkConfig passed offline validation on the operator workstation. The standalone MD RAID1 draft passed strict offline validation with pinned `talosctl`. The maintenance-mode volume probe confirmed that both appear as whole disks. All four ATA device links and exact capacities matched after a cold boot. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core and loopback gRPC-over-TLS tests passed on the workstation. The operator also verified the local authorization socket, worker lifecycle and late-response rejection. Coordinator TCP/TLS deployment and live-node authentication remain pending; production certificate identity creation and certificate-reuse recovery are verified. Disk/adapter behavior and actual pre-STATE/KMS networking, DNS and time remain to be verified on the Pi before installation.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -76,8 +76,23 @@ renewal-file parsing defect: top-level lineage metadata was not accepted by
 the original INI check. The fix accepts the native layout and adds safe
 stage-specific failure diagnostics. Reinstall the corrected helper and retry
 according to the [production guide](trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery).
-Production initialization/recovery acceptance remains pending. Issuance may have
-completed before the failed check; do not repeatedly retry against production.
+Production acceptance was pending after this failed attempt; the successful
+corrected-helper follow-up is recorded below. Issuance may have completed before
+the failed check; avoid repeated production retries.
+
+### Production initialization and recovery verification (2026-11-11)
+
+After the parser fix, the operator's tools play passed (`ok=11`, `changed=1`,
+`unreachable=0`, `failed=0`). Production initialization verified the exact
+certificate name, matching private key, validity and system-trusted chain,
+wrapped and independently recovered the updated state, and stored its
+ciphertext on the coordinator. Default recovery then fetched and recovered that
+state, checked renewal, reverified the certificate, and reused it because
+renewal was not due. The helper reported no state changes to publish, so it
+performed no new wrapping/publication or archival for unchanged state.
+**Production initialization and certificate-reuse recovery passed.** Actual
+production renewal/expiry, process-lifetime authorization, the TCP/TLS listener
+and live Talos authentication/unlock remain pending.
 
 ### Milestone tracker
 

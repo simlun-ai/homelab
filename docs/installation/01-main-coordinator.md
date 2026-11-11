@@ -15,12 +15,12 @@ acceptance criteria. It is documentation, not a deployed or verified service.
 - [x] Implement disposable software-only envelope/session tests for the approved behavior, with a fixed public vector. This verifies the envelope and session core.
 - [x] Verify the [loopback gRPC-over-TLS rehearsal](../../support/hsm/README.md#trust-kms-loopback-rehearsal) on the operator workstation (Python 3.13.18, 2026-11-09).
 - [x] Verify the [local authorization and worker rehearsal](../../support/hsm/README.md#trust-kms-loopback-rehearsal) on the operator workstation (three tests passed, 2026-11-09).
-- [ ] Settle UUID mapping, early-boot NTP/networking, admission rules and independent recovery inputs. The public TLS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`. The [UniFi DNS record](../network.md#required-dns-entries) resolved to `10.10.0.5` from the workstation and the Pi. The Pi's TCP probe timed out. Certificate and listener deployment remain pending.
+- [ ] Settle UUID mapping, early-boot NTP/networking, admission rules and independent recovery inputs. The public TLS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`. The [UniFi DNS record](../network.md#required-dns-entries) resolved to `10.10.0.5` from the workstation and the Pi. The Pi's TCP probe timed out. Production certificate initialization/recovery are verified; listener deployment remains pending.
 - [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
 - [x] Stage the locked service on `ups-aux` and verify it reports an empty authorization window (2026-11-09).
 - [x] Verify the [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) on `ups-aux`: issuance, renewal with the same TLS key, RAM workspace cleanup and the post-run public DNS check passed (2026-11-10).
 - [x] Validate the [wrapped staging state lifecycle](trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate): coordinator-local import/initialization, default recovery, explicit recreation and archival. Coordinator-local import, default recovery/renewal, explicit recreation and recovery/renewal of the replacement passed on 2026-11-11. The helper reported coordinator-local archival on publication.
-- [ ] Validate [production certificate initialization and recovery](trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery). Helpers implemented with separate profiles, due-only production renewal and system-trust verification; operator validation pending.
+- [x] Validate [production certificate initialization and recovery](trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery). Production initialization and recovery with system-trust verification passed on 2026-11-11; recovery reused the existing certificate and published no unchanged state. Actual due renewal remains unverified.
 - [ ] Integrate process-lifetime authorization, the locked TLS listener and scheduled renewal/reload. The coordinator-local staging state lifecycle is verified.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).
 - [ ] Verify startup without Trust/OpenBao, the one-hour KMS window, expiry/lock/restart behaviour, and certificate renewal.
@@ -60,7 +60,18 @@ Production attempt (2026-11-11): tools installation passed (`ok=11`, `changed=3`
 no failures); initialization then failed after the issuance progress message and
 before wrapped publication. The [production guide](trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery)
 records the reproduced native renewal-file parser defect and reinstall/retry
-instructions. Production acceptance, the timer and the TLS listener remain pending.
+instructions. The corrected-helper acceptance follows below; the timer and TLS
+listener remain pending.
+
+Production follow-up (2026-11-11): after the parser fix, the tools play passed
+with `ok=11`, `changed=1`, `unreachable=0`, `failed=0`. Production initialization
+verified the certificate name, matching key, validity and system-trusted chain,
+then wrapped and independently recovered the state before storing its ciphertext
+on the Pi. Default production recovery passed the same checks, reused the
+existing certificate because renewal was not due, and reported no state changes
+to publish. **Production initialization and certificate-reuse recovery passed.**
+Actual production renewal, process-lifetime TLS activation, the listener and
+scheduled renewal/reload remain pending.
 
 ## Stage the locked service
 

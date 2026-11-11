@@ -1,6 +1,6 @@
 # YubiKey Credential Catalogue
 
-**Initial setup/wrapping helpers implemented; all four tokens physically verified 2026-11-04.** Coordinator administrator password and shared SSH key lookups are implemented; actual records require local generation with a verified token. Other production lookups remain proposed.
+**Initial setup/wrapping helpers implemented; all four tokens physically verified 2026-11-04.** Coordinator administrator password, shared SSH key and ACME lookups are implemented; actual records require authorized generation with a verified token. Other production lookups remain proposed.
 
 This document owns the lookup catalogue. Hardware inventory belongs in [inventory.md](../inventory.md#security-keys); golden-key custody, secret handling, and encryption policy belong in [security.md](security.md); recovery requirements belong in [backup-and-restore.md](../backup-and-restore.md).
 
@@ -42,7 +42,7 @@ challenge = ASCII(Base64(SHA256(ASCII(identifier))))
 
 This produces exactly 44 ASCII bytes using padded standard Base64, with no newline or NUL. Enable variable-length processing (`HMAC_LT64`, `lt64(True)`) on all four tokens. This avoids a [documented firmware 2.2 bug](https://github.com/Yubico/yubico-pam/blob/master/ykpamcfg.c) that returns identical responses for different challenges when the flag is clear. Verify every device against software HMAC before acceptance. This replaces the unused 64-byte hexadecimal challenge definition; credential identifiers retain their `homelab/v1/` namespace.
 
-The raw response feeds HKDF-SHA-256 and AES-256-GCM using the [v1 encrypted-record format](security.md#challenges-derivation-and-wrapped-credentials). That section owns derivation, authenticated metadata, revision/rotation rules, and validation. The initial shared implementation is exercised by [step 00](../installation/00-yubikey-setup.md); the coordinator password consumer is implemented; other production consumers remain pending.
+The raw response feeds HKDF-SHA-256 and AES-256-GCM using the [v1 encrypted-record format](security.md#challenges-derivation-and-wrapped-credentials). That section owns derivation, authenticated metadata, revision/rotation rules, and validation. The initial shared implementation is exercised by [step 00](../installation/00-yubikey-setup.md); coordinator credential and ACME consumers are implemented; remaining consumers and service integrations are pending.
 
 The implemented setup helper reserves `homelab/v1/setup/verification/cross-token/r1` for an in-memory dummy credential under `golden-1`. It is not a production credential or persisted record.
 
@@ -81,7 +81,7 @@ These identifiers cover the credential roles documented here. Entries are propos
 | `trust/kms/<node-id>/r1` | Random 32-byte node KMS key protecting Talos system-volume unlock payloads under the [two-layer design](helper-implementation.md#trust-kms-two-layers). Node mapping TBD. | Coordinator bootstrap KMS. |
 | `support-aux/dns-api/cloudflare/r1` | Cloudflare API token for Trust KMS DNS-01 under `golden-1`. The manifest reserves `wrapped/ups-aux-cloudflare-dns-api.json`. | [Certbot staging rehearsal](../installation/trust-kms-cloudflare.md#run-the-staging-rehearsal) lookup implemented. |
 | `support-aux/acme/staging/r1` | Combined disposable Certbot account, TLS key/certificate and renewal state. Coordinator-local `ups-aux-acme-staging.json`; archives stay on the Pi. No private-repository record is required. | Coordinator-local import, recovery/renewal, explicit recreation and recovery/renewal of the replacement verified 2026-11-11. |
-| `support-aux/acme/production/r1` | Combined production Certbot account, TLS key/certificate and renewal state under `golden-1`. Coordinator-local `acme-production/ups-aux-acme-production.json`; local archives, no Git copy. Supersedes the proposed separate `support-trust-backup/tls-private-key/kms/r1` and `support-trust-backup/acme-account/kms/r1` lookups. | Implemented; production initialization/recovery and listener integration unverified. |
+| `support-aux/acme/production/r1` | Combined production Certbot account, TLS key/certificate and renewal state under `golden-1`. Coordinator-local `acme-production/ups-aux-acme-production.json`; local archives, no Git copy. Supersedes the proposed separate `support-trust-backup/tls-private-key/kms/r1` and `support-trust-backup/acme-account/kms/r1` lookups. | Production initialization and certificate-reuse recovery verified 2026-11-11. Actual renewal/expiry and listener integration unverified. |
 | `recovery/r2/openbao-restore/r1` | Independently recoverable R2 download credentials. | Snapshot restore helper. |
 | `recovery/backup-decryption/openbao/r1` | Additional snapshot-decryption material, **if additional encryption is selected**. | Snapshot restore helper. |
 | `trust/talos/bootstrap/r1` | Secret-bearing Talos bootstrap material; bundle boundaries TBD. | Trust bootstrap/rebuild helper. |
