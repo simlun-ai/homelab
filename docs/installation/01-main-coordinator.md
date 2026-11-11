@@ -19,8 +19,8 @@ acceptance criteria. It is documentation, not a deployed or verified service.
 - [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
 - [x] Stage the locked service on `ups-aux` and verify it reports an empty authorization window (2026-11-09).
 - [x] Verify the [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) on `ups-aux`: issuance, renewal with the same TLS key, RAM workspace cleanup and the post-run public DNS check passed (2026-11-10).
-- [ ] Validate the [wrapped staging state lifecycle](trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate): coordinator-local import/initialization, default recovery, explicit recreation and archival. Earlier checkout-based lifecycle passed on 2026-11-11; coordinator-local revision requires validation.
-- [ ] Implement production issuance, scheduled renewal and the locked TLS listener. Coordinator-local staging ciphertext storage is implemented; hardware validation pending.
+- [ ] Validate the [wrapped staging state lifecycle](trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate): coordinator-local import/initialization, default recovery, explicit recreation and archival. Earlier checkout-based lifecycle passed on 2026-11-11. Coordinator-local import and recovery/renewal passed the same day; coordinator-local recreation and recovery afterward remain pending.
+- [ ] Implement production issuance, scheduled renewal and the locked TLS listener. Coordinator-local staging ciphertext import and recovery/renewal are verified; recreation acceptance remains pending.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).
 - [ ] Verify startup without Trust/OpenBao, the one-hour KMS window, expiry/lock/restart behaviour, and certificate renewal.
 
@@ -41,6 +41,16 @@ disposable RAM workspace was removed. A subsequent TXT query to `1.1.1.1` for
 `_acme-challenge.kms.k8s-aux.simlun.se` returned no records. This verifies the
 staging rehearsal; durable wrapped ACME state recovery, production renewal and
 the TLS listener remain pending.
+
+Coordinator-local checks (2026-11-11): the updated tools play completed with
+`ok=11`, `changed=3`, `unreachable=0`, `failed=0`. The operator imported the
+existing wrapped staging record after YubiKey verification; the helper reported
+that local files were unchanged. Default recovery then fetched the Pi's
+ciphertext, recovered the staging state and DNS token, renewed successfully,
+wrapped and independently recovered the update, and published it back to the
+coordinator. The helper reported local archival of the previous ciphertext.
+Coordinator-local recreation and recovery of its replacement remain pending;
+production issuance, the renewal timer and the TLS listener remain pending.
 
 ## Stage the locked service
 
