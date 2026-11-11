@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Protocol, cast
 
 import grpc
-from google.protobuf import descriptor_pb2, descriptor_pool, message_factory
+from google.protobuf import descriptor_pb2, message_factory
 from google.protobuf.message import DecodeError, Message
 
 from . import envelope, session, worker
@@ -41,21 +41,11 @@ def _messages() -> tuple[type[_Request], type[_Response]]:
     response.field.add(
         name="data", number=1, type=descriptor_pb2.FieldDescriptorProto.TYPE_BYTES
     )
-    pool = descriptor_pool.DescriptorPool()
-    pool.Add(schema)
+    # GetMessages is also available on the coordinator's older APT protobuf.
+    classes = message_factory.GetMessages([schema])
     return (
-        cast(
-            type[_Request],
-            message_factory.GetMessageClass(
-                pool.FindMessageTypeByName("sidero.kms.Request")
-            ),
-        ),
-        cast(
-            type[_Response],
-            message_factory.GetMessageClass(
-                pool.FindMessageTypeByName("sidero.kms.Response")
-            ),
-        ),
+        cast(type[_Request], classes["sidero.kms.Request"]),
+        cast(type[_Response], classes["sidero.kms.Response"]),
     )
 
 
