@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import socket
 import subprocess
 import sys
 import tempfile
@@ -196,16 +197,20 @@ class ListenerTests(unittest.TestCase):
                 self.assertEqual(
                     tls.local("status", socket_path=path)["tls_state"], "disabled"
                 )
-            with control.listen(
-                authority,
-                path,
-                allowed_uids=set(),
-                handler=listener.dispatch,
-                frame_limit=tls.FRAME_LIMIT,
+            with (
+                control.listen(
+                    authority,
+                    path,
+                    allowed_uids=set(),
+                    handler=listener.dispatch,
+                    frame_limit=tls.FRAME_LIMIT,
+                ),
+                socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as peer,
             ):
-                self.assertEqual(
-                    tls.local("status", socket_path=path)["error"], "PERMISSION_DENIED"
-                )
+                # Peer credentials are checked before the server reads a request.
+                peer.connect(str(path))
+                response = control.receive(peer, frame_limit=tls.FRAME_LIMIT)
+                self.assertEqual(response["error"], "PERMISSION_DENIED")
 
 
 class DeliveryTests(unittest.TestCase):
