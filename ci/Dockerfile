@@ -6,7 +6,7 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean
 RUN --mount=type=cache,id=homelab-ci-apt-packages,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=homelab-ci-apt-lists,target=/var/lib/apt/lists,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
-    bash ca-certificates git make python3 python3-venv
+    bash ca-certificates git make openssl python3 python3-venv
 
 FROM base AS helper-tools
 ENV HSM_VENV=/opt/homelab-hsm

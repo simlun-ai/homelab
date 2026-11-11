@@ -109,7 +109,13 @@ class StateTests(unittest.TestCase):
                     }
                 ).encode()
 
-                def crypt(_tool: str, _data: bytes, *, wrap: bool) -> bytes:
+                def crypt(
+                    _tool: str,
+                    _data: bytes,
+                    *,
+                    wrap: bool,
+                    environment: str = "staging",
+                ) -> bytes:
                     return b"wrapped" if wrap else b"new-state"
 
                 with (
@@ -208,7 +214,7 @@ class StateTests(unittest.TestCase):
                     "import", "test@example.org", "/wrap", "/unwrap", source
                 )
                 crypt.assert_called_once_with(
-                    "/unwrap", b"wrapped-existing", wrap=False
+                    "/unwrap", b"wrapped-existing", wrap=False, environment="staging"
                 )
                 remote.assert_not_called()
                 dns.assert_not_called()
@@ -234,6 +240,11 @@ class RemoteStateTests(unittest.TestCase):
             (source / "config/accounts/example/private_key.json").write_bytes(
                 b"public-account-fixture"
             )
+            (source / "config/renewal").mkdir()
+            (source / "config/renewal" / f"{remote.acme.HOSTNAME}.conf").write_text(
+                f"[renewalparams]\nserver = {remote.acme.STAGING_CA}\nauthenticator = dns-cloudflare\n"
+                f"dns_cloudflare_credentials = {workspace / 'cloudflare.ini'}\n"
+            )
             encoded = state.snapshot(source)
             request = json.dumps(
                 {
@@ -244,6 +255,7 @@ class RemoteStateTests(unittest.TestCase):
             ).encode()
             result = io.BytesIO()
             with (
+                patch.object(remote.sys, "argv", ["state-remote"]),
                 patch.object(remote, "WORKSPACE", workspace),
                 patch.object(remote.acme, "RAM_ROOT", root),
                 patch.object(remote.acme, "require_coordinator_hardening"),

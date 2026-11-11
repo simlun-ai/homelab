@@ -6,11 +6,13 @@ import os
 from pathlib import Path, PurePosixPath
 from typing import cast
 
+from trust_kms_acme_profile import profile
+
 LIMIT = 1024 * 1024
 WORKSPACE = Path("/run/trust-kms-acme/session")
 
 
-def snapshot(workspace: Path) -> bytes:
+def snapshot(workspace: Path, *, environment: str = "staging") -> bytes:
     entries: dict[str, dict[str, str]] = {}
     root = workspace / "config"
     for path in sorted(root.rglob("*")):
@@ -25,17 +27,19 @@ def snapshot(workspace: Path) -> bytes:
             }
         elif not path.is_dir():
             raise ValueError("Unexpected state entry")
-    data = json.dumps({"format": "trust-acme-staging-v1", "entries": entries}).encode()
+    data = json.dumps(
+        {"format": profile(environment).format, "entries": entries}
+    ).encode()
     if len(data) > LIMIT or not entries:
         raise ValueError("Invalid state size")
     return data
 
 
-def restore(workspace: Path, data: bytes) -> None:
+def restore(workspace: Path, data: bytes, *, environment: str = "staging") -> None:
     if len(data) > LIMIT:
         raise ValueError("State too large")
     value = json.loads(data)
-    if value["format"] != "trust-acme-staging-v1":
+    if value["format"] != profile(environment).format:
         raise ValueError("Unexpected state format")
     entries = cast(dict[str, dict[str, str]], value["entries"])
     if type(entries) is not dict or not entries or len(entries) > 512:

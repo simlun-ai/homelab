@@ -1,4 +1,4 @@
-- name: Install the Trust KMS Certbot rehearsal tools
+- name: Install the Trust KMS Certbot tools
   hosts: ups-aux
   gather_facts: false
   become: true
@@ -22,6 +22,8 @@
     - name: Install Certbot and its Cloudflare DNS plugin from APT
       ansible.builtin.apt:
         name:
+          - openssl
+          - ca-certificates
           - certbot
           - python3-certbot-dns-cloudflare
         state: present
@@ -52,7 +54,7 @@
         group: root
         mode: "0755"
 
-    - name: Install the staging state helpers
+    - name: Install the ACME state helpers
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/../../../../scripts/{{ item }}"
         dest: "/usr/local/lib/trust-kms-acme/{{ item }}"
@@ -60,12 +62,13 @@
         group: root
         mode: "0644"
       loop:
+        - trust_kms_acme_profile.py
         - trust_kms_acme_record.py
         - trust_kms_acme_state.py
         - trust_kms_acme_state_remote.py
         - trust_kms_acme_rehearsal.py
 
-    - name: Install the isolated staging state launcher
+    - name: Install the isolated ACME state launcher
       ansible.builtin.copy:
         src: ../files/trust-kms-acme-state
         dest: /usr/local/sbin/trust-kms-acme-state
@@ -75,11 +78,12 @@
 
     - name: Create the coordinator-local ciphertext directory
       ansible.builtin.file:
-        path: /var/lib/trust-kms/acme-staging
+        path: "/var/lib/trust-kms/acme-{{ item }}"
         state: directory
         owner: root
         group: root
         mode: "0700"
+      loop: [staging, production]
 
     - name: Install the ciphertext storage launcher
       ansible.builtin.copy:
