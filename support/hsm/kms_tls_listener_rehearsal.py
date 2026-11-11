@@ -301,14 +301,17 @@ class ProcessRestartTests(unittest.TestCase):
                 ) as process:
                     try:
                         deadline = time.monotonic() + 5
-                        while (
-                            not path.exists()
-                            and process.poll() is None
-                            and time.monotonic() < deadline
-                        ):
-                            time.sleep(0.01)
-                        self.assertIsNone(process.poll())
-                        status = tls.local("status", socket_path=path)
+                        while True:
+                            try:
+                                status = tls.local("status", socket_path=path)
+                                break
+                            except OSError:
+                                if (
+                                    process.poll() is not None
+                                    or time.monotonic() >= deadline
+                                ):
+                                    raise
+                                time.sleep(0.01)
                         self.assertEqual(status["tls_state"], "disabled")
                         self.assertEqual(status["kms_state"], "locked")
                         self.assertNotEqual(status["instance"], old_instance)
