@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Remove the runtime QEMU rehearsal policy from `ups-aux`, restart the service, and reauthorize and verify the normal locked TLS listener. The controlled QEMU reboot confirmed locked Unseal rejection. Pi-side encrypted `STATE` boot and actual production certificate renewal and expiry remain pending.
+- **Current next step:** Prepare persistent wrapped node-key enrollment and boot-window authorization for `trust-cp1`. The QEMU rehearsal is complete and the normal locked TLS listener is restored on `ups-aux`. Pi-side encrypted `STATE` boot and actual production certificate renewal and expiry remain pending.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -136,6 +136,12 @@ The operator then deliberately rebooted the VM from the same virtual disk
 with KMS locked. The fresh boot log showed Unseal in slot 0 return
 `FailedPrecondition: KMS locked`. `EPHEMERAL` on `/dev/vda6` moved from
 waiting to failed, and subsequent retries received the same response.
+
+The operator removed the runtime systemd override and restarted `ups-aux`'s
+KMS service with `serve-locked` and no `--vm-rehearsal` flag. Production TLS
+reauthorization reused the existing certificate. Status reported active TLS at
+`10.10.0.5:443` and locked KMS. The workstation again verified system trust,
+the hostname, and locked responses from both Seal and Unseal.
 
 ### Milestone tracker
 
