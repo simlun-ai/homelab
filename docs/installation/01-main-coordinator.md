@@ -56,6 +56,12 @@ publication and archival on the Pi. **The full coordinator-local staging
 lifecycle passed.** Production issuance, the renewal timer and the TLS listener
 remain pending.
 
+Production attempt (2026-11-11): tools installation passed (`ok=11`, `changed=3`,
+no failures); initialization then failed after the issuance progress message and
+before wrapped publication. The [production guide](trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery)
+records the reproduced native renewal-file parser defect and reinstall/retry
+instructions. Production acceptance, the timer and the TLS listener remain pending.
+
 ## Stage the locked service
 
 After base hardening and SSH setup, run the dedicated play from the workstation:

@@ -68,7 +68,10 @@ def command(workspace: Path, email: str, *, renew: bool, environment: str) -> li
 
 def check_renewal_config(workspace: Path, environment: str) -> None:
     config = configparser.ConfigParser(interpolation=None)
-    config.read(workspace / "config/renewal" / f"{acme.HOSTNAME}.conf")
+    # Certbot uses ConfigObj: lineage metadata precedes [renewalparams].
+    # Give those top-level keys a synthetic section for the stdlib INI parser.
+    filename = workspace / "config/renewal" / f"{acme.HOSTNAME}.conf"
+    config.read_string("[lineage]\n" + filename.read_text(encoding="utf-8"))
     parameters = config["renewalparams"]
     if (
         parameters["server"] != profile(environment).server
@@ -84,6 +87,7 @@ def check_renewal_config(workspace: Path, environment: str) -> None:
 
 def main() -> int:
     created = False
+    stage = "coordinator and RAM preflight"
     try:
         if len(sys.argv) > 2:
             raise ValueError()
@@ -97,6 +101,7 @@ def main() -> int:
             acme.require_noswap_mount(fd)
         finally:
             os.close(fd)
+        stage = "request validation"
         request = json.loads(sys.stdin.buffer.read(2 * LIMIT + 1))
         email = request["email"]
         if (
@@ -113,16 +118,20 @@ def main() -> int:
         accounts: dict[Path, bytes] = {}
         recovered = request["state"] is not None
         if recovered:
+            stage = "restoring wrapped state"
             restore(
                 WORKSPACE,
                 base64.b64decode(request["state"], validate=True),
                 environment=environment_name,
             )
+            stage = "checking recovered renewal configuration"
             check_renewal_config(WORKSPACE, environment_name)
+            stage = "inspecting recovered certificate and key"
             before, key = acme.inspect_certificate(
                 WORKSPACE, allow_expired=environment_name == "production"
             )
             if environment_name == "production":
+                stage = "verifying recovered production trust"
                 verify_production(WORKSPACE, allow_expired=True)
             accounts = {
                 p.relative_to(WORKSPACE): p.read_bytes()
@@ -132,6 +141,7 @@ def main() -> int:
                 raise ValueError()
         else:
             before, key = b"", b""
+        stage = "preparing the RAM credentials file"
         (WORKSPACE / "cloudflare.ini").write_bytes(
             b"dns_cloudflare_api_token = " + token + b"\n"
         )
@@ -149,6 +159,7 @@ def main() -> int:
             file=sys.stderr,
             flush=True,
         )
+        stage = "Certbot renewal check" if recovered else "Certbot issuance"
         subprocess.run(
             command(WORKSPACE, email, renew=recovered, environment=environment_name),
             cwd=WORKSPACE,
@@ -159,15 +170,32 @@ def main() -> int:
             check=True,
             timeout=acme.CERTBOT_TIMEOUT,
         )
+        stage = "inspecting issued certificate and key"
+        print(
+            "Inspecting the resulting certificate and key.", file=sys.stderr, flush=True
+        )
         after, new_key = acme.inspect_certificate(WORKSPACE)
+        stage = "checking issued renewal configuration"
+        print(
+            "Checking the resulting Certbot renewal configuration.",
+            file=sys.stderr,
+            flush=True,
+        )
         check_renewal_config(WORKSPACE, environment_name)
         if environment_name == "production":
+            stage = "verifying issued production trust"
+            print(
+                "Verifying the resulting production certificate chain.",
+                file=sys.stderr,
+                flush=True,
+            )
             verify_production(WORKSPACE)
             print(
                 "PASS: production certificate name, key, validity and system-trusted chain verified.",
                 file=sys.stderr,
                 flush=True,
             )
+        stage = "checking account and TLS key continuity"
         after_accounts = {
             p.relative_to(WORKSPACE): p.read_bytes()
             for p in (WORKSPACE / "config/accounts").rglob("private_key.json")
@@ -186,26 +214,28 @@ def main() -> int:
                 file=sys.stderr,
                 flush=True,
             )
+        stage = "serializing verified state"
         sys.stdout.buffer.write(snapshot(WORKSPACE, environment=environment_name))
         sys.stdout.buffer.flush()
     except acme.RehearsalError as exc:
-        print(exc, file=sys.stderr)
+        print(f"ACME state operation failed during {stage}: {exc}", file=sys.stderr)
         return 1
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as exc:
         print(
-            "ACME state operation timed out after 150 seconds.",
+            f"ACME state operation timed out during {stage} after {exc.timeout} seconds.",
             file=sys.stderr,
         )
         return 1
     except subprocess.CalledProcessError as exc:
         print(
-            f"ACME state operation exited with status {exc.returncode}.",
+            f"ACME state operation failed during {stage} with exit status {exc.returncode}.",
             file=sys.stderr,
         )
         return 1
     except Exception:
         print(
-            "ACME state operation failed; private details suppressed.", file=sys.stderr
+            f"ACME state operation failed during {stage}; private details suppressed.",
+            file=sys.stderr,
         )
         return 1
     finally:

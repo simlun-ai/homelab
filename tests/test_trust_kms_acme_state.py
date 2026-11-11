@@ -242,7 +242,7 @@ class RemoteStateTests(unittest.TestCase):
             )
             (source / "config/renewal").mkdir()
             (source / "config/renewal" / f"{remote.acme.HOSTNAME}.conf").write_text(
-                f"[renewalparams]\nserver = {remote.acme.STAGING_CA}\nauthenticator = dns-cloudflare\n"
+                f"# renew_before_expiry = 30 days\nversion = 4.0.0\narchive_dir = {workspace / 'config/archive'}\n\n[renewalparams]\nserver = {remote.acme.STAGING_CA}\nauthenticator = dns-cloudflare\n"
                 f"dns_cloudflare_credentials = {workspace / 'cloudflare.ini'}\n"
             )
             encoded = state.snapshot(source)

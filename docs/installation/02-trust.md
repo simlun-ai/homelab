@@ -67,6 +67,18 @@ replacement on the Pi with reported archival, and successfully recovered/renewed
 that replacement. **The full coordinator-local staging lifecycle passed.**
 Production issuance, scheduled renewal and the TLS listener remain pending.
 
+### Production certificate attempt (2026-11-11)
+
+The tools play passed on `ups-aux` (`ok=11`, `changed=3`, no unreachable hosts or
+failures). Production initialization reported issuance starting, then failed
+before wrapping/publication. Native Certbot 4.0.0 reproduction identified a
+renewal-file parsing defect: top-level lineage metadata was not accepted by
+the original INI check. The fix accepts the native layout and adds safe
+stage-specific failure diagnostics. Reinstall the corrected helper and retry
+according to the [production guide](trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery).
+Production initialization/recovery acceptance remains pending. Issuance may have
+completed before the failed check; do not repeatedly retry against production.
+
 ### Milestone tracker
 
 | # | Stage | Exit criteria | Status |
