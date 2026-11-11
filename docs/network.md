@@ -122,8 +122,8 @@ The implemented TLS authorization slice binds only `10.10.0.5:443`, after explic
 production identity recovery. `ups-aux`'s host firewall allows TCP 443 from
 `trust-cp1` (`10.10.0.10/32`) and the existing management networks (currently
 `192.168.254.0/24`). Loopback remains allowed. The temporary Pi maintenance DHCP
-address is excluded. Other coordinators do not receive this rule. Deployment and
-operator validation are pending; the earlier recorded TCP timeout remains the
-last verified Pi-side network probe. Source-IP admission is containment within
+address is excluded. Other coordinators do not receive this rule. The operator verified the deployed
+listener from the workstation on 2026-11-11. The earlier TCP timeout remains
+the last recorded Pi-side probe. Source-IP admission is containment within
 the approved trusted-network model, not node authentication. See the
 [listener validation steps](installation/01-main-coordinator.md#authorize-and-verify-the-locked-tls-listener).

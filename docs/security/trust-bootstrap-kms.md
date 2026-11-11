@@ -216,13 +216,13 @@ Use `kms.k8s-aux.simlun.se`, resolving internally to `10.10.0.5`, with a matchin
 SAN/full certificate chain; serve gRPC over TLS on TCP 443. Cloudflare DNS-01
 is selected for certificate issuance. Internal KMS DNS resolution was verified
 from the workstation and Pi. Production certificate issuance and certificate-reuse
-recovery are verified; The TLS listener/authorization implementation is ready; coordinator deployment and validation remain pending. See the [required DNS entries](../network.md#required-dns-entries).
+recovery are verified. The deployed TLS listener and process-lifetime authorization passed workstation validation on 2026-11-11. See the [required DNS entries](../network.md#required-dns-entries).
 Use Debian-packaged Certbot with the stock Cloudflare plugin and a dedicated
 DNS Edit API token scoped to the `simlun.se` zone. See the
 [Cloudflare setup guide](../installation/trust-kms-cloudflare.md) for the
 separate future cert-manager token and challenge ownership. The coordinator
 rehearsal uses a verified `noswap` tmpfs and discards all Certbot state on exit.
-The checkout-based wrapped state lifecycle passed on 2026-11-11. The full coordinator-local lifecycle also passed that day: import, recovery/renewal, explicit recreation and recovery/renewal of the replacement, with reported local archival. Production initialization and certificate-reuse recovery passed on 2026-11-11 with the separate production profile and system-trust checks. Recovery reused the existing certificate without republishing unchanged state. Actual production renewal/expiry, process-lifetime authorization and the TLS listener remain pending. ACME/TLS ciphertext is not backed up in Git; SD-card loss uses explicit recreation with the preserved DNS token. Initial and
+The checkout-based wrapped state lifecycle passed on 2026-11-11. The full coordinator-local lifecycle also passed that day: import, recovery/renewal, explicit recreation and recovery/renewal of the replacement, with reported local archival. Production initialization and certificate-reuse recovery passed on 2026-11-11 with the separate production profile and system-trust checks. Recovery reused the existing certificate without republishing unchanged state. Actual production renewal/expiry remains pending. ACME/TLS ciphertext is not backed up in Git; SD-card loss uses explicit recreation with the preserved DNS token. Initial and
 expired-certificate recovery must use SSH and independent DNS/ACME access;
 existing KMS TLS cannot be their only prerequisite. A renewed certificate may
 reuse an already protected private key if supported; persisting a new key needs
@@ -234,7 +234,7 @@ additional containment. Both hosts are on VLAN 10, so router rules alone cannot
 isolate same-VLAN peers. UUID and source IP checks do not prevent an attacker
 already inside the trusted network from impersonating a node. The TLS slice adds a host input allowlist for the configured Trust node and
 existing management networks, plus a dedicated service UID and bind capability.
-Operator validation remains pending; additional switch/gateway restrictions
+Workstation TLS and locked RPC checks passed; Pi-side reachability and additional switch/gateway restrictions
 and their tests remain TBD.
 
 Choose the same public NTP service for coordinator and Trust, with working

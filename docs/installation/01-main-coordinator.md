@@ -1,6 +1,6 @@
 # 01 - Main coordinator
 
-**Draft; KMS implementation and hardware verification pending.**
+**Locked production TLS verified on `ups-aux`; live-node authorization pending.**
 
 First complete the shared [UPS coordinator base setup](../../runbooks/ups-coordinator-base-setup.md) for `ups-aux` at `10.10.0.5`, the Trust/Backup host. That runbook owns Raspberry Pi OS Lite installation, SSH access, and Ansible bootstrap for all three coordinators.
 
@@ -15,13 +15,13 @@ acceptance criteria. It is documentation, not a deployed or verified service.
 - [x] Implement disposable software-only envelope/session tests for the approved behavior, with a fixed public vector. This verifies the envelope and session core.
 - [x] Verify the [loopback gRPC-over-TLS rehearsal](../../support/hsm/README.md#trust-kms-loopback-rehearsal) on the operator workstation (Python 3.13.18, 2026-11-09).
 - [x] Verify the [local authorization and worker rehearsal](../../support/hsm/README.md#trust-kms-loopback-rehearsal) on the operator workstation (three tests passed, 2026-11-09).
-- [ ] Settle UUID mapping, early-boot NTP/networking, admission rules and independent recovery inputs. The public TLS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`. The [UniFi DNS record](../network.md#required-dns-entries) resolved to `10.10.0.5` from the workstation and the Pi. The Pi's TCP probe timed out. Production certificate initialization/recovery are verified; listener deployment remains pending.
+- [ ] Settle UUID mapping, early-boot NTP/networking, admission rules and independent recovery inputs. The public TLS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`. The [UniFi DNS record](../network.md#required-dns-entries) resolved to `10.10.0.5` from the workstation and the Pi. The Pi's TCP probe timed out. The listener is deployed and verified from the workstation; repeat the Pi probe.
 - [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
 - [x] Stage the locked service on `ups-aux` and verify it reports an empty authorization window (2026-11-09).
 - [x] Verify the [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) on `ups-aux`: issuance, renewal with the same TLS key, RAM workspace cleanup and the post-run public DNS check passed (2026-11-10).
 - [x] Validate the [wrapped staging state lifecycle](trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate): coordinator-local import/initialization, default recovery, explicit recreation and archival. Coordinator-local import, default recovery/renewal, explicit recreation and recovery/renewal of the replacement passed on 2026-11-11. The helper reported coordinator-local archival on publication.
 - [x] Validate [production certificate initialization and recovery](trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery). Production initialization and recovery with system-trust verification passed on 2026-11-11; recovery reused the existing certificate and published no unchanged state. Actual due renewal remains unverified.
-- [ ] Validate [process-lifetime TLS authorization and the locked listener](#authorize-and-verify-the-locked-tls-listener). Implemented; deployment and operator validation pending.
+- [x] Validate [process-lifetime TLS authorization and the locked listener](#authorize-and-verify-the-locked-tls-listener). Verified on `ups-aux` on 2026-11-11.
 - [ ] Implement scheduled renewal/reload and integration of process-lifetime DNS/ACME authorization.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).
 - [ ] Verify startup without Trust/OpenBao, the one-hour KMS window, expiry/lock/restart behaviour, and certificate renewal.
@@ -42,7 +42,7 @@ rehearsal successfully: issuance and renewal retained the same TLS key, and the
 disposable RAM workspace was removed. A subsequent TXT query to `1.1.1.1` for
 `_acme-challenge.kms.k8s-aux.simlun.se` returned no records. This verifies the
 staging rehearsal; durable wrapped ACME state recovery, production renewal and
-the TLS listener remain pending.
+the TLS listener were pending at that point.
 
 Coordinator-local checks (2026-11-11): the updated tools play completed with
 `ok=11`, `changed=3`, `unreachable=0`, `failed=0`. The operator imported the
@@ -71,8 +71,7 @@ then wrapped and independently recovered the state before storing its ciphertext
 on the Pi. Default production recovery passed the same checks, reused the
 existing certificate because renewal was not due, and reported no state changes
 to publish. **Production initialization and certificate-reuse recovery passed.**
-Actual production renewal, process-lifetime TLS activation, the listener and
-scheduled renewal/reload remain pending.
+Actual production renewal and scheduled renewal/reload remain pending.
 
 ## Stage the locked service
 
@@ -103,7 +102,10 @@ extension above is implemented but not yet validated on the coordinator.
 
 ## Authorize and verify the locked TLS listener
 
-Implemented; operator deployment and validation pending. This slice keeps the
+Verified on `ups-aux` on 2026-11-11, including restart, the expected failed
+network check while TLS was disabled, and successful reauthorization. See the
+[validation record](02-trust.md#locked-production-tls-verification-2026-11-11).
+This slice keeps the
 KMS node policy empty and locked. No node keys or Talos installation are involved.
 A service restart starts locked with TLS disabled and requires fresh workstation
 YubiKey authorization before accepting TCP connections.

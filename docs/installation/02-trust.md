@@ -8,11 +8,11 @@
 
 ### Current position
 
-- **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its additional KMS service is staged and verified locked; production TLS and live-node authorization remain pending.
+- **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its KMS service is deployed, with production TLS and locked RPCs verified from the workstation. Live-node authorization remains pending.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Validate [process-lifetime TLS authorization and the locked KMS listener](01-main-coordinator.md#authorize-and-verify-the-locked-tls-listener) on `ups-aux` at `10.10.0.5:443`. The implementation, scoped firewall rule and restart checks are ready; deployment and operator validation remain pending. [Production certificate initialization and recovery](trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery) passed on 2026-11-11: system-trust checks, wrapped publication, and reuse of the recovered certificate without republishing unchanged state. Actual production renewal and live listener validation remain pending. The [coordinator-local staging lifecycle](trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate) passed on 2026-11-11: import, recovery/renewal, explicit recreation and recovery/renewal of the replacement, with reported local archival. Production renewal and the locked TLS listener follow. The [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) passed: issuance, renewal with the same TLS key, workspace removal and the post-run public DNS check. The operator verified the local service starts locked with the [dedicated staging play](01-main-coordinator.md#stage-the-locked-service). The Pi's network-only rehearsal confirmed the planned static address, route and DNS, followed by DHCP rollback. The KMS TCP probe timed out. The corrected `enabcm6e4ei0` LinkConfig passed offline validation on the operator workstation. The standalone MD RAID1 draft passed strict offline validation with pinned `talosctl`. The maintenance-mode volume probe confirmed that both appear as whole disks. All four ATA device links and exact capacities matched after a cold boot. The full-memory cold boot passed with unchanged UUID and Ethernet. UEFI v1.53 and the manual Boot Manager USB path have reached Talos maintenance mode. KMS software-core and loopback gRPC-over-TLS tests passed on the workstation. The operator also verified the local authorization socket, worker lifecycle and late-response rejection. Coordinator TCP/TLS deployment and live-node authentication remain pending; production certificate identity creation and certificate-reuse recovery are verified. Disk/adapter behavior and actual pre-STATE/KMS networking, DNS and time remain to be verified on the Pi before installation.
+- **Current next step:** Repeat the non-destructive Pi network rehearsal at `10.10.0.10` and verify that it can reach the now-deployed KMS listener. Live Talos authentication, encrypted unlock, and actual production certificate renewal and expiry remain pending.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -35,8 +35,7 @@ issuance and renewal with the same TLS key, followed by removal of the disposabl
 ACME workspace. A subsequent query to `1.1.1.1` for
 `_acme-challenge.kms.k8s-aux.simlun.se` TXT returned no records.
 **Full staging rehearsal acceptance passed.** Durable wrapped ACME state,
-production certificates, scheduled renewal and the TCP/TLS listener remain
-pending. See [step 01](01-main-coordinator.md#prepare-cloudflare-and-rehearse-acme)
+production certificates, scheduled renewal and the TCP/TLS listener were pending at that point. See [step 01](01-main-coordinator.md#prepare-cloudflare-and-rehearse-acme)
 and the [Cloudflare guide](trust-kms-cloudflare.md#run-the-staging-rehearsal).
 
 ### Wrapped state lifecycle verification (2026-11-11)
@@ -65,7 +64,7 @@ the previous ciphertext there. The operator then explicitly recreated the
 staging identity, wrapped and independently recovered it, published the
 replacement on the Pi with reported archival, and successfully recovered/renewed
 that replacement. **The full coordinator-local staging lifecycle passed.**
-Production issuance, scheduled renewal and the TLS listener remain pending.
+Production issuance, scheduled renewal and the TLS listener were pending at that point.
 
 ### Production certificate attempt (2026-11-11)
 
@@ -91,8 +90,24 @@ state, checked renewal, reverified the certificate, and reused it because
 renewal was not due. The helper reported no state changes to publish, so it
 performed no new wrapping/publication or archival for unchanged state.
 **Production initialization and certificate-reuse recovery passed.** Actual
-production renewal/expiry, process-lifetime authorization, the TCP/TLS listener
-and live Talos authentication/unlock remain pending.
+production renewal/expiry and live Talos authentication/unlock remain pending.
+
+### Locked production TLS verification (2026-11-11)
+
+The ACME tools play passed (`ok=11`, `changed=0`, `failed=0`). The first
+`kms-stage` attempt stopped during the status check because the coordinator's
+APT protobuf lacked `GetMessageClass`. After [PR #29](https://github.com/simlun-ai/homelab/pull/29)
+switched to `GetMessages`, staging passed (`ok=18`, `changed=2`, `failed=0`)
+and status showed KMS locked and TLS disabled.
+
+YubiKey authorization recovered and reused the wrapped production certificate
+without republishing ACME state. The listener became active at `10.10.0.5:443`.
+The workstation verified system trust and the hostname `kms.k8s-aux.simlun.se`.
+Both Seal and Unseal returned `FAILED_PRECONDITION`. Restart produced a new
+daemon instance with KMS locked, TLS disabled and no endpoint. The workstation
+check failed as expected while TLS was disabled. Reauthorization restored the
+listener with the same certificate, and both RPCs again reported KMS locked.
+The certificate expires at `2027-02-08T23:55:15Z`.
 
 ### Milestone tracker
 
@@ -101,7 +116,7 @@ and live Talos authentication/unlock remain pending.
 | 0 | Identity and working baseline | Names/IP/roles and owning files agree; branch and roadmap established | In progress — baseline recorded; branch created |
 | 1 | Provisioning contract and scoped tools | Agree on declarative node/disk schema, `clusters/trust/` layout, version pins, `make` entry points and safe secret-handling approach; implement the minimum needed | Pending |
 | 2 | KMS protocol and recovery decisions | Specify per-node wrapped key context, seal/unseal envelope, TLS endpoint and certificate handling, session authorization, early boot DNS/NTP, admission restrictions, and independent loss recovery | Payload/session behavior, endpoint and sequence approved; wire details proposed; UUID/time/admission/recovery choices pending |
-| 3 | `ups-aux` KMS implementation | Service and Ansible configuration deployed; authorized `Seal`/`Unseal`, expiry, restart and fail-closed checks verified independently of Kubernetes/OpenBao | Pending |
+| 3 | `ups-aux` KMS implementation | Service and Ansible configuration deployed; authorized `Seal`/`Unseal`, expiry, restart and fail-closed checks verified independently of Kubernetes/OpenBao | Locked TLS and restart verified; authorized RPCs and expiry pending |
 | 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | In progress — UEFI/Talos maintenance boot, full memory and UUID/link continuity across the RAM-cap cold boot verified; all four candidate SSDs detected on the Pi with matching ATA links and capacities across a cold boot |
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
 | 6 | Install encrypted Talos | Deliberately install onto assigned OS disks only; cold boot with the independent KMS authorized; encrypted volume coverage verified | Pending |
@@ -359,8 +374,7 @@ It does not verify stock-image boot behavior, Pi UUID stability, networking,
 clock synchronization or recovery. Review the proposed envelope, local protocol and process model; require fixed
 public cryptographic vectors as part of the disposable test harness.
 No production keys, manifest entries, endpoint configuration or service were
-created. Acceptance criteria are recorded; all service/hardware checks remain
-pending.
+created. Acceptance criteria are recorded; all service/hardware checks were pending at that point.
 
 ### KMS walkthrough agreement (2026-11-08)
 
@@ -450,7 +464,7 @@ Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include clu
 
 Install the independent Trust cluster after the [main coordinator](01-main-coordinator.md) is ready. Firmware-card preparation can be tried separately while the coordinator/KMS work is pending.
 
-Use `10.10.0.10/24` with gateway `10.10.0.1` on `k8s-aux` (VLAN 10) for the installed `trust-cp1` node (`trust-cp1.k8s-aux.lundmark.internal`). Plan for this address to be available before Talos loads encrypted `STATE`, so the node can reach the coordinator's KMS on `10.10.0.5`. The KMS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; preboot configuration and endpoint deployment/verification remain pending. See the [network overview](../network.md) for the Trust load balancer pool and proposed Kubernetes CIDRs.
+Use `10.10.0.10/24` with gateway `10.10.0.1` on `k8s-aux` (VLAN 10) for the installed `trust-cp1` node (`trust-cp1.k8s-aux.lundmark.internal`). Plan for this address to be available before Talos loads encrypted `STATE`, so the node can reach the coordinator's KMS on `10.10.0.5`. The KMS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; workstation verification passed, and preboot configuration and Pi-side endpoint verification remain pending. See the [network overview](../network.md) for the Trust load balancer pool and proposed Kubernetes CIDRs.
 
 ## First installation experiment: Pi 4 UEFI
 
@@ -643,7 +657,7 @@ The temporary `TCPProbeConfig` resolved `kms.k8s-aux.simlun.se` to
 `10.10.0.5` and timed out connecting to TCP 443. Its failed status accounts
 for the dashboard's connectivity warning. Talos reported synchronized
 time, with the status last updated before the static configuration took
-effect. TLS, KMS authentication and encrypted STATE unlock remain pending.
+effect. Pi-side TLS, KMS authentication and encrypted STATE unlock remain pending.
 - [x] Inspect candidate SSDs and existing signatures read-only on the workstation (2026-11-09).
 - [x] Record the sampled USB-to-SATA adapter model and verify that Talos detects all four SSDs together with matching ATA links (2026-11-09).
 - [x] Recheck all four ATA links and capacities after a cold boot (2026-11-09).

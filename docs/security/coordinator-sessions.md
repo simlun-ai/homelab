@@ -95,7 +95,7 @@ indefinite KMS authority.
 ## TLS-only listener authorization
 
 The [TLS authorization slice](../installation/01-main-coordinator.md#authorize-and-verify-the-locked-tls-listener)
-is implemented; operator deployment/validation remains pending. It recovers the
+was deployed and verified on `ups-aux` on 2026-11-11. It recovers the
 existing production record, verifies it, and streams only the TLS key/full chain
 to the root SSH helper and the restricted `/run/trust-kms/tls.sock`. A captured
 daemon instance must still match; TLS must be disabled and KMS locked. The

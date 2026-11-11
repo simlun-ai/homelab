@@ -73,7 +73,7 @@ Wrapped ACME staging state: `make -C support/ups kms-acme-state HOST=ups-aux ACM
 defaults to recovery. Use `ACME_STATE_MODE=init` once or explicitly select
 `ACME_STATE_MODE=recreate` to issue replacement identity material and archive
 existing ciphertext. See the [staging state instructions](../../docs/installation/trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate).
-ACME ciphertext and archives are stored only on the Pi. Use `ACME_STATE_MODE=import` with an absolute `ACME_IMPORT_RECORD` to move the previously tested record there without new issuance. The helper leaves local files untouched; no ACME Git commit is needed. Staging is the default; explicitly set `ACME_ENVIRONMENT=production` for production state. Production initialization and certificate-reuse recovery with system-trust verification passed on 2026-11-11; actual renewal/expiry and listener integration remain pending. See the [production instructions](../../docs/installation/trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery).
+ACME ciphertext and archives are stored only on the Pi. Use `ACME_STATE_MODE=import` with an absolute `ACME_IMPORT_RECORD` to move the previously tested record there without new issuance. The helper leaves local files untouched; no ACME Git commit is needed. Staging is the default; explicitly set `ACME_ENVIRONMENT=production` for production state. Production initialization and certificate-reuse recovery with system-trust verification passed on 2026-11-11; listener integration is verified and actual renewal/expiry remains pending. See the [production instructions](../../docs/installation/trust-kms-cloudflare.md#production-certificate-provisioning-and-recovery).
 
 
 ## Locked KMS TLS listener
@@ -86,5 +86,5 @@ reports public state, `kms-tls-check` verifies trusted TLS and locked RPCs from
 the management workstation, and `kms-restart` discards in-memory authorization.
 The check requires the pinned `support/hsm kms-rehearsal-tools` dependencies.
 Follow the [complete validation sequence](../../docs/installation/01-main-coordinator.md#authorize-and-verify-the-locked-tls-listener).
-Implementation is ready; coordinator deployment and operator validation remain
-pending. No KMS node keys or automatic renewal/reload are added by this slice.
+Deployment, workstation TLS checks, restart and reauthorization passed on
+`ups-aux` on 2026-11-11. No KMS node keys or automatic renewal/reload are added by this slice.

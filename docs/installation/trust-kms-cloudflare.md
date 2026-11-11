@@ -356,6 +356,6 @@ apply. Avoid repeated production recreation because issuance rate limits apply.
 
 The [TLS-only authorization implementation](01-main-coordinator.md#authorize-and-verify-the-locked-tls-listener)
 connects recovered identity material to the locked KMS TLS listener; operator
-deployment and validation are pending. Scheduled renewal/reload and process-lifetime
-service authorization follow; this transient command removes its plaintext RAM
+deployment and process-lifetime authorization passed on 2026-11-11. Scheduled
+renewal/reload remains pending. This transient command removes its plaintext RAM
 workspace at the end. No node KMS keys or Talos authority are created here.
