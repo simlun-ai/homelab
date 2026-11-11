@@ -268,6 +268,23 @@ unverified. This step provisions the certificate identity only. It does not
 start the KMS TCP listener, keep an authorized RAM workspace alive, or install
 an automatic renewal timer. The existing locked local service stays in place.
 
+Operator attempt (2026-11-11): the tools play passed (`ok=11`, `changed=3`,
+no unreachable hosts or failures), but production initialization stopped after
+starting Certbot issuance, before any wrapped publication was reported. A
+native Certbot 4.0.0 reproduction exposed an INI-parser mismatch: Certbot writes
+lineage metadata before `[renewalparams]`, which the original check rejected.
+The corrected check handles that native layout; failures now identify the stage
+without printing private parser/child output. The original suppressed error
+does not independently establish its exact cause. Production acceptance remains
+pending a retry with the corrected helper.
+
+Reinstall `kms-acme-tools` after pulling this fix, then retry production `init`
+once using the commands below. Do not use `recreate` to bypass an existing
+record; use recovery if initialization reports one already exists. A failed
+post-issuance check can still consume a production issuance even though no
+wrapped record is published. The transient RAM workspace is removed on failure,
+so this attempt's private state cannot be recovered from persistent files.
+
 Staging remains the default for `kms-acme-state` and the disposable rehearsal.
 Production requires `ACME_ENVIRONMENT=production` explicitly. Profiles have
 fixed CA URLs, different snapshot formats and YubiKey contexts, and separate

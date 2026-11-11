@@ -83,7 +83,7 @@ class ProductionTests(unittest.TestCase):
                 )
                 (source / "config/renewal").mkdir()
                 (source / "config/renewal" / f"{remote.acme.HOSTNAME}.conf").write_text(
-                    f"[renewalparams]\nserver = {profiles.profile('production').server}\n"
+                    f"# renew_before_expiry = 30 days\nversion = 4.0.0\narchive_dir = {workspace / 'config/archive'}\n\n[renewalparams]\nserver = {profiles.profile('production').server}\n"
                     f"authenticator = dns-cloudflare\ndns_cloudflare_credentials = {workspace / 'cloudflare.ini'}\n"
                 )
                 encoded = state.snapshot(source, environment="production")
@@ -285,3 +285,91 @@ class NativeCertificateTests(unittest.TestCase):
                                 root, allow_expired=True, ca_file=ca_file
                             )
                             remote.acme.inspect_certificate(root, allow_expired=True)
+
+
+class RenewalConfigRegressionTests(unittest.TestCase):
+    def test_native_configobj_layout_with_lineage_metadata_and_policy_checks(
+        self,
+    ) -> None:
+        # Matches Certbot 4.0.0 storage.write_renewal_config output, including
+        # top-level lineage fields that ConfigParser.read() cannot accept.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            filename = root / "config/renewal" / f"{remote.acme.HOSTNAME}.conf"
+            filename.parent.mkdir(parents=True)
+            for environment in ("staging", "production"):
+                with self.subTest(environment=environment):
+                    content = (
+                        f"# renew_before_expiry = 30 days\nversion = 4.0.0\n"
+                        f"archive_dir = {root / 'config/archive'}\n"
+                        + "".join(
+                            f"{kind} = {root / 'config/live' / remote.acme.HOSTNAME / (kind + '.pem')}\n"
+                            for kind in ("cert", "privkey", "chain", "fullchain")
+                        )
+                        + "\n# Options used in the renewal process\n[renewalparams]\n"
+                        + f"server = {profiles.profile(environment).server}\nauthenticator = dns-cloudflare\n"
+                        + f"dns_cloudflare_credentials = {root / 'cloudflare.ini'}\n"
+                    )
+                    filename.write_text(content)
+                    remote.check_renewal_config(root, environment)
+                    for invalid in (
+                        content.replace(
+                            profiles.profile(environment).server,
+                            "https://wrong.example.org/directory",
+                        ),
+                        content.replace(
+                            "authenticator = dns-cloudflare", "authenticator = manual"
+                        ),
+                        content.replace(
+                            str(root / "cloudflare.ini"), "/wrong/credentials.ini"
+                        ),
+                        content + "post_hook = echo unsafe\n",
+                    ):
+                        filename.write_text(invalid)
+                        with self.assertRaises(ValueError):
+                            remote.check_renewal_config(root, environment)
+
+    def test_post_issuance_failure_reports_safe_stage_and_cleans_ram(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workspace = root / "session"
+            request = json.dumps(
+                {
+                    "email": "test@example.org",
+                    "token": base64.b64encode(b"public-dummy-token").decode(),
+                    "state": None,
+                }
+            ).encode()
+            output, errors = io.BytesIO(), io.StringIO()
+            with (
+                patch.object(remote.sys, "argv", ["remote", "production"]),
+                patch.object(remote, "WORKSPACE", workspace),
+                patch.object(remote.acme, "RAM_ROOT", root),
+                patch.object(remote.acme, "require_coordinator_hardening"),
+                patch.object(remote.acme, "require_noswap_mount"),
+                patch.object(
+                    remote.acme, "inspect_certificate", return_value=(b"cert", b"key")
+                ),
+                patch.object(
+                    remote,
+                    "check_renewal_config",
+                    side_effect=ValueError("private-token-from-parser"),
+                ),
+                patch.object(remote, "snapshot") as snapshot,
+                patch.object(remote, "verify_production") as verify,
+                patch.object(remote.resource, "setrlimit"),
+                patch.object(remote.os, "umask"),
+                patch.object(remote.sys, "stdin", Mock(buffer=io.BytesIO(request))),
+                patch.object(remote.sys, "stdout", Mock(buffer=output)),
+                patch.object(remote.sys, "stderr", errors),
+                patch.object(remote.subprocess, "run"),
+            ):
+                self.assertEqual(remote.main(), 1)
+                snapshot.assert_not_called()
+                verify.assert_not_called()
+            self.assertIn(
+                "failed during checking issued renewal configuration", errors.getvalue()
+            )
+            self.assertNotIn("private-token-from-parser", errors.getvalue())
+            self.assertEqual(output.getvalue(), b"")
+            self.assertFalse(workspace.exists())
