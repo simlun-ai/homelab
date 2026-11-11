@@ -176,9 +176,12 @@ revised coordinator-local tools play passed on 2026-11-11 (`ok=11`, `changed=3`,
 no unreachable hosts or failures). YubiKey-verified import succeeded with local
 files unchanged. Default recovery then fetched the Pi's ciphertext, renewed
 successfully, verified the freshly wrapped update, and published it back on the
-coordinator with reported archival of the previous ciphertext. Coordinator-local
-recreation and recovery afterward remain pending. Production issuance, a
-listener and a renewal timer remain pending.
+coordinator with reported archival of the previous ciphertext. Explicit
+coordinator-local recreation and subsequent recovery/renewal of the replacement
+also passed on 2026-11-11. Both reported verified ciphertext publication with
+previous ciphertext archived on the Pi. **The full coordinator-local staging
+lifecycle is verified.** Production issuance, a listener and a renewal timer
+remain pending.
 
 Install the updated helpers:
 

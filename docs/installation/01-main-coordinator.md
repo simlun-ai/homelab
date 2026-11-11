@@ -19,8 +19,8 @@ acceptance criteria. It is documentation, not a deployed or verified service.
 - [ ] Configure independent DNS/time readiness for the coordinator and Trust under the [bootstrap KMS design](../security/security.md#trust-bootstrap-kms).
 - [x] Stage the locked service on `ups-aux` and verify it reports an empty authorization window (2026-11-09).
 - [x] Verify the [Certbot staging rehearsal](trust-kms-cloudflare.md#run-the-staging-rehearsal) on `ups-aux`: issuance, renewal with the same TLS key, RAM workspace cleanup and the post-run public DNS check passed (2026-11-10).
-- [ ] Validate the [wrapped staging state lifecycle](trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate): coordinator-local import/initialization, default recovery, explicit recreation and archival. Earlier checkout-based lifecycle passed on 2026-11-11. Coordinator-local import and recovery/renewal passed the same day; coordinator-local recreation and recovery afterward remain pending.
-- [ ] Implement production issuance, scheduled renewal and the locked TLS listener. Coordinator-local staging ciphertext import and recovery/renewal are verified; recreation acceptance remains pending.
+- [x] Validate the [wrapped staging state lifecycle](trust-kms-cloudflare.md#wrapped-staging-state-initialize-recover-and-recreate): coordinator-local import/initialization, default recovery, explicit recreation and archival. Coordinator-local import, default recovery/renewal, explicit recreation and recovery/renewal of the replacement passed on 2026-11-11. The helper reported coordinator-local archival on publication.
+- [ ] Implement production issuance, scheduled renewal and the locked TLS listener. The coordinator-local staging state lifecycle is verified; production integration remains pending.
 - [ ] Implement workstation/YubiKey authorization over SSH under the [session policy](../security/coordinator-sessions.md).
 - [ ] Verify startup without Trust/OpenBao, the one-hour KMS window, expiry/lock/restart behaviour, and certificate renewal.
 
@@ -49,8 +49,11 @@ that local files were unchanged. Default recovery then fetched the Pi's
 ciphertext, recovered the staging state and DNS token, renewed successfully,
 wrapped and independently recovered the update, and published it back to the
 coordinator. The helper reported local archival of the previous ciphertext.
-Coordinator-local recreation and recovery of its replacement remain pending;
-production issuance, the renewal timer and the TLS listener remain pending.
+The operator then explicitly recreated staging state and recovered/renewed the
+replacement successfully. Both operations reported verified ciphertext
+publication and archival on the Pi. **The full coordinator-local staging
+lifecycle passed.** Production issuance, the renewal timer and the TLS listener
+remain pending.
 
 ## Stage the locked service
 
