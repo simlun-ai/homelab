@@ -16,7 +16,11 @@ Independent, single-node foundation. All other clusters depend on its services. 
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
 | Certificates | cert-manager with Let's Encrypt and Cloudflare DNS-01; External Secrets Operator PushSecret publishes certificates to OpenBao, and dependent clusters pull them through External Secrets Operator. |
 
-Backup, Pi, and Metal depend on Trust's unsealed OpenBao and KMS adapter for [Talos system-volume unlock](security/security.md#talos-kms-adapter). Trust's own system-volume unlock uses the independent [YubiKey-backed coordinator KMS](security/security.md#trust-bootstrap-kms).
+Backup, Pi, and Metal use separate [Talos KMS adapters](security/security.md#talos-kms-adapter)
+on `ups-aux`, `ups-pi`, and `ups-metal` respectively. All three call the shared
+OpenBao Transit backend in Trust for system-volume unlock. Trust uses its
+independent [YubiKey-backed KMS](security/security.md#trust-bootstrap-kms)
+on `ups-aux`.
 
 Trust's OS and data mirrors are planned. The [inventory](inventory.md#mirror-assignments)
 records the selected SSDs and their ATA device links.
@@ -29,7 +33,7 @@ Single-node cluster on the [Lenovo ThinkCentre M93p Tiny](inventory.md#backup), 
 
 ## Shared infrastructure
 
-Trust and Backup share the [UPS and shutdown coordinator](inventory.md#shared-infrastructure). The coordinator also hosts Trust's planned [bootstrap KMS](security/security.md#trust-bootstrap-kms).
+Trust and Backup share the [UPS and shutdown coordinator](inventory.md#shared-infrastructure). It hosts Trust's [bootstrap KMS](security/security.md#trust-bootstrap-kms) and will host Backup's separate OpenBao-backed adapter.
 
 ## Pi
 

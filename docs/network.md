@@ -116,6 +116,10 @@ configuration also remain pending. See the [draft KMS contract](security/trust-b
 Same-VLAN Trust/coordinator traffic requires host/switch admission consideration;
 inter-VLAN gateway rules alone do not isolate VLAN 10 peers.
 
+Backup, Pi, and Metal will each use a separate KMS endpoint on their UPS
+coordinator. Their names, addresses, and firewall rules are pending. See the
+[adapter design](security/security.md#talos-kms-adapter).
+
 ### Trust KMS listener admission
 
 The implemented TLS authorization slice binds only `10.10.0.5:443`, after explicit
