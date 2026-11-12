@@ -798,7 +798,7 @@ If the firmware card fails, power off and recreate it from the pinned archive; r
 ## Later platform and service milestones
 
 - [ ] Validate Talos installation, boot, MD RAID1, and KMS encryption on the assigned OS disks; implement the pinned tooling and Trust bootstrap configuration.
-- [ ] Document manual encrypted ZFS mirror preparation and deploy the planned platform services and OpenBao, including workstation/YubiKey unseal support.
+- [ ] Document manual encrypted ZFS mirror preparation and deploy the planned platform services and OpenBao, including workstation/YubiKey unseal support. During ZFS setup, configure normal unlock from a local key file on an encrypted Talos system volume and rehearse recovery from the YubiKey-wrapped copy before relying on it. Preserve the ZFS data disks when rebuilding the OS.
 - [ ] Verify cold startup, scheduled Raft snapshot backups, and the required restore paths; record results and update the recovery guide.
 
 References: [Trust architecture](../clusters.md#trust), [hardware and disks](../inventory.md#trust), [repository layout](../layout.md#common-cluster-layout), [OpenBao unseal](../security/openbao-unseal.md), [backup and recovery](../backup-and-restore.md).
