@@ -87,4 +87,4 @@ the management workstation, and `kms-restart` discards in-memory authorization.
 The check requires the pinned `support/hsm kms-rehearsal-tools` dependencies.
 Follow the [complete validation sequence](../../docs/installation/01-main-coordinator.md#authorize-and-verify-the-locked-tls-listener).
 Deployment, workstation TLS checks, restart and reauthorization passed on
-`ups-aux` on 2026-11-11. No KMS node keys or automatic renewal/reload are added by this slice.
+`ups-aux` on 2026-11-11. For Pi key enrollment and authorization, see the [coordinator runbook](../../docs/installation/01-main-coordinator.md#enroll-and-authorize-the-trust-pi-kms-key). Automatic renewal/reload remains pending.

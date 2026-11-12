@@ -22,7 +22,7 @@ Per-device power-return support, settings, and verification remain TBD, includin
 ## Trust
 
 - **Compute:** 1 × Raspberry Pi 4 Model B with 8 GB RAM (nominal inventory capacity). Live discovery reported SMBIOS version `D03115` and serial `1000000089261F6E` on 2026-11-09.
-- **Hardware UUID (observed):** `00d03115-0000-0000-1000-000089261f6e`. Unchanged across the recorded cold boot after disabling the UEFI RAM cap on 2026-11-09. Stability across other firmware changes/reinstall remains unverified; not yet an operational KMS registration.
+- **Hardware UUID (observed):** `00d03115-0000-0000-1000-000089261f6e`. Unchanged across the recorded cold boot after disabling the UEFI RAM cap on 2026-11-09. Stability across other firmware changes/reinstall remains unverified; selected for KMS enrollment; operator enrollment remains pending.
 - **Live memory verification:** `talosctl memory` TOTAL increased from `2848` to `7748` (about 7.6 GiB) after disabling the UEFI 3 GB cap and cold booting on 2026-11-09; AVAILABLE was `7203`. The same UUID and working Ethernet were retained. Nominal inventory RAM remains 8 GB; aggregate RAM totals are unchanged.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
 - **Disks (planned allocation):** Four 128 GB SATA SSD candidates inspected individually on the workstation and detected together on the Pi. See [candidate disk inventory](#candidate-disk-inventory) for the observed identities and signatures. See the [mirror assignments](#mirror-assignments) for the selected pairs.

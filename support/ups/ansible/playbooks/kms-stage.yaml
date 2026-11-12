@@ -107,6 +107,7 @@
         - trust_kms/tls.py
         - trust_kms/daemon.py
         - trust_kms/envelope.py
+        - trust_kms/registration.py
         - trust_kms/session.py
         - trust_kms/worker.py
       notify: Restart Trust KMS staging service

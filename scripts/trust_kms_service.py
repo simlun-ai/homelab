@@ -8,11 +8,12 @@ import socket
 import sys
 import threading
 from pathlib import Path
+from typing import cast
 from uuid import uuid4
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from homelab.trust_kms import control, daemon, envelope, session, tls  # noqa: E402
+from homelab.trust_kms import control, daemon, envelope, registration, session, tls  # noqa: E402
 
 DEFAULT_SOCKET = Path("/run/trust-kms/control.sock")
 VM_NODE = "5c73da99-dfe7-48b3-8687-5d0b46dbe647"
@@ -42,7 +43,13 @@ def serve_locked(
             max_window_seconds=VM_WINDOW_SECONDS,
         )
         if vm_rehearsal
-        else daemon.Authority({})
+        else daemon.Authority(
+            {
+                registration.NODE: session.Policy(
+                    frozenset({registration.KEY_ID}), registration.KEY_ID
+                )
+            }
+        )
     )
     listener = tls.Listener(authority, address=address, ca_file=ca_file)
     with (
@@ -109,14 +116,69 @@ def vm_window(path: Path, *, open_window: bool) -> None:
     print(f"PASS: disposable VM key authorized for up to {VM_WINDOW_SECONDS} seconds.")
 
 
+def node_window(path: Path, action: str) -> None:
+    if os.geteuid() != 0:
+        raise ValueError("KMS control requires root")
+    tls.harden_process()
+    if action == "node-open":
+        tls.require_memory_policy()
+        raw = sys.stdin.buffer.read(1025)
+        if len(raw) > 1024:
+            raise ValueError("Oversized request")
+        data: object = json.loads(raw, object_pairs_hook=envelope.unique)
+        if not isinstance(data, dict) or data.keys() != {
+            "instance",
+            "request_id",
+            "key",
+        }:
+            raise ValueError("Unexpected request")
+        payload = cast(dict[str, object], data)
+        status = tls.local("status", socket_path=path.with_name("tls.sock"))
+        instance = envelope.node_uuid(payload["instance"])
+        if status.get("instance") != instance or status.get("tls_state") != "active":
+            raise ValueError("TLS is not active on the expected instance")
+        key = payload["key"]
+        if not isinstance(key, str):
+            raise ValueError("Invalid key")
+        envelope.decode(key, 32)
+        result = request(
+            path,
+            "open-boot-window",
+            timeout=10,
+            expected_instance=instance,
+            request_id=envelope.node_uuid(payload["request_id"]),
+            grants=[
+                {
+                    "node_uuid": registration.NODE,
+                    "key_id": registration.KEY_ID,
+                    "key": key,
+                }
+            ],
+        )
+        if result.get("state") != "active" or result.get("authorized") != [
+            [registration.NODE, registration.KEY_ID]
+        ]:
+            raise ValueError("Activation was not confirmed")
+    else:
+        result = request(
+            path, "lock-KMS" if action == "node-lock" else "status", timeout=10
+        )
+        if action == "node-lock" and (
+            result.get("state") != "locked" or result.get("authorized") != []
+        ):
+            raise ValueError("Lock was not confirmed")
+    if result.get("error") is not None:
+        raise ValueError("KMS request failed")
+    fields = ("instance", "state", "request_id", "remaining", "authorized")
+    print(json.dumps({field: result[field] for field in fields}))
+
+
 def check_locked(path: Path) -> None:
     status = request(path, "status")
     if (
         status.get("protocol") != control.PROTOCOL
         or status.get("state") != "locked"
         or status.get("authorized") != []
-        or status.get("request_id") is not None
-        or status.get("session_id") is not None
         or status.get("remaining") != 0
     ):
         raise ValueError("KMS did not report a clean locked startup")
@@ -143,7 +205,16 @@ def check_locked(path: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "action", choices=("serve-locked", "status", "vm-open", "vm-lock")
+        "action",
+        choices=(
+            "serve-locked",
+            "status",
+            "vm-open",
+            "vm-lock",
+            "node-open",
+            "node-lock",
+            "node-status",
+        ),
     )
     parser.add_argument("--socket", type=Path, default=DEFAULT_SOCKET)
     parser.add_argument("--vm-rehearsal", action="store_true")
@@ -156,6 +227,8 @@ def main() -> int:
             serve_locked(path, vm_rehearsal=args.vm_rehearsal)
         elif args.action == "status":
             check_locked(path)
+        elif args.action.startswith("node-"):
+            node_window(path, args.action)
         else:
             vm_window(path, open_window=args.action == "vm-open")
     except (OSError, ValueError):

@@ -75,22 +75,21 @@ Sources: [Talos dependency](https://github.com/siderolabs/talos/blob/v1.14.5/go.
 [protocol](https://github.com/siderolabs/kms-client/blob/v0.2.0/api/kms/kms.proto).
 Recheck these sources when the Trust Talos pin changes.
 
-## Proposed node registration and records
+## Node registration and records
 
 Register `trust-cp1` with an independently recorded hardware UUID observed through
 pinned Talos on the actual Pi. Live discovery on 2026-11-09 reported
 `00d03115-0000-0000-1000-000089261f6e`; see the
 [inventory](../inventory.md#trust) and [baseline record](../installation/02-trust.md#read-only-live-baseline-2026-11-09).
-This is an observed candidate, not an operational registration. The UUID remained
+This is the selected registration. Operator enrollment remains pending. The UUID remained
 unchanged across the recorded cold boot after disabling the UEFI RAM cap on
 2026-11-09. Stability across other firmware changes, reinstall and the intended
 disk layout still needs verification before relying on it for recovery. Do not infer a UUID from the
 hostname, IP, MAC or Raspberry Pi serial.
 
-Proposed wrapped key context: `homelab/v1/trust/kms/trust-cp1/r1`, under the
-catalogue's existing `trust/kms/<node-id>/r1` reservation. Final context, filename,
-UUID and generation mapping need review together. Do not add an operational
-manifest entry or generate a production record until that mapping is approved.
+The wrapped key context is `homelab/v1/trust/kms/trust-cp1/r1` and its record
+is `secrets/wrapped/trust-cp1-kms-r1.json`. See the
+[enrollment runbook](../installation/01-main-coordinator.md#enroll-and-authorize-the-trust-pi-kms-key).
 
 Non-secret coordinator configuration maps a canonical UUID to explicitly allowed
 key IDs and one active Seal generation. Parse UUID text to canonical lowercase
@@ -360,8 +359,7 @@ Retrying it cannot open another window.
 The test uses a disposable certificate, public fixture keys, and a controlled
 clock. The operator ran the expanded rehearsal on `simlun-x1` on 2026-11-09.
 All three tests passed. See the [Trust runbook](../installation/02-trust.md#experiment-record-and-acceptance-checks). The [locked staging play](../installation/01-main-coordinator.md#stage-the-locked-service)
-installs a systemd unit that starts with an empty key policy. The staging unit
-allows Unix sockets only. Its runtime socket accepts the service UID and root.
+originally installed a unit with an empty key policy and Unix sockets only. Its runtime socket accepts the service UID and root.
 Locked startup was verified on `ups-aux` on 2026-11-09. SSH/YubiKey delivery, production TLS,
 and paging and dump protections for the coordinator process remain pending.
 The supervisor handles a transient activation payload. The worker lifetime
