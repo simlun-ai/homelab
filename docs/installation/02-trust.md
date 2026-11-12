@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Validate [persistent wrapped node-key enrollment and boot-window authorization](01-main-coordinator.md#enroll-and-authorize-the-trust-pi-kms-key) for `trust-cp1`. The QEMU rehearsal is complete and the normal locked TLS listener is restored on `ups-aux`. Pi-side encrypted `STATE` boot and actual production certificate renewal and expiry remain pending.
+- **Current next step:** Validate [boot-window authorization and key reuse across windows](01-main-coordinator.md#enroll-and-authorize-the-trust-pi-kms-key) for `trust-cp1`. Wrapped enrollment and locked coordinator startup passed. The QEMU rehearsal is complete and the normal locked TLS listener is restored on `ups-aux`. Pi-side encrypted `STATE` boot and actual production certificate renewal and expiry remain pending.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -142,6 +142,17 @@ KMS service with `serve-locked` and no `--vm-rehearsal` flag. Production TLS
 reauthorization reused the existing certificate. Status reported active TLS at
 `10.10.0.5:443` and locked KMS. The workstation again verified system trust,
 the hostname, and locked responses from both Seal and Unseal.
+
+### Persistent node key enrollment (2026-11-12)
+
+The operator ran `kms-enroll` for `trust-cp1`. The Pi UUID check, YubiKey
+wrapping, and independent recovery all passed. The operator pushed the
+ciphertext to the private secrets repository and updated the parent submodule
+pointer. Coordinator staging passed with `ok=18`, `changed=3`, and no failures
+or unreachable hosts. TLS reauthorization reused the existing production
+certificate, and the workstation verified system trust, the hostname, and
+locked responses from Seal and Unseal. Live key reuse across boot windows
+remains to be verified.
 
 ### Milestone tracker
 

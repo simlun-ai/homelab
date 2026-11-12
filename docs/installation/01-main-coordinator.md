@@ -255,8 +255,9 @@ Reauthorize production TLS and rerun `kms-tls-check` if leaving the listener act
 The public registration binds the observed `trust-cp1` UUID
 `00d03115-0000-0000-1000-000089261f6e` to generation
 `homelab/v1/trust/kms/trust-cp1/r1`. The VM override selects its separate
-disposable policy. The Pi and coordinator procedures below need operator
-verification.
+disposable policy. Pi enrollment, independent key recovery, coordinator staging, and the locked
+TLS check passed on 2026-11-12. Authorization and key reuse across windows
+remain to be verified.
 
 With the Pi in maintenance mode at `10.10.0.246`, the private wrapped-record
 submodule initialized, and the YubiKey connected, run from the workstation:
