@@ -304,6 +304,12 @@ class DaemonRehearsal(unittest.TestCase):
                 )
 
                 self.assertEqual(activate()["state"], "active")
+                self.assertEqual(
+                    transport.RESPONSE.FromString(
+                        unseal(request(sealed_data), timeout=5)
+                    ).data,
+                    PUBLIC_PAYLOAD,
+                )
                 current = authority.worker
                 assert current is not None and current.process.pid is not None
                 process = Path(f"/proc/{current.process.pid}")

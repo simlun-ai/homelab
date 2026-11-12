@@ -95,9 +95,8 @@ sudo /usr/bin/python3 -I -B /usr/local/lib/trust-kms/trust_kms_service.py status
 Expect `state: locked`, a daemon instance ID, and `listener: disabled`.
 On 2026-11-09 the operator ran the staging play successfully on `ups-aux`.
 See the [Trust experiment record](02-trust.md#experiment-record-and-acceptance-checks). The
-staged service has an empty key policy and rejects activation. It listens
-only on the local Unix socket at that verified stage. The TLS authorization
-extension above is implemented but not yet validated on the coordinator.
+original staging run verified the locked local socket. The later TLS
+verification is recorded below.
 
 
 ## Authorize and verify the locked TLS listener
@@ -105,8 +104,7 @@ extension above is implemented but not yet validated on the coordinator.
 Verified on `ups-aux` on 2026-11-11, including restart, the expected failed
 network check while TLS was disabled, and successful reauthorization. See the
 [validation record](02-trust.md#locked-production-tls-verification-2026-11-11).
-This slice keeps the
-KMS node policy empty and locked. No node keys or Talos installation are involved.
+The TLS authorization leaves the node-key window locked.
 A service restart starts locked with TLS disabled and requires fresh workstation
 YubiKey authorization before accepting TCP connections.
 
@@ -251,6 +249,57 @@ sudo systemctl restart trust-kms.service
 ```
 
 Reauthorize production TLS and rerun `kms-tls-check` if leaving the listener active.
+
+## Enroll and authorize the Trust Pi KMS key
+
+The public registration binds the observed `trust-cp1` UUID
+`00d03115-0000-0000-1000-000089261f6e` to generation
+`homelab/v1/trust/kms/trust-cp1/r1`. The VM override selects its separate
+disposable policy. The Pi and coordinator procedures below need operator
+verification.
+
+With the Pi in maintenance mode at `10.10.0.246`, the private wrapped-record
+submodule initialized, and the YubiKey connected, run from the workstation:
+
+```sh
+make -C clusters/trust kms-enroll
+```
+
+Enrollment verifies the live UUID, creates the 32-byte key once, and wraps it
+in `secrets/wrapped/trust-cp1-kms-r1.json`. It then independently unwraps and
+compares the recovered key. If the operation is interrupted after publication,
+run `make -C clusters/trust kms-key-verify` to verify the existing record.
+Review and commit the ciphertext in the private submodule and update the
+parent pointer before installing any disk that depends on it. Keep the same
+record for future boots and coordinator replacement.
+
+Stage the updated coordinator service and reauthorize TLS after its restart.
+With the coordinator SSH key loaded, use these workstation commands:
+
+```sh
+make -C clusters/trust kms-window-status
+make -C clusters/trust kms-window-open
+make -C clusters/trust kms-window-status
+sealed_probe=$(make -s --no-print-directory -C clusters/trust kms-probe-seal)
+make -C clusters/trust kms-window-lock
+make -C support/ups kms-tls-check HOST=ups-aux
+make -C clusters/trust kms-window-open
+printf '%s\n' "$sealed_probe" | make -C clusters/trust kms-probe-unseal
+make -C clusters/trust kms-window-lock
+unset sealed_probe
+```
+
+The probe uses the gRPC dependencies from `make -C support/hsm kms-rehearsal-tools`.
+It first checks rejection of an unregistered UUID, then seals a public payload.
+Successful Unseal after reopening confirms that the same node key was recovered.
+The workstation must be on an allowed management network.
+
+Open requires the YubiKey to recover the enrolled record and sends the key over
+host-verified SSH to the root helper. The request binds to the current daemon
+instance and admits only the registered UUID and generation. The worker expires
+after at most one hour. Explicit lock revokes the window and preserves TLS.
+If an acknowledgment is lost, check status before retrying. To open again after
+lock or expiry, recover the same record. The coordinator does not store it.
 
 ## Final follow-up: coordinator memory review
 

@@ -16,7 +16,9 @@ help:
 	  'credentials-rehearse: native 24-hour client issuance on verified tmpfs (RAM_ROOT=/dev/shm)' \
 	  'recovery-rehearse: disposable YubiKey recovery, configuration and 24-hour client reissuance' \
 	  'admin-inspect: recover existing production authority and inspect a fresh client locally' \
-	  'admin-rehearse: test administration inspection with a disposable wrapped authority'
+	  'admin-rehearse: test administration inspection with a disposable wrapped authority' \
+	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \
+	  'kms-window-open / kms-window-status / kms-window-lock: control the trust-cp1 KMS window'
 tools:
 	@$(PYTHON) -I -B "$(SCOPE)/tooling.py" install
 check-tools:
@@ -58,3 +60,20 @@ admin-rehearse: check-tools check-rendered
 	  --talosctl "$(SCOPE)/bin/talosctl" --ram-root "$(RAM_ROOT)" \
 	  --wrap "$(HSM_VENV)/bin/homelab-wrap" \
 	  --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
+
+.PHONY: kms-enroll kms-key-verify kms-window-open kms-window-status kms-window-lock
+kms-enroll: check-tools
+kms-enroll: KMS_ACTION := enroll
+kms-key-verify: KMS_ACTION := verify
+kms-window-open: KMS_ACTION := open
+kms-window-status: KMS_ACTION := status
+kms-window-lock: KMS_ACTION := lock
+kms-enroll kms-key-verify kms-window-open kms-window-status kms-window-lock:
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_kms_node_operator.py" \
+	  $(KMS_ACTION) \
+	  --talosctl "$(SCOPE)/bin/talosctl" --wrap "$(HSM_VENV)/bin/homelab-wrap" \
+	  --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
+
+.PHONY: kms-probe-seal kms-probe-unseal
+kms-probe-seal kms-probe-unseal:
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_kms_tls_check.py" $(patsubst kms-probe-%,%,$@)
