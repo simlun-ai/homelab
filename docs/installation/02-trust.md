@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Confirm the matching ARM64 installer carries the tested early networking arguments into the installed boot path. Offline RAID1/KMS validation and the custom ISO's maintenance-mode network, time sync, and KMS TCP probe passed. Pi-side TLS and encrypted `STATE` unlock remain to be verified on installed boot.
+- **Current next step:** Run the offline install rehearsal with the digest-pinned ARM64 installer and recheck the two live OS disk identities before preparing the install. The installer UKI contains the exact early networking argument tested on the custom ISO. Pi-side TLS and encrypted `STATE` unlock remain to be verified on installed boot.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -198,9 +198,45 @@ First boot test media with the candidate arguments and no install config.
 Check the effective kernel command line, address, route, DNS, fresh time
 sync, and KMS TCP reachability. Confirm the selected ARM64 installer carries
 the same arguments into the installed boot path before relying on it for
-encrypted `STATE`. The RAID draft still points to the generic installer.
+encrypted `STATE`. The RAID draft selects the installer built from the same Image Factory
+schematic as the tested ISO and pins its ARM64 manifest digest.
 The definitive check is an installed boot from the mirror with the USB
 installer removed and the Trust KMS window authorized.
+
+### Verify the installer boot arguments
+
+Talos v1.14.5 unattended installation tells GRUB to use the command line
+embedded in the installer image's UKI. The installer ISO and the installed
+boot image are separate assets. The ARM64 manifest and UKI layer matched
+their registry digests, and the UKI's `.cmdline` section contained the exact
+`ip=` argument from the tested ISO schematic. To repeat the check, this
+example uses Docker and LLVM's `llvm-objcopy` on the workstation. It extracts
+an image file without running the installer.
+
+```bash
+(
+  set -euo pipefail
+  image='factory.talos.dev/metal-installer/c388d7fe0077e7d054f4a4d76fe7bb0a7fba9741b0ad2569be0a410b2c54f940:v1.14.5@sha256:3d7a3a87e00e553b754a53a08a6890a7b19e00b7bdae28de763c357ee35c24dc'
+  schematic=clusters/trust/talos/experiments/trust-cp1-early-network.schematic.yaml
+  expected=$(sed -n 's/^    - \(ip=.*\)$/\1/p' "$schematic")
+  test -n "$expected"
+  work=$(mktemp -d)
+  container=
+  trap 'if test -n "$container"; then docker rm "$container" >/dev/null; fi; rm -rf -- "$work"' EXIT
+
+  docker pull --platform linux/arm64 "$image"
+  container=$(docker create --platform linux/arm64 "$image")
+  docker cp "$container:/usr/install/arm64/vmlinuz.efi" "$work/vmlinuz.efi"
+  llvm-objcopy --dump-section ".cmdline=$work/cmdline" \
+    "$work/vmlinuz.efi" "$work/copied.efi"
+  tr -d '\000' < "$work/cmdline" | tr ' ' '\n' | grep -Fx -- "$expected"
+  echo 'PASS: ARM64 installer UKI contains the tested early networking argument.'
+) && make -C clusters/trust install-config-rehearse
+```
+
+The exact match checks addressing, gateway, interface, DNS and NTP as a single
+argument. A cold boot from the installed mirror is still needed to verify the
+effective arguments and KMS-backed `STATE` unlock on the Pi.
 
 ### Pi early boot rehearsal (2026-11-14 UTC)
 
