@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Validate the full install configuration with the existing wrapped Trust bootstrap identity. The operator's offline rehearsal with the pinned ARM64 installer passed. Pi-side TLS and encrypted `STATE` unlock remain to be verified on installed boot.
+- **Current next step:** Prepare the explicit in-memory install apply command for `trust-cp1`. The full configuration passed strict validation with the enrolled Talos bootstrap identity. Installed boot from the OS mirror and encrypted `STATE` unlock remain to be verified.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -266,6 +266,17 @@ effective arguments and KMS-backed `STATE` unlock on the Pi.
   `kms.k8s-aux.simlun.se:443` with `success: true` and an empty
   `lastError`. Installed-media argument persistence, TLS verification
   and encrypted volume unlock were outside this rehearsal.
+
+### Production Talos identity and install validation
+
+The operator's offline rehearsal passed with the digest-pinned ARM64 installer.
+The first production validation stopped before config generation because the
+expected Talos bootstrap record was unavailable locally. The operator
+initialized the production identity, then successfully recovered it and ran
+`install-config-validate` against the full RAID1 and KMS configuration.
+The operator committed and pushed the wrapped record in the private submodule
+and pushed the updated parent pointer. Installation and Pi cold boot are the
+next hardware checks.
 
 ### Milestone tracker
 
