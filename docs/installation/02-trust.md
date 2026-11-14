@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Prepare and validate the Pi installation configuration: confirm the OS mirror selectors, KMS-backed `STATE` and `EPHEMERAL`, and pre-`STATE` networking. Wrapped enrollment, locked coordinator startup, and key reuse across boot windows passed. The QEMU rehearsal is complete and the normal locked TLS listener is restored on `ups-aux`. Pi-side encrypted `STATE` boot and actual production certificate renewal and expiry remain pending.
+- **Current next step:** Confirm the matching ARM64 installer carries the tested early networking arguments into the installed boot path. Offline RAID1/KMS validation and the custom ISO's maintenance-mode network, time sync, and KMS TCP probe passed. Pi-side TLS and encrypted `STATE` unlock remain to be verified on installed boot.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -201,6 +201,26 @@ the same arguments into the installed boot path before relying on it for
 encrypted `STATE`. The RAID draft still points to the generic installer.
 The definitive check is an installed boot from the mirror with the USB
 installer removed and the Trust KMS window authorized.
+
+### Pi early boot rehearsal (2026-11-14 UTC)
+
+- The operator's `install-config-rehearse` verified the pinned clients,
+  checked render freshness, and passed strict metal validation of the full
+  disposable RAID1 and KMS configuration.
+- `ups-aux` reported a synchronized clock via systemd-timesyncd, using
+  `2.debian.pool.ntp.org` at the time of the check. The Pi separately tested
+  the candidate Cloudflare NTP address `162.159.200.1`.
+- Image Factory schematic
+  `c388d7fe0077e7d054f4a4d76fe7bb0a7fba9741b0ad2569be0a410b2c54f940`
+  produced the custom Talos v1.14.5 ARM64 rehearsal ISO. The USB write matched
+  the downloaded ISO byte for byte over the image length.
+- Before applying an install config, the Pi reported the intended `ip=`
+  argument, `10.10.0.10/24` on `enabcm6e4ei0`, a boot default route and a
+  resolver at `10.10.0.1`, and `synced: true`.
+- A temporary five-minute TCP probe from that boot reached
+  `kms.k8s-aux.simlun.se:443` with `success: true` and an empty
+  `lastError`. Installed-media argument persistence, TLS verification
+  and encrypted volume unlock were outside this rehearsal.
 
 ### Milestone tracker
 
