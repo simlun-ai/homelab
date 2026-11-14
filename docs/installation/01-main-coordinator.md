@@ -256,8 +256,8 @@ The public registration binds the observed `trust-cp1` UUID
 `00d03115-0000-0000-1000-000089261f6e` to generation
 `homelab/v1/trust/kms/trust-cp1/r1`. The VM override selects its separate
 disposable policy. Pi enrollment, independent key recovery, coordinator staging, and the locked
-TLS check passed on 2026-11-12. Authorization and key reuse across windows
-remain to be verified.
+TLS check passed on 2026-11-12. Authorization, explicit lock, and key reuse across two windows passed on
+2026-11-14. See the [Trust validation record](02-trust.md#persistent-node-key-enrollment-2026-11-12).
 
 With the Pi in maintenance mode at `10.10.0.246`, the private wrapped-record
 submodule initialized, and the YubiKey connected, run from the workstation:
