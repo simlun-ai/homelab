@@ -558,7 +558,7 @@ Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include clu
 
 Install the independent Trust cluster after the [main coordinator](01-main-coordinator.md) is ready. Firmware-card preparation can be tried separately while the coordinator/KMS work is pending.
 
-Use `10.10.0.10/24` with gateway `10.10.0.1` on `k8s-aux` (VLAN 10) for the installed `trust-cp1` node (`trust-cp1.k8s-aux.lundmark.internal`). Plan for this address to be available before Talos loads encrypted `STATE`, so the node can reach the coordinator's KMS on `10.10.0.5`. The KMS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; workstation verification passed, and the Pi's maintenance-mode TCP probe passed, and native TLS and actual pre-`STATE` boot remain to be verified. See the [network overview](../network.md) for the Trust load balancer pool and proposed Kubernetes CIDRs.
+Use `10.10.0.10/24` with gateway `10.10.0.1` on `k8s-aux` (VLAN 10) for the installed `trust-cp1` node (`trust-cp1.k8s-aux.lundmark.internal`). Plan for this address to be available before Talos loads encrypted `STATE`, so the node can reach the coordinator's KMS on `10.10.0.5`. The KMS endpoint is selected as `https://kms.k8s-aux.simlun.se`; workstation verification passed, and the Pi's maintenance-mode TCP probe passed, and native TLS and actual pre-`STATE` boot remain to be verified. See the [network overview](../network.md) for the Trust load balancer pool and proposed Kubernetes CIDRs.
 
 ## First installation experiment: Pi 4 UEFI
 

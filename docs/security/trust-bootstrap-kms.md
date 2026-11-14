@@ -21,7 +21,7 @@ core below; transport framing and worker mechanics remain proposals.
    lasts one hour, independent of SSH disconnection and request traffic. Lock,
    expiry or restart removes authority; opening a replacement window requires
    explicit lock and fresh touch. Discard results completing after lock/expiry.
-2. Use `https://kms.k8s-aux.simlun.se:443`, gRPC over TLS on TCP 443, with internal
+2. Use `https://kms.k8s-aux.simlun.se`, gRPC over TLS on TCP 443, with internal
    DNS mapping to `10.10.0.5` and a public certificate issued using Cloudflare
    DNS-01. Selection does not establish DNS, certificate or listener deployment.
 3. Implement software-only envelope/session tests first, using disposable public

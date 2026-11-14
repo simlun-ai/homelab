@@ -6,4 +6,4 @@ encryption:
   keys:
     - slot: 0
       kms:
-        endpoint: https://kms.k8s-aux.simlun.se:443
+        endpoint: https://kms.k8s-aux.simlun.se
