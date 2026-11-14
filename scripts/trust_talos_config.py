@@ -18,6 +18,8 @@ import trust_talos_secrets as secrets
 SCOPE = Path(__file__).resolve().parents[1] / "clusters/trust"
 CLUSTER = "trust-rehearsal"
 ENDPOINT = "https://trust-rehearsal.invalid:6443"
+INSTALL_ENDPOINT = "https://trust-api.k8s-aux.lundmark.internal:6443"
+RAID_PATCH = SCOPE / "talos/experiments/trust-cp1-raid1.yaml"
 INSTALL_DISK = "/dev/REHEARSAL-DO-NOT-INSTALL"
 # Linux UAPI values; some Python builds omit the symbolic fcntl constants.
 F_ADD_SEALS = getattr(fcntl, "F_ADD_SEALS", 1033)
@@ -46,23 +48,27 @@ def memory_file(content: bytes) -> Generator[int]:
         os.close(fd)
 
 
-def generate(talosctl: str, bundle: bytes, output_type: str) -> bytes:
+def generate(
+    talosctl: str, bundle: bytes, output_type: str, *, install: bool = False
+) -> bytes:
+    patches = ["--config-patch", "@" + str(SCOPE / "talos/rendered/trust-cp1.yaml")]
+    if install:
+        patches.extend(["--config-patch", "@" + str(RAID_PATCH)])
     with memory_file(bundle) as fd:
         return secrets.capture_bundle(
             [
                 talosctl,
                 "gen",
                 "config",
-                CLUSTER,
-                ENDPOINT,
+                "trust" if install else CLUSTER,
+                INSTALL_ENDPOINT if install else ENDPOINT,
                 "--talos-version",
                 secrets.cluster_version("talos"),
                 "--kubernetes-version",
                 secrets.cluster_version("kubernetes"),
                 "--with-secrets",
                 f"/proc/self/fd/{fd}",
-                "--config-patch",
-                "@" + str(SCOPE / "talos/rendered/trust-cp1.yaml"),
+                *patches,
                 "--install-disk",
                 INSTALL_DISK,
                 "--with-docs=false",
@@ -165,16 +171,42 @@ def rehearse(talosctl: str) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--talosctl", type=Path, required=True)
+    parser.add_argument("--validate-install", action="store_true")
+    parser.add_argument("--unwrap", type=Path)
     args = parser.parse_args()
+    if args.validate_install != (args.unwrap is not None):
+        parser.error("--validate-install and --unwrap must be supplied together")
     try:
         secrets.harden()
-        rehearse(secrets.executable(args.talosctl, "talosctl"))
+        talosctl = secrets.executable(args.talosctl, "talosctl")
+        if args.unwrap is None:
+            rehearse(talosctl)
+        else:
+            unwrap = secrets.executable(args.unwrap, "homelab-unwrap")
+            secrets.require_private_repository()
+            print(
+                "Touch the YubiKey to recover the existing Trust bootstrap identity.",
+                flush=True,
+            )
+            bundle = secrets.recover_bundle(
+                unwrap, record=secrets.RECORD, key_id=secrets.KEY_ID
+            )
+            print(
+                "Validating the full Trust install configuration in memory.", flush=True
+            )
+            validate_machine(
+                talosctl, generate(talosctl, bundle, "controlplane", install=True)
+            )
+            print(
+                "PASS: full Trust install configuration passed strict metal validation."
+            )
+
     except secrets.PreflightError as exc:
         print(f"Configuration preflight failed: {exc}", file=sys.stderr)
         return 1
     except (Exception, KeyboardInterrupt):
         print(
-            "Configuration rehearsal failed; details suppressed. See the last stage above.",
+            "Configuration operation failed; details suppressed. See the last stage above.",
             file=sys.stderr,
         )
         return 1

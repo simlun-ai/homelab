@@ -11,6 +11,7 @@ help:
 	  'render: regenerate committed public Talos YAML' \
 	  'check-rendered: verify committed YAML is current' \
 	  'validate: verify public bundle with pinned Talos tooling (run tools first)' \
+	  'install-config-validate: recover the existing Trust identity and validate the full install config' \
 	  'install-config-rehearse: validate a disposable full config with RAID1 and KMS patches' \
 	  'secrets-rehearse: disposable in-memory Talos/YubiKey round trip and failure checks' \
 	  'config-rehearse: offline disposable full config and Talos admin credential generation' \
@@ -87,3 +88,8 @@ install-config-rehearse: check-tools check-rendered
 	  --config-patch "@$$2/talos/experiments/trust-cp1-raid1.yaml" \
 	  --with-docs=false --with-examples=false --output-types controlplane --output - | \
 	  "$$1" validate --mode metal --strict --config /dev/stdin' bash "$(SCOPE)/bin/talosctl" "$(SCOPE)"
+
+.PHONY: install-config-validate
+install-config-validate: check-tools check-rendered
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_talos_config.py" \
+	  --talosctl "$(SCOPE)/bin/talosctl" --validate-install --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
