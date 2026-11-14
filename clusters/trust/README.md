@@ -335,3 +335,12 @@ memory baseline and synchronized time; see the
 The full-memory cold boot increased TOTAL from `2848` to `7748`, with unchanged
 UUID/link/MAC and synchronized time. Disk/adapter, DNS and actual pre-STATE/KMS
 readiness checks remain pending.
+
+### Validate the install configuration with the enrolled Talos identity
+
+Run `make -C clusters/trust install-config-validate` with the private
+wrapped-record submodule initialized and the YubiKey connected. This assembles
+the full control-plane configuration for the Trust API endpoint using the
+public render and the pinned RAID1 installer draft. The command reports
+strict offline validation and keeps the recovered identity and generated
+configuration in memory. See the [installation preflight](../../docs/installation/02-trust.md#pi-installation-preflight).

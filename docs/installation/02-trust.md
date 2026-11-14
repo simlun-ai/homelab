@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Run the offline install rehearsal with the digest-pinned ARM64 installer and recheck the two live OS disk identities before preparing the install. The installer UKI contains the exact early networking argument tested on the custom ISO. Pi-side TLS and encrypted `STATE` unlock remain to be verified on installed boot.
+- **Current next step:** Validate the full install configuration with the existing wrapped Trust bootstrap identity. The operator's offline rehearsal with the pinned ARM64 installer passed. Pi-side TLS and encrypted `STATE` unlock remain to be verified on installed boot.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -167,10 +167,7 @@ live expiry and Pi boot with encrypted `STATE` remain to be verified.
 The public render contains KMS-backed LUKS2 for `STATE` and `EPHEMERAL`.
 The separate [RAID1 draft](../../clusters/trust/talos/experiments/trust-cp1-raid1.yaml)
 selects the Intenso and Silicon Power SSDs by their exact ATA links and
-targets the resulting `md-name-talos:boot` device. Compare the live disk
-listing with the [mirror assignments](../inventory.md#mirror-assignments).
-Disconnect the Fanxiang and Patriot ZFS drives before applying an install
-configuration. Keep the UEFI card and installer media distinct from the two
+targets the resulting `md-name-talos:boot` device. The [mirror assignments](../inventory.md#mirror-assignments) record the Fanxiang and Patriot ZFS drives separately; neither ATA link matches the RAID selector. Repeat live discovery if disk assignments or hardware change. Keep the UEFI card and installer media distinct from the two
 OS SSDs.
 
 Run the offline preflight from the homelab root:
@@ -184,6 +181,18 @@ The rehearsal generates disposable credentials in a pipe and validates the full
 config with both patch sets. It uses a sentinel legacy install disk and sends
 nothing to the Pi. The RAID draft includes an unattended installer, so keep
 the assembled config offline until explicitly ready to install.
+
+After the disposable rehearsal passes, validate the configuration using the
+existing wrapped Trust bootstrap identity:
+
+```sh
+make -C clusters/trust install-config-validate
+```
+
+Touch the YubiKey to recover the existing record. The helper uses the real Trust
+API endpoint, public render, and pinned RAID1 installer draft. It keeps
+plaintext in memory and reports only validation status. Leave the KMS key
+window closed for this operation.
 
 For pre-`STATE` networking, Talos v1.14.5 accepts a kernel
 [`ip=` argument](https://github.com/siderolabs/talos/blob/v1.14.5/website/content/v1.14/reference/kernel.md)
