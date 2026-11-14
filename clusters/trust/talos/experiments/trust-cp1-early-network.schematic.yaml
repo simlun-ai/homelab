@@ -1,0 +1,4 @@
+# Candidate public boot arguments for the Pi's Image Factory installer.
+customization:
+  extraKernelArgs:
+    - ip=10.10.0.10::10.10.0.1:255.255.255.0::enabcm6e4ei0:off:10.10.0.1::162.159.200.1

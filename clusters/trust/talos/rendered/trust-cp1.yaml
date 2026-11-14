@@ -24,3 +24,23 @@ apiVersion: v1alpha1
 kind: ResolverConfig
 nameservers:
   - address: 10.10.0.1
+---
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+encryption:
+  provider: luks2
+  keys:
+    - slot: 0
+      kms:
+        endpoint: https://kms.k8s-aux.simlun.se
+---
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: STATE
+encryption:
+  provider: luks2
+  keys:
+    - slot: 0
+      kms:
+        endpoint: https://kms.k8s-aux.simlun.se

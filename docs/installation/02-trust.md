@@ -162,6 +162,46 @@ original payload. The final lock reported `state: locked`, `remaining: 0`,
 and an empty authorization list. This exercised explicit lock and key reuse;
 live expiry and Pi boot with encrypted `STATE` remain to be verified.
 
+### Pi installation preflight
+
+The public render contains KMS-backed LUKS2 for `STATE` and `EPHEMERAL`.
+The separate [RAID1 draft](../../clusters/trust/talos/experiments/trust-cp1-raid1.yaml)
+selects the Intenso and Silicon Power SSDs by their exact ATA links and
+targets the resulting `md-name-talos:boot` device. Compare the live disk
+listing with the [mirror assignments](../inventory.md#mirror-assignments).
+Disconnect the Fanxiang and Patriot ZFS drives before applying an install
+configuration. Keep the UEFI card and installer media distinct from the two
+OS SSDs.
+
+Run the offline preflight from the homelab root:
+
+```sh
+make -C clusters/trust validate
+make -C clusters/trust install-config-rehearse
+```
+
+The rehearsal generates disposable credentials in a pipe and validates the full
+config with both patch sets. It uses a sentinel legacy install disk and sends
+nothing to the Pi. The RAID draft includes an unattended installer, so keep
+the assembled config offline until explicitly ready to install.
+
+For pre-`STATE` networking, Talos v1.14.5 accepts a kernel
+[`ip=` argument](https://github.com/siderolabs/talos/blob/v1.14.5/website/content/v1.14/reference/kernel.md)
+with IP, gateway, interface, resolver and NTP address. The public
+[candidate schematic](../../clusters/trust/talos/experiments/trust-cp1-early-network.schematic.yaml)
+uses the observed `enabcm6e4ei0` interface, `10.10.0.10/24`,
+`10.10.0.1` for the route and resolver, and Cloudflare NTP at
+`162.159.200.1`. The NTP choice is provisional. Confirm the coordinator's time
+source and verify NTP reachability from the Pi before selecting it.
+
+First boot test media with the candidate arguments and no install config.
+Check the effective kernel command line, address, route, DNS, fresh time
+sync, and KMS TCP reachability. Confirm the selected ARM64 installer carries
+the same arguments into the installed boot path before relying on it for
+encrypted `STATE`. The RAID draft still points to the generic installer.
+The definitive check is an installed boot from the mirror with the USB
+installer removed and the Trust KMS window authorized.
+
 ### Milestone tracker
 
 | # | Stage | Exit criteria | Status |
@@ -518,7 +558,7 @@ Review fixes (2026-11-07): enforce Trust render checks in `make ci`, include clu
 
 Install the independent Trust cluster after the [main coordinator](01-main-coordinator.md) is ready. Firmware-card preparation can be tried separately while the coordinator/KMS work is pending.
 
-Use `10.10.0.10/24` with gateway `10.10.0.1` on `k8s-aux` (VLAN 10) for the installed `trust-cp1` node (`trust-cp1.k8s-aux.lundmark.internal`). Plan for this address to be available before Talos loads encrypted `STATE`, so the node can reach the coordinator's KMS on `10.10.0.5`. The KMS endpoint is selected as `https://kms.k8s-aux.simlun.se:443`; workstation verification passed, and the Pi's maintenance-mode TCP probe passed, and native TLS and actual pre-`STATE` boot remain to be verified. See the [network overview](../network.md) for the Trust load balancer pool and proposed Kubernetes CIDRs.
+Use `10.10.0.10/24` with gateway `10.10.0.1` on `k8s-aux` (VLAN 10) for the installed `trust-cp1` node (`trust-cp1.k8s-aux.lundmark.internal`). Plan for this address to be available before Talos loads encrypted `STATE`, so the node can reach the coordinator's KMS on `10.10.0.5`. The KMS endpoint is selected as `https://kms.k8s-aux.simlun.se`; workstation verification passed, and the Pi's maintenance-mode TCP probe passed, and native TLS and actual pre-`STATE` boot remain to be verified. See the [network overview](../network.md) for the Trust load balancer pool and proposed Kubernetes CIDRs.
 
 ## First installation experiment: Pi 4 UEFI
 
