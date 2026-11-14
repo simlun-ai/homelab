@@ -11,6 +11,7 @@ help:
 	  'render: regenerate committed public Talos YAML' \
 	  'check-rendered: verify committed YAML is current' \
 	  'validate: verify public bundle with pinned Talos tooling (run tools first)' \
+	  'install-config-rehearse: validate a disposable full config with RAID1 and KMS patches' \
 	  'secrets-rehearse: disposable in-memory Talos/YubiKey round trip and failure checks' \
 	  'config-rehearse: offline disposable full config and Talos admin credential generation' \
 	  'credentials-rehearse: native 24-hour client issuance on verified tmpfs (RAM_ROOT=/dev/shm)' \
@@ -77,3 +78,12 @@ kms-enroll kms-key-verify kms-window-open kms-window-status kms-window-lock:
 .PHONY: kms-probe-seal kms-probe-unseal
 kms-probe-seal kms-probe-unseal:
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_kms_tls_check.py" $(patsubst kms-probe-%,%,$@)
+
+.PHONY: install-config-rehearse
+install-config-rehearse: check-tools check-rendered
+	@bash -o pipefail -c '"$$1" gen config trust-install-rehearsal https://trust-install-rehearsal.invalid:6443 \
+	  --install-disk /dev/REHEARSAL-DO-NOT-INSTALL \
+	  --config-patch "@$$2/talos/rendered/trust-cp1.yaml" \
+	  --config-patch "@$$2/talos/experiments/trust-cp1-raid1.yaml" \
+	  --with-docs=false --with-examples=false --output-types controlplane --output - | \
+	  "$$1" validate --mode metal --strict --config /dev/stdin' bash "$(SCOPE)/bin/talosctl" "$(SCOPE)"
