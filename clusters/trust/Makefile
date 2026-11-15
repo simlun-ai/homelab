@@ -11,6 +11,7 @@ help:
 	  'render: regenerate committed public Talos YAML' \
 	  'check-rendered: verify committed YAML is current' \
 	  'validate: verify public bundle with pinned Talos tooling (run tools first)' \
+	  'install-config-apply: install Talos on the assigned trust-cp1 OS mirror' \
 	  'install-config-validate: recover the existing Trust identity and validate the full install config' \
 	  'install-config-rehearse: validate a disposable full config with RAID1 and KMS patches' \
 	  'secrets-rehearse: disposable in-memory Talos/YubiKey round trip and failure checks' \
@@ -93,3 +94,8 @@ install-config-rehearse: check-tools check-rendered
 install-config-validate: check-tools check-rendered
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_talos_config.py" \
 	  --talosctl "$(SCOPE)/bin/talosctl" --validate-install --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
+
+.PHONY: install-config-apply
+install-config-apply: check-tools check-rendered
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_talos_config.py" \
+	  --talosctl "$(SCOPE)/bin/talosctl" --apply-install --unwrap "$(HSM_VENV)/bin/homelab-unwrap"

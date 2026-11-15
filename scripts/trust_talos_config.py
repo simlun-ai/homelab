@@ -1,4 +1,4 @@
-"""Offline disposable Talos generation; no node operations or persistent files."""
+"""Assemble Trust Talos configurations in memory and optionally install trust-cp1."""
 
 import argparse
 import fcntl
@@ -11,14 +11,18 @@ from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+import yaml
+
 # Explicit local module path, including when launched with Python -I.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import trust_talos_secrets as secrets
+from homelab.trust_kms import registration
 
 SCOPE = Path(__file__).resolve().parents[1] / "clusters/trust"
 CLUSTER = "trust-rehearsal"
 ENDPOINT = "https://trust-rehearsal.invalid:6443"
 INSTALL_ENDPOINT = "https://trust-api.k8s-aux.lundmark.internal:6443"
+INSTALL_NODE = "10.10.0.10"
 RAID_PATCH = SCOPE / "talos/experiments/trust-cp1-raid1.yaml"
 INSTALL_DISK = "/dev/REHEARSAL-DO-NOT-INSTALL"
 # Linux UAPI values; some Python builds omit the symbolic fcntl constants.
@@ -103,6 +107,46 @@ def validate_machine(talosctl: str, config: bytes) -> None:
         )
 
 
+def check_install_node(talosctl: str) -> None:
+    report = secrets.capture_bundle(
+        [
+            talosctl,
+            "get",
+            "systeminformation",
+            "--insecure",
+            "--nodes",
+            INSTALL_NODE,
+            "-o",
+            "yaml",
+        ],
+        timeout=20,
+    )
+    if yaml.safe_load(report)["spec"]["uuid"].lower() != registration.NODE:
+        raise secrets.PreflightError(
+            "Maintenance node does not match the registered trust-cp1 UUID"
+        )
+
+
+def apply_install(talosctl: str, config: bytes) -> None:
+    with memory_file(config) as fd:
+        subprocess.run(
+            [
+                talosctl,
+                "apply-config",
+                "--insecure",
+                "--nodes",
+                INSTALL_NODE,
+                "--file",
+                f"/proc/self/fd/{fd}",
+            ],
+            pass_fds=(fd,),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=True,
+            timeout=60,
+        )
+
+
 def validate_client(
     talosctl: str, config: bytes, expected_context: str = CLUSTER
 ) -> dict[str, object]:
@@ -171,11 +215,13 @@ def rehearse(talosctl: str) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--talosctl", type=Path, required=True)
-    parser.add_argument("--validate-install", action="store_true")
+    actions = parser.add_mutually_exclusive_group()
+    actions.add_argument("--validate-install", action="store_true")
+    actions.add_argument("--apply-install", action="store_true")
     parser.add_argument("--unwrap", type=Path)
     args = parser.parse_args()
-    if args.validate_install != (args.unwrap is not None):
-        parser.error("--validate-install and --unwrap must be supplied together")
+    if (args.validate_install or args.apply_install) != (args.unwrap is not None):
+        parser.error("--unwrap is required with either install action")
     try:
         secrets.harden()
         talosctl = secrets.executable(args.talosctl, "talosctl")
@@ -184,6 +230,12 @@ def main() -> int:
         else:
             unwrap = secrets.executable(args.unwrap, "homelab-unwrap")
             secrets.require_private_repository()
+            if args.apply_install:
+                print(
+                    f"Checking trust-cp1 in maintenance mode at {INSTALL_NODE}.",
+                    flush=True,
+                )
+                check_install_node(talosctl)
             print(
                 "Touch the YubiKey to recover the existing Trust bootstrap identity.",
                 flush=True,
@@ -194,12 +246,27 @@ def main() -> int:
             print(
                 "Validating the full Trust install configuration in memory.", flush=True
             )
-            validate_machine(
-                talosctl, generate(talosctl, bundle, "controlplane", install=True)
-            )
+            machine = generate(talosctl, bundle, "controlplane", install=True)
+            validate_machine(talosctl, machine)
             print(
                 "PASS: full Trust install configuration passed strict metal validation."
             )
+            if args.apply_install:
+                print(
+                    "Sending the install config to trust-cp1; watch the Pi console.",
+                    flush=True,
+                )
+                try:
+                    apply_install(talosctl, machine)
+                except (OSError, subprocess.SubprocessError, KeyboardInterrupt):
+                    print(
+                        "Install apply was not acknowledged. Check the Pi console before retrying.",
+                        file=sys.stderr,
+                    )
+                    return 1
+                print(
+                    "PASS: Talos accepted the install configuration. Check the console for installation progress."
+                )
 
     except secrets.PreflightError as exc:
         print(f"Configuration preflight failed: {exc}", file=sys.stderr)
