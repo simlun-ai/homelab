@@ -344,3 +344,8 @@ the full control-plane configuration for the Trust API endpoint using the
 public render and the pinned RAID1 installer draft. The command reports
 strict offline validation and keeps the recovered identity and generated
 configuration in memory. See the [installation preflight](../../docs/installation/02-trust.md#pi-installation-preflight).
+
+Use `install-config-apply` only when ready to install the assigned OS mirror.
+It checks the maintenance UUID and sends the validated config in memory to
+`10.10.0.10`. Open the Trust KMS window immediately before applying. See the
+[install procedure](../../docs/installation/02-trust.md#apply-the-initial-trust-install-configuration).

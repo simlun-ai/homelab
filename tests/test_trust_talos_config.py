@@ -78,6 +78,41 @@ class TalosConfigTests(unittest.TestCase):
         with self.assertRaises(OSError):
             os.fstat(fd)
 
+    def test_install_apply_uses_only_the_fixed_node_and_inherited_config(self) -> None:
+        def check_call(
+            argv: list[str], *, pass_fds: tuple[int, ...], **_: object
+        ) -> None:
+            (fd,) = pass_fds
+            self.assertEqual(
+                argv,
+                [
+                    "/abs/talosctl",
+                    "apply-config",
+                    "--insecure",
+                    "--nodes",
+                    "10.10.0.10",
+                    "--file",
+                    f"/proc/self/fd/{fd}",
+                ],
+            )
+            self.assertEqual(os.read(fd, 100), b"disposable config")
+
+        with patch.object(module.subprocess, "run", side_effect=check_call) as run:
+            module.apply_install("/abs/talosctl", b"disposable config")
+        run.assert_called_once()
+        (fd,) = run.call_args.kwargs["pass_fds"]
+        with self.assertRaises(OSError):
+            os.fstat(fd)
+
+    def test_install_preflight_rejects_a_different_node(self) -> None:
+        with patch.object(
+            module.secrets,
+            "capture_bundle",
+            return_value=b"spec: {uuid: 11111111-1111-4111-8111-111111111111}",
+        ):
+            with self.assertRaises(module.secrets.PreflightError):
+                module.check_install_node("/abs/talosctl")
+
     def test_client_metadata_requires_admin_context_and_unexpired_certificate(
         self,
     ) -> None:
