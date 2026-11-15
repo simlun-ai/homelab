@@ -11,8 +11,8 @@
 - **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its KMS service is deployed, with production TLS and locked RPCs verified from the workstation. Live-node authorization remains pending.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
-- **Planned, not verified:** Talos installation, MD RAID1 for the OS disks, KMS-backed `STATE`/`EPHEMERAL` encryption, and Kubernetes bootstrap.
-- **Current next step:** Run the explicit in-memory install apply on `trust-cp1` during a fresh KMS window. The full configuration passed strict validation with the enrolled Talos bootstrap identity. Installed boot from the OS mirror and encrypted `STATE` unlock remain to be verified.
+- **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap remains pending.
+- **Current next step:** Bootstrap Kubernetes on the running `trust-cp1` node, then verify API access, node readiness, system pods, DNS, and Flannel networking.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -306,6 +306,25 @@ Verify that Talos boots at the planned address and opens both encrypted system
 volumes. Close the KMS window after verification. Kubernetes bootstrap is the
 following milestone.
 
+### Installed Pi cold boot and encrypted unlock (2026-11-15)
+
+Talos accepted the install configuration and announced a reboot. The console
+stopped at `psci: CPU3: killed (polled 0 ms)`. The operator power-cycled the
+Pi with the USB installer removed and the UEFI microSD card in place. The
+installed system answered at `10.10.0.10` and accepted the authenticated
+Talos admin client.
+
+The installed kernel command line contained the expected early network
+argument. Linux assembled `/dev/md127` with two of two RAID1 members.
+`STATE` on `/dev/md127p3` initially reported missing encryption config and
+then DNS failures through `127.0.0.53`. The retries recovered. Talos opened
+`STATE` and `EPHEMERAL` on `/dev/md127p4` through the KMS handler in slot
+0, and both volumes reached `ready`.
+
+The operator then explicitly locked KMS. Status showed `state: locked`,
+`remaining: 0`, and `authorized: []`. Degraded mirror boot, member replacement,
+and Kubernetes bootstrap remain to be verified.
+
 ### Milestone tracker
 
 | # | Stage | Exit criteria | Status |
@@ -316,7 +335,7 @@ following milestone.
 | 3 | `ups-aux` KMS implementation | Service and Ansible configuration deployed; authorized `Seal`/`Unseal`, expiry, restart and fail-closed checks verified independently of Kubernetes/OpenBao | Locked TLS and restart verified; authorized RPCs and expiry pending |
 | 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | In progress — UEFI/Talos maintenance boot, full memory and UUID/link continuity across the RAM-cap cold boot verified; all four candidate SSDs detected on the Pi with matching ATA links and capacities across a cold boot |
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
-| 6 | Install encrypted Talos | Deliberately install onto assigned OS disks only; cold boot with the independent KMS authorized; encrypted volume coverage verified | Pending |
+| 6 | Install encrypted Talos | Deliberately install onto assigned OS disks only; cold boot with the independent KMS authorized; encrypted volume coverage verified | Passed 2026-11-15 |
 | 7 | Bootstrap Kubernetes | Bootstrap the single control-plane node; verify API, node readiness, system pods, DNS and Flannel networking | Pending |
 | 8 | Recovery and repeatability | Verify KMS locked/unlocked cold boots, expiry and failure modes, OS mirror degraded boot/recovery, and documented reproducible rebuild | Pending |
 
@@ -866,7 +885,7 @@ effect. Pi-side TLS, KMS authentication and encrypted STATE unlock remain pendin
 - [ ] Firmware card does not confuse Talos EFI/system-disk discovery.
 - [x] Operator validated the standalone RAID1 draft offline with the pinned client in strict metal mode (2026-11-09).
 - [ ] Installation onto MD RAID1 with metadata `1.0` completes without META deletion or copying firmware.
-- [ ] Installed Talos cold boots with installation media removed.
+- [x] Installed Talos cold boots with installation media removed (2026-11-15).
 - [ ] Cold boot succeeds with either OS disk disconnected, tested separately after restoring mirror health between tests.
 - [ ] Rehearse replacing one OS SSD. Boot from the surviving member, verify the replacement's ATA link and size, update only the RAID member selector, then verify a two-member array, completed resync and boot from the replacement. Talos reconciliation adds matches. Removing the old link alone does not remove a member.
 - [ ] Talos upgrade and subsequent cold boot work.
