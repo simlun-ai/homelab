@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Verify DNS, same-node pod-to-pod traffic, and ClusterIP service routing with disposable workloads. Kubernetes bootstrap, API readiness, node readiness, and system-pod readiness passed.
+- **Current next step:** Cold-boot the installed Pi with KMS locked, confirm the native Unseal rejection, then authorize the existing wrapped key and verify encrypted volumes and Kubernetes readiness recover.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -332,8 +332,14 @@ in memory, the operator verified that the Kubernetes API returned `ok` at
 `/readyz` and that `trust-cp1` was `Ready` as a control plane at
 `10.10.0.10`, running Kubernetes v1.37.1 on Talos v1.14.5. All seven
 `kube-system` pods were running and ready, including both CoreDNS replicas,
-Flannel, and kube-proxy. Workload DNS, pod-to-pod traffic, and ClusterIP
-routing remain to be exercised.
+Flannel, and kube-proxy.
+
+On 2026-11-16, the operator ran the workload networking smoke test in a
+temporary namespace. CoreDNS at `10.240.0.10` resolved the fully qualified
+Service name to its expected ClusterIP, `10.240.103.175`. The client received
+the expected HTTP response both directly from the server pod at `10.128.0.7`
+and through the ClusterIP. The temporary namespace was deleted successfully.
+This verifies workload networking on the single-node cluster.
 
 ### Milestone tracker
 
@@ -346,7 +352,7 @@ routing remain to be exercised.
 | 4 | Pi 4 UEFI live-boot experiment | EDK2 card cold-boots; generic ARM64 Talos installer sees Ethernet, memory and explicitly identified disks; evidence recorded below | In progress — UEFI/Talos maintenance boot, full memory and UUID/link continuity across the RAM-cap cold boot verified; all four candidate SSDs detected on the Pi with matching ATA links and capacities across a cold boot |
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
 | 6 | Install encrypted Talos | Deliberately install onto assigned OS disks only; cold boot with the independent KMS authorized; encrypted volume coverage verified | Passed 2026-11-15 |
-| 7 | Bootstrap Kubernetes | Bootstrap the single control-plane node; verify API, node readiness, system pods, DNS and Flannel networking | Bootstrap and readiness passed; workload network smoke test pending |
+| 7 | Bootstrap Kubernetes | Bootstrap the single control-plane node; verify API, node readiness, system pods, DNS and Flannel networking | Passed 2026-11-16, including workload DNS, same-node pod traffic, and ClusterIP routing |
 | 8 | Recovery and repeatability | Verify KMS locked/unlocked cold boots, expiry and failure modes, OS mirror degraded boot/recovery, and documented reproducible rebuild | Pending |
 
 **Milestone boundary:** Stage 7 is the first target. Do not expand into OpenBao, ZFS LocalPV, ingress, certificates, monitoring, backups or the dependent-cluster KMS adapter until the basic encrypted Trust cluster is working. Stage 8 validates that milestone's recovery characteristics before treating the installation as production-ready.
