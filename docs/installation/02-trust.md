@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Test a degraded cold boot from each OS RAID1 member, restoring both members and verifying mirror health between tests. Locked cold boot and same-boot recovery passed.
+- **Current next step:** Restore the two-member OS mirror and verify resync has finished before testing a Silicon Power-only cold boot. The Intenso-only cold boot passed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -355,6 +355,19 @@ confirmed zero time remaining and an empty authorization list. With KMS locked,
 Kubernetes `/readyz` returned `ok`, `trust-cp1` was `Ready`, and all seven
 system pods were running and ready.
 
+### Intenso-only RAID1 boot (2026-11-16)
+
+With the Silicon Power Ace A5X disconnected, the installed Pi booted from
+the Intenso SSD. The OS array reported RAID1 metadata 1.0 and
+`[2/1] [U_]`. Both encrypted volumes reached `ready`: `STATE` on
+`/dev/md127p3` and `EPHEMERAL` on `/dev/md127p4`. Kubernetes `/readyz`
+returned `ok`, `trust-cp1` was `Ready`, and all seven system pods
+were running and ready.
+
+Before testing the other member, reconnect both OS SSDs on a powered-off
+Pi and verify the array returns to `[2/2] [UU]` with no recovery or resync
+in progress.
+
 ### Milestone tracker
 
 | # | Stage | Exit criteria | Status |
@@ -367,7 +380,7 @@ system pods were running and ready.
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
 | 6 | Install encrypted Talos | Deliberately install onto assigned OS disks only; cold boot with the independent KMS authorized; encrypted volume coverage verified | Passed 2026-11-15 |
 | 7 | Bootstrap Kubernetes | Bootstrap the single control-plane node; verify API, node readiness, system pods, DNS and Flannel networking | Passed 2026-11-16, including workload DNS, same-node pod traffic, and ClusterIP routing |
-| 8 | Recovery and repeatability | Verify KMS locked/unlocked cold boots, expiry and failure modes, OS mirror degraded boot/recovery, and documented reproducible rebuild | Locked cold boot and same-boot recovery passed; degraded mirror and remaining recovery checks pending |
+| 8 | Recovery and repeatability | Verify KMS locked/unlocked cold boots, expiry and failure modes, OS mirror degraded boot/recovery, and documented reproducible rebuild | Locked cold boot, same-boot recovery, and Intenso-only boot passed; mirror restoration and Silicon Power-only boot pending |
 
 **Milestone boundary:** Stage 7 is the first target. Do not expand into OpenBao, ZFS LocalPV, ingress, certificates, monitoring, backups or the dependent-cluster KMS adapter until the basic encrypted Trust cluster is working. Stage 8 validates that milestone's recovery characteristics before treating the installation as production-ready.
 
