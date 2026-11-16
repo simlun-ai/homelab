@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Reconnect the Intenso SSD after a clean shutdown, boot with both OS SSDs attached, and verify the mirror returns to `[2/2] [UU]` with no recovery in progress. Both single-member cold boots passed.
+- **Current next step:** Verify automatic expiry of a live KMS window with the Pi left running. Both single-member boots and final mirror restoration passed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -379,8 +379,10 @@ and the UEFI microSD. The installed RAID1 array reported metadata 1.0 and
 `/readyz` returned `ok`, `trust-cp1` was `Ready`, and all seven system
 pods were running and ready.
 
-Both OS SSDs have now booted independently. Final mirror restoration with
-the Intenso reconnected remains to be verified.
+Both OS SSDs booted independently. After the Silicon Power-only boot, the
+operator reconnected the Intenso and booted with both drives attached.
+Recovery progressed to completion. The final `/proc/mdstat` showed RAID1
+metadata 1.0, `[2/2] [UU]`, and no recovery or resync in progress.
 
 ### Milestone tracker
 
@@ -394,7 +396,7 @@ the Intenso reconnected remains to be verified.
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
 | 6 | Install encrypted Talos | Deliberately install onto assigned OS disks only; cold boot with the independent KMS authorized; encrypted volume coverage verified | Passed 2026-11-15 |
 | 7 | Bootstrap Kubernetes | Bootstrap the single control-plane node; verify API, node readiness, system pods, DNS and Flannel networking | Passed 2026-11-16, including workload DNS, same-node pod traffic, and ClusterIP routing |
-| 8 | Recovery and repeatability | Verify KMS locked/unlocked cold boots, expiry and failure modes, OS mirror degraded boot/recovery, and documented reproducible rebuild | Locked cold boot, same-boot recovery, and Intenso-only boot passed; mirror restored between tests; Silicon Power-only boot passed; final mirror restoration pending |
+| 8 | Recovery and repeatability | Verify KMS locked/unlocked cold boots, expiry and failure modes, OS mirror degraded boot/recovery, and documented reproducible rebuild | Locked cold boot, same-boot recovery, and Intenso-only boot passed; mirror restored between tests; Silicon Power-only boot passed; final mirror restoration passed; live expiry and replacement rehearsal pending |
 
 **Milestone boundary:** Stage 7 is the first target. Do not expand into OpenBao, ZFS LocalPV, ingress, certificates, monitoring, backups or the dependent-cluster KMS adapter until the basic encrypted Trust cluster is working. Stage 8 validates that milestone's recovery characteristics before treating the installation as production-ready.
 
@@ -943,7 +945,7 @@ effect. Pi-side TLS, KMS authentication and encrypted STATE unlock remain pendin
 - [x] Operator validated the standalone RAID1 draft offline with the pinned client in strict metal mode (2026-11-09).
 - [ ] Installation onto MD RAID1 with metadata `1.0` completes without META deletion or copying firmware.
 - [x] Installed Talos cold boots with installation media removed (2026-11-15).
-- [ ] Cold boot succeeds with either OS disk disconnected, tested separately after restoring mirror health between tests.
+- [x] Cold boot succeeds with either OS disk disconnected, tested separately after restoring mirror health between tests (2026-11-16).
 - [ ] Rehearse replacing one OS SSD. Boot from the surviving member, verify the replacement's ATA link and size, update only the RAID member selector, then verify a two-member array, completed resync and boot from the replacement. Talos reconciliation adds matches. Removing the old link alone does not remove a member.
 - [ ] Talos upgrade and subsequent cold boot work.
 - [ ] Independent coordinator KMS unlock works, including a cold startup.
