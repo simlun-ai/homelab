@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Deliver the independently recovered Trust ZFS key to a root-only file on encrypted `EPHEMERAL`. Wrapped enrollment and publication passed.
+- **Current next step:** Inspect the assigned Patriot and Fanxiang data disks before preparing the encrypted `trust-data` mirror. Wrapped key enrollment and delivery to encrypted `EPHEMERAL` passed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1283,9 +1283,14 @@ and metadata match. It deletes the temporary namespace after the operation.
 Expect `PASS: root-only ZFS key verified on encrypted EPHEMERAL.` and namespace
 deletion. If the command is interrupted, inspect the temporary
 `trust-zfs-key-*` namespace and rerun installation to verify the file. Keep
-the wrapped record for recovery after an OS rebuild. Live delivery and
-boot-time pool unlock remain to be verified. Pool creation and ZFS LocalPV
-are later steps.
+the wrapped record for recovery after an OS rebuild.
+
+On 2026-11-17, the operator ran `zfs-key-install` on `trust-cp1`. The receiver
+confirmed the destination was on encrypted `EPHEMERAL` before recovering the
+wrapped ZFS key. Delivery verified the root-owned `0600` file at
+`/var/lib/trust-zfs/keys/data.key`, and the temporary namespace was deleted.
+Pool creation, boot-time unlock, recovery after local key loss, and
+ZFS LocalPV inheritance remain to be verified.
 
 ## Later platform and service milestones
 
