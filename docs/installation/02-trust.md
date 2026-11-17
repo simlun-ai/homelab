@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Enroll a dedicated Trust ZFS key and verify recovery from the YubiKey-wrapped record before creating the data mirror. The ZFS extension boot and live module load passed.
+- **Current next step:** Deliver the independently recovered Trust ZFS key to a root-only file on encrypted `EPHEMERAL`. Wrapped enrollment and publication passed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1247,6 +1247,10 @@ was interrupted after publication, use `make -C clusters/trust zfs-key-verify`
 to recover the existing record and check its length. Commit and push the
 ciphertext in the private submodule and update the parent pointer before
 using the key. These commands work independently of the Pi and OpenBao.
+
+On 2026-11-17, the operator enrolled the key, independently recovered the
+same 32 bytes with the YubiKey, pushed the wrapped record to the private
+submodule, and pushed the updated parent pointer.
 
 Installing the local key file on encrypted `EPHEMERAL`, creating and unlocking
 the pool, and verifying ZFS LocalPV inheritance are later steps.
