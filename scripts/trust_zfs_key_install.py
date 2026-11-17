@@ -34,6 +34,7 @@ def deliver(kubectl: str, kubeconfig: bytes, unwrap: str) -> None:
                     *args,
                 ],
                 pass_fds=(fd,),
+                # Secret payloads go only to stdin, outside the child argv.
                 input=payload,
                 timeout=timeout,
                 check=True,
