@@ -1190,6 +1190,14 @@ image=$(cat clusters/trust/talos/experiments/trust-cp1-zfs.schematic.arm64.image
     --reboot-mode powercycle
 ```
 
+Preserve the existing `EPHEMERAL` volume during routine upgrades. With pinned
+Talos v1.14.5, use the standard in-place upgrade above. The deprecated
+`--preserve` flag applies only to the legacy upgrade API. Check the flags
+again when changing Talos versions. After the ZFS pool is in service, verify
+its local key file and pool readiness after each upgrade. If a reset or
+reinstall removes `EPHEMERAL`, restore the key from the existing wrapped
+record before importing and unlocking the data pool.
+
 The power-cycle reboot mode bypasses kexec. If the command loses its
 connection, inspect the console and node state before retrying. After
 boot, verify the installed command line, both encrypted volumes, and
@@ -1252,8 +1260,32 @@ On 2026-11-17, the operator enrolled the key, independently recovered the
 same 32 bytes with the YubiKey, pushed the wrapped record to the private
 submodule, and pushed the updated parent pointer.
 
-Installing the local key file on encrypted `EPHEMERAL`, creating and unlocking
-the pool, and verifying ZFS LocalPV inheritance are later steps.
+### Install the Trust ZFS key on the Pi
+
+With `trust-cp1` ready, the private submodule initialized, and the YubiKey
+connected, run from the homelab root:
+
+```sh
+make -C clusters/trust zfs-key-install
+```
+
+Touch the YubiKey for the Talos admin identity and again for the enrolled ZFS
+key. A temporary receiver pod on `trust-cp1` mounts only
+`/var/lib/trust-zfs/keys` from the host. The receiver checks the mount against
+the LUKS2 `EPHEMERAL` mapper before accepting bytes and repeats that check
+during delivery. The key travels over authenticated Kubernetes exec stdin.
+The process arguments contain the public receiver code and action name;
+the key bytes are supplied through a separate stdin pipe.
+The helper creates the file without replacing an existing entry, verifies
+root ownership and mode `0600`, and accepts an existing file only if the bytes
+and metadata match. It deletes the temporary namespace after the operation.
+
+Expect `PASS: root-only ZFS key verified on encrypted EPHEMERAL.` and namespace
+deletion. If the command is interrupted, inspect the temporary
+`trust-zfs-key-*` namespace and rerun installation to verify the file. Keep
+the wrapped record for recovery after an OS rebuild. Live delivery and
+boot-time pool unlock remain to be verified. Pool creation and ZFS LocalPV
+are later steps.
 
 ## Later platform and service milestones
 
