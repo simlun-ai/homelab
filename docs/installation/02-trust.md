@@ -1204,6 +1204,14 @@ verify `/dev/zfs` after reboot. The extension and module smoke check is
 complete when ZFS is loaded and the node is healthy. Then lock the KMS
 window. Pool creation and key installation are separate steps.
 
+### Open question: console-free boot and upgrades
+
+Configure and test the Pi's UEFI boot order with both OS SSDs ahead of PXE.
+Investigate why a same-version extension upgrade reported a successful post-check
+while the Pi booted the old schematic, and verify systemd-boot selects the intended
+UKI without manual intervention. Include a remote post-upgrade check of the running
+schematic and extensions. Out-of-band recovery remains a separate question.
+
 ## Later platform and service milestones
 
 - [ ] Validate Talos installation, boot, MD RAID1, and KMS encryption on the assigned OS disks; implement the pinned tooling and Trust bootstrap configuration.
