@@ -9,6 +9,7 @@ help:
 	  'tools: download and verify pinned talosctl and kubectl (Linux amd64/arm64)' \
 	  'check-tools: verify installed binaries offline' \
 	  'schematic-id SCHEMATIC=path.yaml: write the Image Factory ID to a sibling .id file' \
+	  'installer-image SCHEMATIC=path.yaml: resolve and verify the pinned ARM64 installer' \
 	  'render: regenerate committed public Talos YAML' \
 	  'check-rendered: verify committed YAML is current' \
 	  'validate: verify public bundle with pinned Talos tooling (run tools first)' \
@@ -106,3 +107,7 @@ export SCHEMATIC
 schematic-id:
 	@test -n "$$SCHEMATIC" || { echo 'Set SCHEMATIC to a public YAML file (relative to clusters/trust or absolute).' >&2; exit 2; }
 	@$(PYTHON) -I -B "$(SCOPE)/schematic.py" -- "$$SCHEMATIC"
+
+.PHONY: installer-image
+installer-image: schematic-id
+	@$(PYTHON) -I -B "$(SCOPE)/schematic.py" --installer-image -- "$$SCHEMATIC"

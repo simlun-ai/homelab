@@ -1153,18 +1153,20 @@ If the firmware card fails, power off and recreate it from the pinned archive; r
 
 The [ZFS schematic](../../clusters/trust/talos/experiments/trust-cp1-zfs.schematic.yaml)
 adds `siderolabs/zfs` and retains the Pi's verified early network argument.
-Regenerate its canonical ID from the homelab root:
+Regenerate the schematic ID and the pinned ARM64 installer reference from the homelab root:
 
 ```sh
-make -C clusters/trust schematic-id \
+make -C clusters/trust installer-image \
   SCHEMATIC=talos/experiments/trust-cp1-zfs.schematic.yaml
 ```
 
 The target registers the public schematic with Image Factory and writes the
 returned ID beside it in `trust-cp1-zfs.schematic.id`. Image Factory hashes
 its canonical representation, so a SHA-256 of the source file can differ.
-If the schematic changes, also resolve and verify the new ARM64 installer
-manifest and UKI before updating the separate image digest.
+It reads the Talos release from `versions.yaml`, selects the Linux ARM64
+manifest, verifies its SHA-256, and writes the full digest-pinned reference to
+`trust-cp1-zfs.schematic.arm64.image`. If that reference changes, inspect
+the new installer UKI before upgrading.
 
 Use the ARM64 installer for the same Talos v1.14.5 release. This is an
 in-place upgrade of the installed OS mirror. Keep the current installer
@@ -1180,10 +1182,10 @@ Use the existing in-memory Talos admin credential flow. Pass the following
 arguments to the authenticated command:
 
 ```sh
-schematic_id=$(cat clusters/trust/talos/experiments/trust-cp1-zfs.schematic.id)
-talosctl upgrade --endpoints 10.10.0.10 --nodes 10.10.0.10 \
-  --image "factory.talos.dev/metal-installer/${schematic_id}:v1.14.5@sha256:f195c829a3abdc655c1393a45f070ab320093ad27f993c0b8dc0d720c9c689f3" \
-  --reboot-mode powercycle
+image=$(cat clusters/trust/talos/experiments/trust-cp1-zfs.schematic.arm64.image) &&
+  talosctl upgrade --endpoints 10.10.0.10 --nodes 10.10.0.10 \
+    --image "$image" \
+    --reboot-mode powercycle
 ```
 
 The power-cycle reboot mode bypasses kexec. If the command loses its
