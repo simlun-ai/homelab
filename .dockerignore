@@ -4,6 +4,7 @@
 !clusters/trust/Makefile
 !clusters/trust/versions.yaml
 !clusters/trust/render.py
+!clusters/trust/schematic.py
 !clusters/trust/tooling.py
 !clusters/trust/toolchain.toml
 !clusters/trust/talos/patches/**/*.yaml
