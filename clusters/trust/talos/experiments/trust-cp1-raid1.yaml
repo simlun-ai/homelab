@@ -8,7 +8,7 @@ provisioning:
   volumeSelector:
     match: >-
       "/dev/disk/by-id/ata-Intenso_SSD_Sata_III_2025032901388" in disk.symlinks ||
-      "/dev/disk/by-id/ata-SPCC_Solid_State_Disk_WWDD241210062007013" in disk.symlinks
+      "/dev/disk/by-id/ata-SPCC_Solid_State_Disk_WWDD250221070002136" in disk.symlinks
 ---
 apiVersion: v1alpha1
 kind: UnattendedInstallConfig

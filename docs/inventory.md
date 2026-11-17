@@ -25,8 +25,8 @@ Per-device power-return support, settings, and verification remain TBD, includin
 - **Hardware UUID (observed):** `00d03115-0000-0000-1000-000089261f6e`. Unchanged across the recorded cold boot after disabling the UEFI RAM cap on 2026-11-09. Stability across other firmware changes/reinstall remains unverified; used for KMS enrollment and independent key recovery on 2026-11-12.
 - **Live memory verification:** `talosctl memory` TOTAL increased from `2848` to `7748` (about 7.6 GiB) after disabling the UEFI 3 GB cap and cold booting on 2026-11-09; AVAILABLE was `7203`. The same UUID and working Ethernet were retained. Nominal inventory RAM remains 8 GB; aggregate RAM totals are unchanged.
 - **USB:** One official Raspberry Pi powered, four-port USB 3 hub.
-- **Disks (planned allocation):** Four 128 GB SATA SSD candidates inspected individually on the workstation and detected together on the Pi. See [candidate disk inventory](#candidate-disk-inventory) for the observed identities and signatures. See the [mirror assignments](#mirror-assignments) for the selected pairs.
-- **OS drives:** Planned MD RAID1 using Intenso and Silicon Power Ace A5X (128 GB nominal usable).
+- **Disks:** Four 128 GB SATA SSDs are assigned to Trust. The original candidates were inspected individually on the workstation and detected together on the Pi. See [candidate disk inventory](#candidate-disk-inventory) for the observed identities and signatures. See the [mirror assignments](#mirror-assignments) for the selected pairs.
+- **OS drives:** MD RAID1 using the Intenso and the replacement Silicon Power SSD (128 GB nominal usable).
 - **Storage:** Planned encrypted ZFS mirror using Patriot P220 and Fanxiang S101 (128 GB nominal usable).
 - **Capacity accounting:** Summary totals use 512 GB raw and 256 GB nominal usable across the two planned mirrors.
 - **Power:** Official USB-C power adapters for the Pi and hub, supplied from 230 V mains.
@@ -94,13 +94,16 @@ Intenso's DOS/MBR signature remains a separate workstation observation.
 
 #### Mirror assignments
 
-All four SSDs are brand new. The pairs below are selected for the planned
-mirrors.
+These are the current assignments. The replacement Silicon Power SSD
+(`WWDD250221070002136`, 128,035,676,160 bytes) passed the standalone boot on
+2026-11-17. The original SSD (`WWDD241210062007013`) was removed and is retained
+outside the active mirror and Trust capacity totals. Earlier discovery tables
+record the original hardware.
 
 | Mirror | SSD | ATA device link |
 | --- | --- | --- |
 | Talos OS (MD RAID1) | Intenso SSD Sata III | `/dev/disk/by-id/ata-Intenso_SSD_Sata_III_2025032901388` |
-| Talos OS (MD RAID1) | Silicon Power Ace A5X | `/dev/disk/by-id/ata-SPCC_Solid_State_Disk_WWDD241210062007013` |
+| Talos OS (MD RAID1) | Silicon Power (replacement) | `/dev/disk/by-id/ata-SPCC_Solid_State_Disk_WWDD250221070002136` |
 | Encrypted ZFS data | Patriot P220 | `/dev/disk/by-id/ata-Patriot_P220_128GB_P220HHBB251201003962` |
 | Encrypted ZFS data | Fanxiang S101 | `/dev/disk/by-id/ata-Fanxiang_S101_128GB_26060780625001902` |
 
