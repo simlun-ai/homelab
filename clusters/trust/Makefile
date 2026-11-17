@@ -23,6 +23,7 @@ help:
 	  'admin-inspect: recover existing production authority and inspect a fresh client locally' \
 	  'admin-rehearse: test administration inspection with a disposable wrapped authority' \
 	  'zfs-key-enroll / zfs-key-verify: enroll or verify the wrapped Trust ZFS key' \
+	  'zfs-key-install: deliver the enrolled key to encrypted EPHEMERAL' \
 	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \
 	  'kms-window-open / kms-window-status / kms-window-lock: control the trust-cp1 KMS window'
 tools:
@@ -120,4 +121,10 @@ zfs-key-enroll:
 
 zfs-key-verify:
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_zfs_key.py" verify \
+	  --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
+
+.PHONY: zfs-key-install
+zfs-key-install: check-tools
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_zfs_key_install.py" \
+	  --talosctl "$(SCOPE)/bin/talosctl" --kubectl "$(SCOPE)/bin/kubectl" \
 	  --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
