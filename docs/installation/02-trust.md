@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Reconnect the Intenso and verify final mirror restoration with the replacement Silicon Power SSD. The replacement rebuilt successfully and booted on its own with both encrypted volumes ready and Kubernetes healthy.
+- **Current next step:** Consolidate the verified install and recovery steps into a reproducible rebuild checklist. Replacement SSD standalone boot and final mirror restoration passed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -393,6 +393,45 @@ daemon instance and request ID, with `state: locked`, `remaining: 0`, and
 `authorized: []`. The workstation verified system-trusted TLS and locked
 responses from both Seal and Unseal.
 
+### Replace an OS RAID1 member
+
+1. Identify the replacement by its ATA link and byte capacity. Use at least
+   128,035,676,160 bytes for the current pair. Inspect it on the workstation
+   with `lsblk -b`, `/proc/mdstat` and `mdadm --examine`. If it auto-assembles
+   an old array, verify it is the only member before stopping that workstation
+   array. Clear the old superblock and disk signatures on the replacement
+   using its exact ATA link, then verify `wipefs` lists no signatures.
+2. Shut down Talos cleanly and cut power before swapping SSDs. Keep the removed
+   member aside intact. With a Trust KMS window active, boot from the surviving
+   member. Confirm the one-member array in `/proc/mdstat` and locate the
+   replacement's exact ATA link and size with authenticated `talosctl get disks`.
+3. Create a public patch containing only the existing `RAIDArrayConfig` named
+   `boot`, with `provisioning.volumeSelector.match` selecting the survivor
+   and the replacement by exact ATA link. Use authenticated
+   `talosctl patch machineconfig --mode no-reboot --dry-run --patch-file <patch>`
+   against `trust-cp1`. Confirm the diff changes only the failed member's link,
+   then repeat without `--dry-run`. The old member should already be physically
+   absent; changing the selector alone does not remove an attached member.
+4. Wait for `/proc/mdstat` to show `[2/2] [UU]` with no recovery or resync.
+   Shut down cleanly and boot the replacement alone with KMS authorized.
+   Verify the degraded mirror, both encrypted volumes, API readiness and node
+   readiness. Allow Kubernetes time to settle after Talos starts.
+5. Shut down, reconnect the surviving original member and boot with KMS
+   authorized. Verify `[2/2] [UU]` again with no rebuild in progress. Close
+   any still-active KMS window after verification. Update the inventory and
+   the checked-in RAID selector to match the live configuration.
+
+**Verified on 2026-11-17.** The replacement Silicon Power SSD
+(`WWDD250221070002136`) had the same byte capacity as the removed
+`WWDD241210062007013` drive. Old RAID 1.0 and GPT/PMBR signatures were
+cleared on the workstation. The Pi booted from the Intenso with the spare
+attached, and the live selector patch was accepted without a reboot.
+The replacement joined the array and rebuilt. On its own it reported
+`[2/1] [_U]`, both encrypted volumes ready, API `/readyz` returning `ok`,
+and eventually `trust-cp1` and all seven system pods ready. After the
+Intenso was reconnected, the final rebuild finished with RAID metadata
+1.0, `[2/2] [UU]`, and no recovery line.
+
 ### Milestone tracker
 
 | # | Stage | Exit criteria | Status |
@@ -405,7 +444,7 @@ responses from both Seal and Unseal.
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
 | 6 | Install encrypted Talos | Deliberately install onto assigned OS disks only; cold boot with the independent KMS authorized; encrypted volume coverage verified | Passed 2026-11-15 |
 | 7 | Bootstrap Kubernetes | Bootstrap the single control-plane node; verify API, node readiness, system pods, DNS and Flannel networking | Passed 2026-11-16, including workload DNS, same-node pod traffic, and ClusterIP routing |
-| 8 | Recovery and repeatability | Verify KMS locked/unlocked cold boots, expiry and failure modes, OS mirror degraded boot/recovery, and documented reproducible rebuild | Locked cold boot, same-boot recovery, and Intenso-only boot passed; mirror restored between tests; Silicon Power-only boot passed; final mirror restoration and live KMS window expiry passed; replacement rehearsal and rebuild documentation pending |
+| 8 | Recovery and repeatability | Verify KMS locked/unlocked cold boots, expiry and failure modes, OS mirror degraded boot/recovery, and documented reproducible rebuild | Locked cold boot, same-boot recovery, and Intenso-only boot passed; mirror restored between tests; Silicon Power-only boot passed; final mirror restoration and live KMS window expiry passed; replacement rehearsal passed; rebuild checklist pending |
 
 **Milestone boundary:** Stage 7 is the first target. Do not expand into OpenBao, ZFS LocalPV, ingress, certificates, monitoring, backups or the dependent-cluster KMS adapter until the basic encrypted Trust cluster is working. Stage 8 validates that milestone's recovery characteristics before treating the installation as production-ready.
 
@@ -955,7 +994,7 @@ effect. Pi-side TLS, KMS authentication and encrypted STATE unlock remain pendin
 - [ ] Installation onto MD RAID1 with metadata `1.0` completes without META deletion or copying firmware.
 - [x] Installed Talos cold boots with installation media removed (2026-11-15).
 - [x] Cold boot succeeds with either OS disk disconnected, tested separately after restoring mirror health between tests (2026-11-16).
-- [ ] Rehearse replacing one OS SSD. Boot from the surviving member, verify the replacement's ATA link and size, update only the RAID member selector, then verify a two-member array, completed resync and boot from the replacement. Talos reconciliation adds matches. Removing the old link alone does not remove a member.
+- [x] Rehearse replacing one OS SSD (verified 2026-11-17). Boot from the surviving member, verify the replacement's ATA link and size, update only the RAID member selector, then verify a two-member array, completed resync and boot from the replacement. Talos reconciliation adds matches. Removing the old link alone does not remove a member.
 - [ ] Talos upgrade and subsequent cold boot work.
 - [ ] Independent coordinator KMS unlock works, including a cold startup.
 
