@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Plan Trust ZFS setup and rehearse recovery of its independently wrapped key before relying on the local key file. The Talos rebuild checklist is documented; a full rebuild remains unrehearsed.
+- **Current next step:** Verify the ZFS extension upgrade on Trust before preparing the encrypted data mirror. The Talos rebuild checklist is documented; a full rebuild remains unrehearsed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1148,6 +1148,43 @@ the intended OS targets. Verify the physical interface and planned address
 before applying a machine configuration.
 
 If the firmware card fails, power off and recreate it from the pinned archive; recheck SD-first EEPROM boot. Preserve the previous boot media/settings for rollback. Reverting a Talos disk installation needs its own recovery procedure before destructive installation is attempted.
+
+## Stage the ZFS extension on Trust
+
+The [ZFS schematic](../../clusters/trust/talos/experiments/trust-cp1-zfs.schematic.yaml)
+adds `siderolabs/zfs` and retains the Pi's verified early network argument.
+Use the ARM64 installer for the same Talos v1.14.5 release. This is an
+in-place upgrade of the installed OS mirror. Keep the current installer
+reference in the initial-install draft until the upgrade and boot pass.
+
+Before upgrading, confirm the mirror shows `[2/2] [UU]` with no rebuild
+in progress, and that Kubernetes is healthy. Keep the UEFI microSD and
+both OS SSDs attached, and the USB installer removed. Verify a fresh KMS
+window is active for `trust-cp1` before starting the upgrade. Keep the
+console visible through the single-node outage.
+
+Use the existing in-memory Talos admin credential flow. Pass the following
+arguments to the authenticated command:
+
+```sh
+talosctl upgrade --endpoints 10.10.0.10 --nodes 10.10.0.10 \
+  --image factory.talos.dev/metal-installer/6a913c641507a4fc7ff51c595e607d39b4fdfcd80f7cbb6581fe4517a7c21cf3:v1.14.5@sha256:f195c829a3abdc655c1393a45f070ab320093ad27f993c0b8dc0d720c9c689f3 \
+  --reboot-mode powercycle
+```
+
+The power-cycle reboot mode bypasses kexec. If the command loses its
+connection, inspect the console and node state before retrying. After
+boot, verify the installed command line, both encrypted volumes, and
+mirror and Kubernetes readiness.
+
+Confirm `talosctl get extensions` lists ZFS before adding the public
+[ZFS module document](../../clusters/trust/talos/experiments/trust-cp1-zfs-module.yaml).
+Apply that document to the live machine configuration via authenticated
+`talosctl patch machineconfig`, starting with a dry run. If Talos requires
+a reboot for the module change, keep the same boot prerequisites and
+verify `/dev/zfs` after reboot. The extension and module smoke check is
+complete when ZFS is loaded and the node is healthy. Then lock the KMS
+window. Pool creation and key installation are separate steps.
 
 ## Later platform and service milestones
 
