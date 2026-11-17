@@ -15,8 +15,8 @@ NODE = "10.10.0.10"
 HOSTNAME = "trust-cp1"
 KEY_DIRECTORY = "/var/lib/trust-zfs/keys"
 IMAGE = (
-    "docker.io/library/python:3.13-slim-bookworm"
-    "@sha256:aed314f1f0c7e988b7aee5d889414ec977430bad37770966c52aff5366a13a06"
+    "docker.io/library/python:3.13.18-slim-trixie"
+    "@sha256:7e9b0661d175b176a592d3969ccaf702c11b6769a485fa8b0d3769dd07bf1720"
 )
 RECEIVER = Path(__file__).with_name("trust_zfs_key_receiver.py")
 
