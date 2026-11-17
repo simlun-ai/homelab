@@ -14,7 +14,10 @@ import trust_zfs_key as zfs  # noqa: E402
 NODE = "10.10.0.10"
 HOSTNAME = "trust-cp1"
 KEY_DIRECTORY = "/var/lib/trust-zfs/keys"
-IMAGE = "docker.io/library/python@sha256:9cf2fdca7b3dd6082fd160ff5b8664f108c7441e200018a36554b2e8028f45df"
+IMAGE = (
+    "docker.io/library/python:3.13-slim-bookworm"
+    "@sha256:aed314f1f0c7e988b7aee5d889414ec977430bad37770966c52aff5366a13a06"
+)
 RECEIVER = Path(__file__).with_name("trust_zfs_key_receiver.py")
 
 
