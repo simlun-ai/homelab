@@ -1228,6 +1228,29 @@ while the Pi booted the old schematic, and verify systemd-boot selects the inten
 UKI without manual intervention. Include a remote post-upgrade check of the running
 schematic and extensions. Out-of-band recovery remains a separate question.
 
+### Enroll the Trust ZFS key
+
+The Patriot/Fanxiang mirror will use native encryption at the root dataset
+of `trust-data`. Enroll its independent key from the workstation before
+creating the pool. Initialize the private wrapped-record submodule and
+connect the YubiKey, then run:
+
+```sh
+make -C clusters/trust zfs-key-enroll
+```
+
+Touch the YubiKey when prompted for wrapping and again for independent
+recovery. The helper checks that the recovered 32 bytes match the generated
+bytes in memory. The wrapped record is
+`secrets/wrapped/trust-data-zfs-r1.json`. If it already exists or enrollment
+was interrupted after publication, use `make -C clusters/trust zfs-key-verify`
+to recover the existing record and check its length. Commit and push the
+ciphertext in the private submodule and update the parent pointer before
+using the key. These commands work independently of the Pi and OpenBao.
+
+Installing the local key file on encrypted `EPHEMERAL`, creating and unlocking
+the pool, and verifying ZFS LocalPV inheritance are later steps.
+
 ## Later platform and service milestones
 
 - [ ] Validate Talos installation, boot, MD RAID1, and KMS encryption on the assigned OS disks; implement the pinned tooling and Trust bootstrap configuration.

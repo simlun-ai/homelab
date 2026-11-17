@@ -108,7 +108,7 @@ homelab/v1/<scope>/zfs/<node-id>/<pool>/<root-id>/r1
 
 | Scope / node | Pool | Lookup suffix |
 | --- | --- | --- |
-| Trust / node ID TBD | Pool name TBD | `trust/zfs/<node-id>/<pool>/<root-id>/r1` |
+| Trust / `trust-cp1` | Planned `trust-data` root dataset | `trust/zfs/trust-cp1/trust-data/root/r1` |
 | Backup / node ID TBD | Pool name TBD | `backup/zfs/<node-id>/<pool>/<root-id>/r1` |
 | Metal / worker1 | `immich` | `metal/zfs/worker1/immich/<root-id>/r1` |
 | Metal / worker1 | `photos` | `metal/zfs/worker1/photos/<root-id>/r1` |

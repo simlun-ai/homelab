@@ -22,6 +22,7 @@ help:
 	  'recovery-rehearse: disposable YubiKey recovery, configuration and 24-hour client reissuance' \
 	  'admin-inspect: recover existing production authority and inspect a fresh client locally' \
 	  'admin-rehearse: test administration inspection with a disposable wrapped authority' \
+	  'zfs-key-enroll / zfs-key-verify: enroll or verify the wrapped Trust ZFS key' \
 	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \
 	  'kms-window-open / kms-window-status / kms-window-lock: control the trust-cp1 KMS window'
 tools:
@@ -111,3 +112,12 @@ schematic-id:
 .PHONY: installer-image
 installer-image: schematic-id
 	@$(PYTHON) -I -B "$(SCOPE)/schematic.py" --installer-image -- "$$SCHEMATIC"
+
+.PHONY: zfs-key-enroll zfs-key-verify
+zfs-key-enroll:
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_zfs_key.py" enroll \
+	  --wrap "$(HSM_VENV)/bin/homelab-wrap" --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
+
+zfs-key-verify:
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_zfs_key.py" verify \
+	  --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
