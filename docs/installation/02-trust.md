@@ -8,11 +8,11 @@
 
 ### Current position
 
-- **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its KMS service is deployed, with production TLS and locked RPCs verified from the workstation. Live-node authorization remains pending.
+- **Completed prerequisite:** `ups-aux` base bootstrap/hardening and console login verified (2026-11-06). Its KMS service is deployed, with production TLS and locked RPCs verified from the workstation. Live-node authorization and encrypted Pi boot were verified.
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Consolidate the verified install and recovery steps into a reproducible rebuild checklist. Replacement SSD standalone boot and final mirror restoration passed.
+- **Current next step:** Plan Trust ZFS setup and rehearse recovery of its independently wrapped key before relying on the local key file. The Talos rebuild checklist is documented; a full rebuild remains unrehearsed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -432,6 +432,71 @@ and eventually `trust-cp1` and all seven system pods ready. After the
 Intenso was reconnected, the final rebuild finished with RAID metadata
 1.0, `[2/2] [UU]`, and no recovery line.
 
+### Trust Pi rebuild checklist
+
+Choose the path before changing disks:
+
+| Situation | Recovery path |
+| --- | --- |
+| Installed mirror is intact, including after a coordinator outage | Restore coordinator TLS and authorize the existing node key. Boot from the installed mirror. The existing Kubernetes state comes back with the disks. |
+| One OS SSD failed | Follow [Replace an OS RAID1 member](#replace-an-os-raid1-member). |
+| Reinstalling Talos on the same Pi | Verify the hardware UUID, retain the wrapped Talos identity and registered node key, and follow the fresh OS install checklist below. |
+| Replacing the Pi board | Plan a fresh OS install. Verify the new hardware UUID and update the registration. Enroll a distinct key generation and retain the old wrapped record for any old disks that still depend on it. The current enrollment helper targets the original Pi and generation; update and review it before use on replacement hardware. The new UUID cannot open the old UUID-bound Talos payloads. |
+
+**Coordinator and workstation**
+
+- Check out the reviewed homelab revision with the initialized private
+  wrapped-record submodule. Verify the pinned tools with
+  `make -C clusters/trust tools`.
+- Restore `ups-aux` using the [coordinator runbook](01-main-coordinator.md).
+  Verify SSH, time, DNS, and trusted TLS on the KMS endpoint. After a service
+  restart, reauthorize TLS with `kms-tls-authorize`. Confirm the locked
+  listener with `make -C support/ups kms-tls-check HOST=ups-aux`.
+- Verify the existing wrapped Talos bootstrap identity and, for the original
+  registration, verify the wrapped node key with
+  `make -C clusters/trust kms-key-verify`. The KMS key and Talos bootstrap
+  identity are separate records.
+
+**Fresh OS install**
+
+1. Preserve the ZFS data disks. Use the [current OS assignments](../inventory.md#mirror-assignments)
+   for the RAID selector. Restore the SD-first [UEFI boot setup](#first-installation-experiment-pi-4-uefi)
+   if needed. Boot the custom ARM64 USB ISO from the tested schematic.
+2. Confirm the Pi reaches maintenance mode at `10.10.0.10` and has the
+   expected early network arguments, DNS, and time sync. Follow
+   [Pi installation preflight](#pi-installation-preflight). Run
+   `install-config-rehearse` and `install-config-validate` via
+   `make -C clusters/trust`.
+3. Follow [Apply the initial Trust install configuration](#apply-the-initial-trust-install-configuration).
+   Open a KMS window and apply the in-memory config only when ready to
+   install onto the selected OS mirror. Check the console for completion.
+   Leave the UEFI microSD installed and remove the USB installer for
+   the cold boot. If the console stalls at the reboot handoff after
+   installation completes, use the tested power-cycle procedure.
+4. Check RAID1 health in `/proc/mdstat` and confirm `STATE` and
+   `EPHEMERAL` are ready. Early DNS failures can resolve on retry. If Talos
+   reports `FailedPrecondition: KMS locked`, authorize the enrolled key
+   and watch for same-boot recovery.
+5. For a fresh cluster with empty etcd, issue a short-lived Talos admin
+   credential from the wrapped identity and run authenticated
+   `talosctl bootstrap --endpoints 10.10.0.10 --nodes 10.10.0.10` once.
+   For recovery of existing Kubernetes state, follow the restore plan for
+   that state before deciding how to initialize etcd.
+
+**Verify and close**
+
+- Check Kubernetes `/readyz`, `trust-cp1` readiness, and all system pods.
+  On a fresh rebuild, check workload DNS, pod-to-pod traffic and ClusterIP
+  routing before adding platform services.
+- Close the KMS window with `make -C clusters/trust kms-window-lock` and
+  confirm zero remaining time and an empty authorization list.
+- If restoring ZFS data, follow the [key custody and recovery decision](../emergency-recovery-guide.md#restore-trust-and-openbao).
+  Import and unlock the existing data disks with their original ZFS key.
+
+The checklist consolidates the verified original installation, locked-boot
+recovery, and disk replacement. A full rebuild from scratch and
+replacement-board enrollment have not yet been rehearsed end to end.
+
 ### Milestone tracker
 
 | # | Stage | Exit criteria | Status |
@@ -444,7 +509,7 @@ Intenso was reconnected, the final rebuild finished with RAID metadata
 | 5 | OS storage and machine configuration | Confirm supported bootable MD RAID1 path, immutable disk selectors, pre-`STATE` networking and KMS-backed `STATE`/`EPHEMERAL` settings; validate before destructive actions | Pending |
 | 6 | Install encrypted Talos | Deliberately install onto assigned OS disks only; cold boot with the independent KMS authorized; encrypted volume coverage verified | Passed 2026-11-15 |
 | 7 | Bootstrap Kubernetes | Bootstrap the single control-plane node; verify API, node readiness, system pods, DNS and Flannel networking | Passed 2026-11-16, including workload DNS, same-node pod traffic, and ClusterIP routing |
-| 8 | Recovery and repeatability | Verify KMS locked/unlocked cold boots, expiry and failure modes, OS mirror degraded boot/recovery, and documented reproducible rebuild | Locked cold boot, same-boot recovery, and Intenso-only boot passed; mirror restored between tests; Silicon Power-only boot passed; final mirror restoration and live KMS window expiry passed; replacement rehearsal passed; rebuild checklist pending |
+| 8 | Recovery and repeatability | Verify KMS locked/unlocked cold boots, expiry and failure modes, OS mirror degraded boot/recovery, and documented reproducible rebuild | Locked cold boot, same-boot recovery, and Intenso-only boot passed; mirror restored between tests; Silicon Power-only boot passed; final mirror restoration and live KMS window expiry passed; replacement rehearsal passed; rebuild checklist documented; full rebuild not rehearsed |
 
 **Milestone boundary:** Stage 7 is the first target. Do not expand into OpenBao, ZFS LocalPV, ingress, certificates, monitoring, backups or the dependent-cluster KMS adapter until the basic encrypted Trust cluster is working. Stage 8 validates that milestone's recovery characteristics before treating the installation as production-ready.
 

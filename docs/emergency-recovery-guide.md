@@ -87,6 +87,8 @@ Replacement programming must use the same key/settings with **touch required**, 
 
 ## Restore Trust and OpenBao
 
+Use the [Trust Pi rebuild checklist](installation/02-trust.md#trust-pi-rebuild-checklist) when the repository is available. It distinguishes booting intact OS disks, replacing one mirror member, and reinstalling Talos.
+
 OpenBao backups are online Raft snapshots uploaded by a job inside Trust to Cloudflare R2. Required targets are a full Trust rebuild on a replacement Raspberry Pi 4 and temporary OpenBao recovery in a Linux container on a trusted workstation. Both require documented, tested procedures; neither is verified yet. Start with the OpenBao version recorded for the snapshot and independently obtainable configuration/tools.
 
 1. Recover R2 access and any wrapped/decryption material.

@@ -1,6 +1,6 @@
 # 01 - Main coordinator
 
-**Locked production TLS verified on `ups-aux`; live-node authorization pending.**
+**Production TLS and live Trust node authorization verified on `ups-aux`.** See the [Trust Pi rebuild checklist](02-trust.md#trust-pi-rebuild-checklist) for the boot sequence.
 
 First complete the shared [UPS coordinator base setup](../../runbooks/ups-coordinator-base-setup.md) for `ups-aux` at `10.10.0.5`, the Trust/Backup host. That runbook owns Raspberry Pi OS Lite installation, SSH access, and Ansible bootstrap for all three coordinators.
 
