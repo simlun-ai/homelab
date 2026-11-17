@@ -90,7 +90,7 @@ def write_installer_image(source: Path) -> Path:
     if f"sha256:{hashlib.sha256(manifest).hexdigest()}" != digest:
         raise ValueError("ARM64 manifest does not match the index digest")
     return write_output(
-        source.with_suffix(".arm64.image"), f"{FACTORY}/{repository}:{release}@{digest}"
+        source.with_suffix(".arm64.image"), f"{FACTORY}/{repository}@{digest}"
     )
 
 
