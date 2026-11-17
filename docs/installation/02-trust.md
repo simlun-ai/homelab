@@ -1164,8 +1164,10 @@ The target registers the public schematic with Image Factory and writes the
 returned ID beside it in `trust-cp1-zfs.schematic.id`. Image Factory hashes
 its canonical representation, so a SHA-256 of the source file can differ.
 It reads the Talos release from `versions.yaml`, selects the Linux ARM64
-manifest, verifies its SHA-256, and writes the full digest-pinned reference to
-`trust-cp1-zfs.schematic.arm64.image`. If that reference changes, inspect
+manifest, verifies its SHA-256, and writes the digest-only reference to
+`trust-cp1-zfs.schematic.arm64.image`. Talos v1.14.5 pulls an image specified
+with both tag and digest under the digest-only name, then fails to find it
+under the original name in containerd. If that reference changes, inspect
 the new installer UKI before upgrading.
 
 Use the ARM64 installer for the same Talos v1.14.5 release. This is an
