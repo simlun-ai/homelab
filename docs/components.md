@@ -4,6 +4,9 @@ Cluster entries are **planned** placements at the catalog version, not deployed 
 
 ## Infrastructure
 
+Trust ran ZFS extension `2.4.4-v1.14.5` and loaded the kernel module on
+2026-11-17. See the [verification record](installation/02-trust.md#zfs-extension-and-module-verification-2026-11-17).
+
 | Component | Latest version | Trust | Backup | Pi | Metal |
 | --- | --- | --- | --- | --- | --- |
 | Talos | v1.14.5 | v1.14.5 | v1.14.2 | v1.14.2 | v1.14.2 |

@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Verify the ZFS extension upgrade on Trust before preparing the encrypted data mirror. The Talos rebuild checklist is documented; a full rebuild remains unrehearsed.
+- **Current next step:** Enroll a dedicated Trust ZFS key and verify recovery from the YubiKey-wrapped record before creating the data mirror. The ZFS extension boot and live module load passed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1203,6 +1203,22 @@ a reboot for the module change, keep the same boot prerequisites and
 verify `/dev/zfs` after reboot. The extension and module smoke check is
 complete when ZFS is loaded and the node is healthy. Then lock the KMS
 window. Pool creation and key installation are separate steps.
+
+### ZFS extension and module verification (2026-11-17)
+
+The operator regenerated the schematic ID and ARM64 installer reference with
+no diff, then verified the OS mirror and Kubernetes were healthy. The initial
+upgrade pulled the image but failed to look it up under its tag-plus-digest
+name. The digest-only retry completed, drained and uncordoned the node, and
+reported a passing post-check.
+
+The Pi initially booted the old schematic. The operator then selected
+`talos-v1.14.5~1.efi` in systemd-boot. Talos reported the expected schematic
+`6a913c641507a4fc7ff51c595e607d39b4fdfcd80f7cbb6581fe4517a7c21cf3`
+and ZFS `2.4.4-v1.14.5`. The module patch dry run showed only the addition
+of `KernelModuleConfig` for `zfs`. The live apply succeeded without a reboot.
+The module appeared as live in `/proc/modules` and `/dev/zfs` was present.
+Automatic boot selection and data-pool setup remain pending.
 
 ### Open question: console-free boot and upgrades
 
