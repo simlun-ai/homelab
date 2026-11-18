@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Return the exported data SSDs to the powered-off Pi, boot `trust-cp1` with a KMS window, and verify that `trust-data` is online and unlocked. The workstation read-only recovery and checksum test passed.
+- **Current next step:** Rehearse recovery after loss of the local ZFS key file on encrypted `EPHEMERAL`. The workstation read-only recovery and return to the Pi passed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1418,9 +1418,15 @@ the original key with the YubiKey, mounted the fixture read-only, and
 matched the recorded SHA-256. The fixture was unmounted and
 `trust-data` exported successfully.
 
-Returning the drives to the Pi and verifying the mirror is pending.
+After both SSDs were returned to the Pi, `trust-cp1` reached `Ready`.
+`trust-data` and both ATA members were `ONLINE` with zero read, write,
+and checksum errors. The pool reported `readonly=off` and
+`keystatus=available` with `file:///var/lib/trust-zfs/keys/data.key`.
+This completed the workstation recovery rehearsal. The temporary
+verification namespace was deleted.
+
 Recovery after local key loss on the Pi and ZFS LocalPV encryption
-inheritance also remain to be verified.
+inheritance remain to be verified.
 
 ## Later platform and service milestones
 
