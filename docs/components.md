@@ -18,7 +18,7 @@ Trust ran ZFS extension `2.4.4-v1.14.5` and loaded the kernel module on
 | Traefik | v3.7.14 | v3.7.14 |  |  |  |
 | kube-prometheus-stack (Helm chart) | v92.3.0 | v92.3.0 |  |  |  |
 | Loki | v3.7.8 |  |  |  |  |
-| ZFS LocalPV | v2.11.1 | v2.11.1 |  |  |  |
+| ZFS LocalPV | v2.11.2 | v2.11.2 |  |  |  |
 | OpenBao | v2.7.1 | v2.7.1 |  |  |  |
 | [Talos KMS adapter](security/security.md#talos-kms-adapter) (repository-owned Python service) | TBD | TBD |  |  |  |
 | OpenTofu | v1.13.1 |  |  |  |  |
