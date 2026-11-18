@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Reboot `trust-cp1` with a KMS boot window and the ZFS-enabled EFI entry. Verify automatic import of the `trust-data` mirror and check whether the local key loads automatically.
+- **Current next step:** Write a recovery fixture to the encrypted `trust-data` mirror, then reboot `trust-cp1` to check automatic pool import and key loading. Reuse the fixture for the workstation recovery test.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1324,8 +1324,30 @@ Pool import and key availability are separate checks. The extension runs
 attempts to mount. Record the observed behavior with the root mountpoint
 set to `none`. Close the Trust KMS window after the node has recovered.
 
-Recovery after local key loss and ZFS LocalPV encryption inheritance
-remain to be verified.
+### Rehearse Trust data recovery on the workstation
+
+1. On `trust-cp1`, create `trust-data/recovery-check` with
+   `canmount=noauto` and `mountpoint=/var/lib/trust-zfs/recovery-check`.
+   Confirm that its encryption root is `trust-data`. Mount it explicitly,
+   write a non-secret fixture, save its SHA-256 outside the pool, then
+   unmount it. Use the fixture for the boot and workstation checks.
+2. After the Pi reboot check, cleanly export only `trust-data` and shut
+   down the Pi before moving the two data SSDs. Leave the OS mirror and
+   UEFI microSD in the Pi.
+3. On a workstation with compatible OpenZFS, verify the two ATA partition
+   links and import only the test pool with `-N`, `readonly=on`, and a
+   temporary alternate root. Confirm the pool and both members are online.
+   Confirm the key is unavailable before recovery.
+4. Recover the original raw key with the YubiKey from the private wrapped
+   record. Supply it to `zfs load-key` through a memory-backed input and
+   keep the pool's recorded key location. Explicitly mount the test dataset
+   read-only and compare the fixture's SHA-256 with the value saved before
+   removing the drives.
+5. Unmount the test dataset and export the pool before disconnecting the
+   drives. Return them to the Pi and verify the mirror is online.
+
+This test is pending. Recovery after local key loss on the Pi and ZFS
+LocalPV encryption inheritance also remain to be verified.
 
 ## Later platform and service milestones
 
