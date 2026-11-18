@@ -1441,6 +1441,30 @@ above. The fixture was unmounted, the restored key matched the temporarily
 moved file byte for byte, and the temporary copy and namespace were
 removed.
 
+### Inspect Trust ZFS properties with Talos debug
+
+On 2026-11-18, the operator used `talosctl debug` over the authenticated
+Talos API to run the installed ZFS tool. For one-off host commands such as
+checking ZFS properties, this is the simpler path. The standard debug
+container exposes the host under `/host`, so the check needs only the Talos
+admin identity and a pinned debug image.
+
+The following command uses the current Trust Talos credentials and the
+pinned image referenced by `scripts/trust_zfs_key_install.py` as
+`debug_image`. Keep the input stream open through command completion when
+calling it from a non-interactive wrapper.
+
+```sh
+talosctl --endpoints 10.10.0.10 --nodes 10.10.0.10 debug --namespace cri \
+  --args '/usr/sbin/chroot,/host,/usr/local/sbin/zfs,get,-r,compression,trust-data' \
+  "$debug_image"
+```
+
+Both `trust-data` and `trust-data/recovery-check` reported
+`compression=on` with source `default`. Keep the OpenZFS default for these
+experiments. At the next planned dataset creation, choose and explicitly
+set the compression algorithm.
+
 ZFS LocalPV provisioning and encryption inheritance remain to be verified.
 
 ## Later platform and service milestones
