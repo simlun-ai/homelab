@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Cleanly export `trust-data` and shut down `trust-cp1` before moving the Patriot and Fanxiang data SSDs to the workstation for the read-only recovery rehearsal.
+- **Current next step:** Return the exported data SSDs to the powered-off Pi, boot `trust-cp1` with a KMS window, and verify that `trust-data` is online and unlocked. The workstation read-only recovery and checksum test passed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1359,9 +1359,68 @@ On 2026-11-18, the operator wrote and unmounted the fixture on
 `trust-data`. The SHA-256 of `fixture.txt` is
 `3f5b529e80156a0d7348d8f1ae8c7a68d06381dcd8e7415a23a25ebc70660b56`.
 
-The workstation import and checksum comparison are pending. Recovery
-after local key loss on the Pi and ZFS LocalPV encryption inheritance
-also remain to be verified.
+#### Read-only unlock example
+
+Run from the homelab root with the private wrapped-record submodule and the
+HSM tools available. First import only `trust-data` with
+`zpool import -N -o readonly=on -R <temporary-altroot>` and the two verified
+ATA partition links as described above. The example loads the original raw
+key from an anonymous memory file passed as standard input to `zfs load-key`.
+The `-L` override applies only to that invocation. ZFS mounts the dataset
+under the alternate root.
+
+```sh
+(
+  set +x
+  set -e
+  sudo -v
+  test "$(sudo -n zpool get -H -o value readonly trust-data)" = on
+
+  "${HSM_VENV:-$HOME/.local/share/homelab/venvs/hsm}/bin/python" -I -B - <<'PY'
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("scripts").resolve()))
+import trust_talos_recovery as recovery
+import trust_zfs_key as zfs_key
+
+recovery.secrets.harden()
+recovery.secrets.require_private_repository(record=zfs_key.RECORD)
+unwrap = str(Path(sys.executable).with_name("homelab-unwrap"))
+print("Touch the YubiKey to recover the original Trust ZFS key.", flush=True)
+with recovery.config.memory_file(zfs_key.recover(unwrap)) as fd:
+    subprocess.run(
+        ["sudo", "-n", "zfs", "load-key", "-L", "file:///proc/self/fd/0", "trust-data"],
+        stdin=fd, check=True,
+    )
+PY
+
+  sudo -n zfs mount -o ro trust-data/recovery-check
+)
+```
+
+After reading the dataset, unmount it and export the pool before unplugging
+the drives.
+
+```sh
+sudo zfs unmount trust-data/recovery-check &&
+  sudo zpool export trust-data
+```
+
+#### Workstation recovery result
+
+On 2026-11-18, the workstation imported the two ATA members as an
+`ONLINE` mirror with `readonly=on` and `cachefile=none`. The workstation
+used OpenZFS userspace 2.1.5 and kernel module 2.2.2. Before recovery the
+fixture was unmounted and its key was unavailable. The operator recovered
+the original key with the YubiKey, mounted the fixture read-only, and
+matched the recorded SHA-256. The fixture was unmounted and
+`trust-data` exported successfully.
+
+Returning the drives to the Pi and verifying the mirror is pending.
+Recovery after local key loss on the Pi and ZFS LocalPV encryption
+inheritance also remain to be verified.
 
 ## Later platform and service milestones
 
