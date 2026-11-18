@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Rehearse recovery after loss of the local ZFS key file on encrypted `EPHEMERAL`. The workstation read-only recovery and return to the Pi passed.
+- **Current next step:** Validate ZFS LocalPV provisioning and encryption inheritance on `trust-data` with a disposable PVC before deploying OpenBao. Local ZFS key-loss recovery and the workstation recovery rehearsal passed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1425,8 +1425,23 @@ and checksum errors. The pool reported `readonly=off` and
 This completed the workstation recovery rehearsal. The temporary
 verification namespace was deleted.
 
-Recovery after local key loss on the Pi and ZFS LocalPV encryption
-inheritance remain to be verified.
+### Rehearse recovery after local ZFS key loss
+
+On 2026-11-18, the operator exported `trust-data` and moved
+`data.key` aside on encrypted `EPHEMERAL`. The pool imported `ONLINE`
+without mounting datasets and reported `keystatus=unavailable`. Loading
+the key from the configured URI failed because the file was missing.
+
+The operator ran `make -C clusters/trust zfs-key-install`. The helper
+verified the destination was on encrypted `EPHEMERAL`, recovered the
+original key with the YubiKey, and verified the root-owned `0600` file.
+`zfs load-key trust-data` loaded the key using the normal local URI. The
+operator mounted the fixture read-only and matched the SHA-256 recorded
+above. The fixture was unmounted, the restored key matched the temporarily
+moved file byte for byte, and the temporary copy and namespace were
+removed.
+
+ZFS LocalPV provisioning and encryption inheritance remain to be verified.
 
 ## Later platform and service milestones
 
