@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Inspect the assigned Patriot and Fanxiang data disks before preparing the encrypted `trust-data` mirror. Wrapped key enrollment and delivery to encrypted `EPHEMERAL` passed.
+- **Current next step:** Reboot `trust-cp1` with a KMS boot window and the ZFS-enabled EFI entry. Verify automatic import of the `trust-data` mirror and check whether the local key loads automatically.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1289,8 +1289,43 @@ On 2026-11-17, the operator ran `zfs-key-install` on `trust-cp1`. The receiver
 confirmed the destination was on encrypted `EPHEMERAL` before recovering the
 wrapped ZFS key. Delivery verified the root-owned `0600` file at
 `/var/lib/trust-zfs/keys/data.key`, and the temporary namespace was deleted.
-Pool creation, boot-time unlock, recovery after local key loss, and
-ZFS LocalPV inheritance remain to be verified.
+
+### Create the encrypted Trust data mirror
+
+On 2026-11-18, Talos reported both assigned data SSDs at 128,035,676,160
+bytes with no discovered partitions or volume signatures. The operator
+created the pool manually from a temporary privileged pod on `trust-cp1`
+with the Talos host mounted at `/host`. Run pool creation only for the
+initial setup of these assigned disks.
+
+```sh
+chroot /host zpool create -o ashift=12 -m none \
+  -O encryption=aes-256-gcm -O keyformat=raw \
+  -O keylocation=file:///var/lib/trust-zfs/keys/data.key \
+  trust-data mirror \
+  /dev/disk/by-id/ata-Fanxiang_S101_128GB_26060780625001902 \
+  /dev/disk/by-id/ata-Patriot_P220_128GB_P220HHBB251201003962
+```
+
+`zpool status -P trust-data` showed `mirror-0` and both `-part1`
+members `ONLINE`, with zero read, write, and checksum errors.
+`zfs get encryption,encryptionroot,keyformat,keylocation,keystatus,mountpoint trust-data`
+showed `aes-256-gcm`, encryption root `trust-data`, raw key format,
+the expected file URI, `keystatus=available`, and `mountpoint=none`.
+The temporary namespace was deleted.
+
+### Verify Trust data storage after a reboot
+
+Open the Trust KMS window and reboot into the ZFS-enabled EFI entry. Once
+`trust-cp1` returns, check `zpool status -P trust-data` and
+`zfs get keystatus,keylocation trust-data` before manually loading the key.
+Pool import and key availability are separate checks. The extension runs
+`zpool import -fal`, and OpenZFS documents `-l` in terms of datasets it
+attempts to mount. Record the observed behavior with the root mountpoint
+set to `none`. Close the Trust KMS window after the node has recovered.
+
+Recovery after local key loss and ZFS LocalPV encryption inheritance
+remain to be verified.
 
 ## Later platform and service milestones
 
