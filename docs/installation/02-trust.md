@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Reboot `trust-cp1` to check automatic import and key loading for `trust-data`. The encrypted fixture and its checksum are ready for the workstation recovery test.
+- **Current next step:** Cleanly export `trust-data` and shut down `trust-cp1` before moving the Patriot and Fanxiang data SSDs to the workstation for the read-only recovery rehearsal.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1323,6 +1323,14 @@ Pool import and key availability are separate checks. The extension runs
 `zpool import -fal`, and OpenZFS documents `-l` in terms of datasets it
 attempts to mount. Record the observed behavior with the root mountpoint
 set to `none`. Close the Trust KMS window after the node has recovered.
+
+On 2026-11-18, after rebooting into the ZFS-enabled EFI entry, `trust-cp1`
+returned to `Ready`. The status check ran before any manual key load.
+`trust-data` and both ATA mirror members were `ONLINE` with zero read,
+write, and checksum errors. ZFS reported `keystatus=available` with the
+local key URI and `mountpoint=none`, confirming automatic import and
+local key loading for this configuration. The temporary namespace was
+deleted.
 
 ### Rehearse Trust data recovery on the workstation
 
