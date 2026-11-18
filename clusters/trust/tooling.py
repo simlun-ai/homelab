@@ -9,10 +9,12 @@ import sys
 import tempfile
 import tomllib
 import urllib.request
+import zipfile
 from pathlib import Path
 
 SCOPE = Path(__file__).resolve().parent
-PINS = {"talosctl": "talos", "kubectl": "kubectl"}
+PINS = {"talosctl": "talos", "kubectl": "kubectl", "tofu": "opentofu"}
+
 MAX_DOWNLOAD = 256 * 1024 * 1024
 
 
@@ -48,7 +50,8 @@ def specification(tool: str, arch: str) -> tuple[str, str]:
     progress(f"Reading download URL and SHA-256 for {tool}/{arch}")
     with (SCOPE / "toolchain.toml").open("rb") as source:
         entry = tomllib.load(source)[tool]
-    url = entry["url"].format(version=version(PINS[tool]), arch=arch)
+    release = version(PINS[tool])
+    url = entry["url"].format(version=release, release=release[1:], arch=arch)
     checksum = entry["sha256"][arch]
     if not isinstance(url, str) or not url.startswith("https://"):
         raise ValueError(f"Invalid HTTPS download URL for {tool}")
@@ -78,6 +81,12 @@ def verified(path: Path, checksum: str, url: str) -> bool:
 
 
 def install(tool: str, url: str, checksum: str) -> None:
+    archive = None
+    if tool == "tofu":
+        with (SCOPE / "toolchain.toml").open("rb") as source:
+            archive = tomllib.load(source)["tofu"]["archive_sha256"][architecture()]
+        if not isinstance(archive, str) or not re.fullmatch(r"[0-9a-f]{64}", archive):
+            raise ValueError("Invalid OpenTofu ZIP SHA-256")
     directory = SCOPE / "bin"
     if directory.is_symlink():
         raise ValueError("Tool directory must not be a symlink")
@@ -85,6 +94,7 @@ def install(tool: str, url: str, checksum: str) -> None:
     directory.mkdir(exist_ok=True)
     temporary: Path | None = None
     receipt: Path | None = None
+    extracted: Path | None = None
     try:
         progress(f"Creating temporary download file for {tool}")
         with tempfile.NamedTemporaryFile(
@@ -102,11 +112,31 @@ def install(tool: str, url: str, checksum: str) -> None:
                         raise ValueError(f"Download too large: {tool}")
                     digest.update(chunk)
                     target.write(chunk)
-            progress(
-                f"Verifying downloaded {tool}: {size} bytes, expected SHA-256 {checksum}"
-            )
-            if not size or digest.hexdigest() != checksum:
-                raise ValueError(f"SHA-256 verification failed: {tool}")
+        expected = archive or checksum
+        progress(
+            f"Verifying downloaded {tool}: {size} bytes, expected SHA-256 {expected}"
+        )
+        if not size or digest.hexdigest() != expected:
+            raise ValueError(f"SHA-256 verification failed: {tool}")
+        executable = temporary
+        if archive is not None:
+            progress(f"Extracting and verifying {tool} from the checked ZIP")
+            with (
+                zipfile.ZipFile(temporary) as package,
+                package.open(tool) as source,
+                tempfile.NamedTemporaryFile(
+                    dir=directory, prefix=f".{tool}-", delete=False
+                ) as target,
+            ):
+                extracted = Path(target.name)
+                data = source.read(MAX_DOWNLOAD + 1)
+                if (
+                    len(data) > MAX_DOWNLOAD
+                    or hashlib.sha256(data).hexdigest() != checksum
+                ):
+                    raise ValueError(f"Extracted binary verification failed: {tool}")
+                target.write(data)
+            executable = extracted
         progress(f"Writing source receipt for {tool}")
         with tempfile.NamedTemporaryFile(
             dir=directory, prefix=f".{tool}-source-", delete=False
@@ -114,8 +144,8 @@ def install(tool: str, url: str, checksum: str) -> None:
             receipt = Path(source.name)
             source.write((url + "\n").encode("utf-8"))
         progress(f"Setting executable permissions and installing {directory / tool}")
-        temporary.chmod(0o755)
-        temporary.replace(directory / tool)
+        executable.chmod(0o755)
+        executable.replace(directory / tool)
         progress(f"Installing source receipt {directory / (tool + '.source')}")
         receipt.replace(directory / f"{tool}.source")
     except OSError as exc:
@@ -126,20 +156,23 @@ def install(tool: str, url: str, checksum: str) -> None:
             temporary.unlink(missing_ok=True)
         if receipt is not None:
             receipt.unlink(missing_ok=True)
+        if extracted is not None:
+            extracted.unlink(missing_ok=True)
 
 
-def tools(action: str) -> None:
+def tools(action: str, selected: tuple[str, ...] | None = None) -> None:
     progress("Detecting operator platform and architecture")
     arch = architecture()
     progress(f"Selected linux/{arch}; action={action}")
     if (SCOPE / "bin").is_symlink():
         raise ValueError("Tool directory must not be a symlink")
-    for tool in PINS:
+    for tool in selected or tuple(tool for tool in PINS if tool != "tofu"):
         url, checksum = specification(tool, arch)
         if not verified(SCOPE / "bin" / tool, checksum, url):
             if action == "check":
                 raise ValueError(
-                    f"Missing or changed {tool}; run make -C clusters/trust tools"
+                    f"Missing or changed {tool}; run make -C clusters/trust "
+                    + ("tofu-tools" if tool == "tofu" else "tools")
                 )
             install(tool, url, checksum)
         print(f"Verified {tool} {version(PINS[tool])} for linux/{arch}", flush=True)
@@ -148,10 +181,11 @@ def tools(action: str) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("install", "check"))
+    parser.add_argument("--tool", choices=tuple(PINS))
     args = parser.parse_args()
     try:
-        tools(args.action)
-    except (OSError, ValueError, KeyError) as exc:
+        tools(args.action, (args.tool,) if args.tool else None)
+    except (OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
         print(f"Trust tooling failed: {exc}", file=sys.stderr)
         return 1
     return 0

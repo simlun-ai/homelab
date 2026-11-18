@@ -1465,7 +1465,13 @@ Both `trust-data` and `trust-data/recovery-check` reported
 experiments. At the next planned dataset creation, choose and explicitly
 set the compression algorithm.
 
-ZFS LocalPV provisioning and encryption inheritance remain to be verified.
+### Install ZFS LocalPV
+
+Use the [Trust OpenTofu bootstrap runbook](../../runbooks/trust-opentofu-bootstrap.md)
+to enroll and verify the wrapped state key, prepare the private sibling
+state checkout, review the infrastructure plan, and install ZFS LocalPV
+v2.11.2. Live provisioning and ZFS encryption inheritance remain to be
+verified with a disposable PVC before deploying OpenBao.
 
 ## Later platform and service milestones
 

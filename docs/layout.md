@@ -76,6 +76,13 @@ Keep machine-readable node assignments synchronized with the inventory. A declar
 
 Plaintext secret-bearing kubeconfigs, talosconfigs, machine secrets, **complete secret-bearing rendered configurations**, tokens, and keys have no workstation-disk location. Public committed per-node patch bundles under `talos/rendered/` contain non-secret configuration only and must never include credentials. Wrapped credential records are permitted in `/secrets/wrapped/`. Trust uses sealed anonymous memory descriptors for offline configuration generation and verified tmpfs directories for native client signing; other runtime storage remains TBD under [security.md](security/security.md#secret-handling-boundary).
 
+Trust's infrastructure pilot uses `clusters/trust/tofu/` for the LocalPV
+release and StorageClass. Cluster-specific chart values remain under
+`helm/values/infrastructure/`. The Trust OpenTofu root owns the chart pin.
+Its encrypted state is held in the separate single-writer checkout
+`../homelab-opentofu-state`. Workload deployment ownership remains open.
+See [Trust OpenTofu bootstrap](../runbooks/trust-opentofu-bootstrap.md).
+
 ## Shared implementation
 
 | Proposed path | Responsibility |

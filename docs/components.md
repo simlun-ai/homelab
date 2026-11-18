@@ -21,7 +21,7 @@ Trust ran ZFS extension `2.4.4-v1.14.5` and loaded the kernel module on
 | ZFS LocalPV | v2.11.2 | v2.11.2 |  |  |  |
 | OpenBao | v2.7.1 | v2.7.1 |  |  |  |
 | [Talos KMS adapter](security/security.md#talos-kms-adapter) (repository-owned Python service) | TBD | TBD |  |  |  |
-| OpenTofu | v1.13.1 |  |  |  |  |
+| OpenTofu | v1.13.1 | v1.13.0 (infrastructure pilot) |  |  |  |
 | External Secrets Operator | v2.11.0 | v2.11.0 | v2.11.0 | v2.11.0 | v2.11.0 |
 | cert-manager | v1.21.2 | v1.21.2 |  |  |  |
 | Garage | v2.4.1 |  | v2.4.1 |  |  |
@@ -52,7 +52,7 @@ Trust ran ZFS extension `2.4.4-v1.14.5` and loaded the kernel module on
 | Python cryptography (HKDF/AESGCM), constrained RFC 8785 serialization | Initial [v1 wrapping helper](security/security.md#challenges-derivation-and-wrapped-credentials); step 00 pins live in [the code project’s pyproject.toml](../tools/homelab-hsm/homelab_secrets/pyproject.toml). |
 | YubiKey Manager Python SDK | Selected for [step 00](installation/00-yubikey-setup.md); version pinned in [the code project’s pyproject.toml](../tools/homelab-hsm/homelab_secrets/pyproject.toml), physical-device verification passed on all four tokens on 2026-11-04. |
 | kubectl, talosctl, Helm, OpenBao CLI (`bao`) | [Trust client pins](../clusters/trust/versions.yaml) and [scoped acquisition](../clusters/trust/README.md#scoped-tools-and-validation) implemented for Linux; other tools/scopes TBD. |
-| OpenTofu CLI (`tofu`) | Independently pinned per scope; catalog version above. |
+| OpenTofu CLI (`tofu`) | Independently pinned per scope; Trust uses [v1.13.0](../clusters/trust/versions.yaml). |
 | [pftf/RPi4 EDK2 UEFI firmware](https://github.com/pftf/RPi4) | v1.53 selected only for the [Trust Pi 4 installation experiment](installation/02-trust.md#first-installation-experiment-pi-4-uefi); unverified. |
 | Raspberry Pi OS Lite | 64-bit; exact image release TBD. Selected for all UPS coordinators on microSD; [base setup](../runbooks/ups-coordinator-base-setup.md). |
 | Ansible | ansible-core and dependencies pinned in [requirements.txt](../support/ups/requirements.txt); base bootstrap implemented, hardware verification pending. |
