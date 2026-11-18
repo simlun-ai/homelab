@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Write a recovery fixture to the encrypted `trust-data` mirror, then reboot `trust-cp1` to check automatic pool import and key loading. Reuse the fixture for the workstation recovery test.
+- **Current next step:** Reboot `trust-cp1` to check automatic import and key loading for `trust-data`. The encrypted fixture and its checksum are ready for the workstation recovery test.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1346,8 +1346,14 @@ set to `none`. Close the Trust KMS window after the node has recovered.
 5. Unmount the test dataset and export the pool before disconnecting the
    drives. Return them to the Pi and verify the mirror is online.
 
-This test is pending. Recovery after local key loss on the Pi and ZFS
-LocalPV encryption inheritance also remain to be verified.
+On 2026-11-18, the operator wrote and unmounted the fixture on
+`trust-data/recovery-check`. The dataset inherits encryption from
+`trust-data`. The SHA-256 of `fixture.txt` is
+`3f5b529e80156a0d7348d8f1ae8c7a68d06381dcd8e7415a23a25ebc70660b56`.
+
+The workstation import and checksum comparison are pending. Recovery
+after local key loss on the Pi and ZFS LocalPV encryption inheritance
+also remain to be verified.
 
 ## Later platform and service milestones
 
