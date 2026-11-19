@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Decide the production StorageClass for OpenBao. The disposable LocalPV test passed persistence, encryption, compression, and reclamation checks.
+- **Current next step:** Apply and verify the production `trust-zfs-retain` StorageClass for OpenBao. The disposable LocalPV test passed persistence, encryption, compression, and reclamation checks.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1516,6 +1516,16 @@ default. Deleting the reader and the claim reclaimed the Kubernetes
 PV. A follow-up Talos debug listing confirmed that LocalPV removed
 the matching ZFS dataset and that the pool and recovery fixture
 remained present. The test namespace was deleted.
+
+### Prepare OpenBao's production storage
+
+The Trust infrastructure root defines `trust-zfs-retain` as a
+non-default LocalPV StorageClass for persistent data. It uses ZFS
+filesystems on `trust-data`, inherits its encryption, explicitly sets
+`compression=lz4`, and retains the backing volume when the claim is
+deleted. Follow the [production retention rehearsal](../../runbooks/trust-opentofu-bootstrap.md#5-verify-the-production-retention-policy)
+before pointing OpenBao at the class. Installation and live verification
+of this StorageClass are pending.
 
 ## Later platform and service milestones
 

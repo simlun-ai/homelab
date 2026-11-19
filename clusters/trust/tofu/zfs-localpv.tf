@@ -37,3 +37,21 @@ resource "kubernetes_storage_class_v1" "zfs_rehearsal" {
 
   depends_on = [helm_release.zfs_localpv]
 }
+
+resource "kubernetes_storage_class_v1" "zfs_retain" {
+  metadata {
+    name = "trust-zfs-retain"
+  }
+
+  storage_provisioner = "zfs.csi.openebs.io"
+  volume_binding_mode = "WaitForFirstConsumer"
+  reclaim_policy      = "Retain"
+
+  parameters = {
+    fstype      = "zfs"
+    poolname    = "trust-data"
+    compression = "lz4"
+  }
+
+  depends_on = [helm_release.zfs_localpv]
+}
