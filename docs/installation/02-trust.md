@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Verify that a disposable ZFS LocalPV claim preserves data across pod replacement, inherits encryption and compression, and is reclaimed on deletion. The driver and rehearsal StorageClass are installed.
+- **Current next step:** Decide the production StorageClass for OpenBao. The disposable LocalPV test passed persistence, encryption, compression, and reclamation checks.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1499,8 +1499,23 @@ a reboot. The subsequent node check and OpenTofu plan passed, with
 
 The operator verified the encrypted Trust state envelope at serial 3
 and committed it locally in the private sibling checkout (`41c016f`).
-A fresh OpenTofu plan read the state and reported no changes. The remote
-state publication and disposable PVC checks remain pending.
+A fresh OpenTofu plan read the state and reported no changes. Remote
+state publication remains pending.
+
+### Verify LocalPV persistence and reclamation
+
+On 2026-11-19, a disposable 1 GiB claim using
+`trust-zfs-rehearsal` was provisioned on `trust-cp1`. The writer
+stored a fixture and a replacement pod read the same bytes through
+the same claim.
+
+A Talos debug check confirmed that the backing dataset under
+`trust-data` was a ZFS filesystem with `encryption=aes-256-gcm`,
+`encryptionroot=trust-data`, and `compression=on` from the OpenZFS
+default. Deleting the reader and the claim reclaimed the Kubernetes
+PV. A follow-up Talos debug listing confirmed that LocalPV removed
+the matching ZFS dataset and that the pool and recovery fixture
+remained present. The test namespace was deleted.
 
 ## Later platform and service milestones
 
