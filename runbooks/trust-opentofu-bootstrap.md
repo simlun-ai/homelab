@@ -162,9 +162,11 @@ make -C clusters/trust tofu-state-recover \
 ```
 
 The helper checks that the recovery file resides on tmpfs and is a private
-operator-owned file. It uses the usual local backend and encryption
-settings to push the state with OpenTofu's lineage and serial checks
-enabled. Only the wrapped state key is needed. Leave the RAM recovery copy
+operator-owned file. If the emergency snapshot is encrypted, the helper
+opens a copy through a separate temporary backend and captures the
+decrypted state in memory. It passes the state to the usual encrypted
+backend with OpenTofu's lineage and serial checks enabled. Only the
+wrapped state key is needed. Leave the RAM recovery copy
 in place until the encrypted state is verified and the next plan accounts
 for the resources left by the failed apply. Avoid `tofu state pull` during
 normal operations because it prints decrypted state.
