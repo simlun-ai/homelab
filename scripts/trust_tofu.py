@@ -157,8 +157,20 @@ def key_session(address: Path) -> Generator[None]:
             worker.join()
 
 
+def init_backend(
+    tofu: str, work: Path, env: dict[str, str], state: Path | None
+) -> None:
+    backend = "-backend=false" if state is None else f"-backend-config=path={state}"
+    subprocess.run(
+        [tofu, "init", "-input=false", "-lockfile=readonly", backend],
+        cwd=work,
+        env=env,
+        check=True,
+    )
+
+
 def recover_state(tofu: str, path: Path, work: Path, env: dict[str, str]) -> None:
-    """Push OpenTofu's emergency state directly from verified tmpfs."""
+    """Recover an emergency snapshot from verified tmpfs into the encrypted backend."""
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
     with os.fdopen(fd, "rb") as source:
         recovery.credentials.require_tmpfs(source.fileno())
@@ -171,8 +183,36 @@ def recover_state(tofu: str, path: Path, work: Path, env: dict[str, str]) -> Non
             raise recovery.secrets.PreflightError(
                 "Recovery state must be a private operator-owned regular file on tmpfs"
             )
+        envelope: object = json.load(source)
+        source.seek(0)
+        if not isinstance(envelope, dict) or "encrypted_data" not in envelope:
+            subprocess.run(
+                [tofu, "state", "push", "-"],
+                cwd=work,
+                env=env,
+                stdin=source,
+                check=True,
+            )
+            return
+
+        # state push accepts plaintext. Open the encrypted snapshot through a
+        # separate backend and collect state pull's plaintext only in memory.
+        snapshot = work / "recovery-source.tfstate"
+        with snapshot.open("xb") as destination:
+            shutil.copyfileobj(source, destination)
+        source_env = {**env, "TF_DATA_DIR": str(work / "recovery-backend")}
+        init_backend(tofu, work, source_env, snapshot)
+        plaintext = subprocess.run(
+            [tofu, "state", "pull"],
+            cwd=work,
+            env=source_env,
+            stdout=subprocess.PIPE,
+            check=True,
+        ).stdout
+        if not plaintext:
+            raise ValueError("The recovery source returned no state")
         subprocess.run(
-            [tofu, "state", "push", "-"], cwd=work, env=env, stdin=source, check=True
+            [tofu, "state", "push", "-"], cwd=work, env=env, input=plaintext, check=True
         )
 
 
@@ -238,15 +278,9 @@ def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
             ),
             TF_VAR_kubeconfig_path=str(work / "kubeconfig"),
         )
-        backend = "-backend=false" if state is None else f"-backend-config=path={state}"
         try:
             with key_session(address) if state is not None else nullcontext():
-                subprocess.run(
-                    [tofu, "init", "-input=false", "-lockfile=readonly", backend],
-                    cwd=work,
-                    env=env,
-                    check=True,
-                )
+                init_backend(tofu, work, env, state)
                 if recovery_file is not None:
                     recover_state(tofu, recovery_file, work, env)
                     print(f"PASS: recovered state persisted to {state}.", flush=True)
