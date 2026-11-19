@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Apply and verify the production `trust-zfs-retain` StorageClass for OpenBao. The disposable LocalPV test passed persistence, encryption, compression, and reclamation checks.
+- **Current next step:** Commit the updated encrypted OpenTofu state and verify `trust-zfs-retain` with a disposable claim before deploying OpenBao. The StorageClass apply passed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1524,8 +1524,13 @@ non-default LocalPV StorageClass for persistent data. It uses ZFS
 filesystems on `trust-data`, inherits its encryption, explicitly sets
 `compression=lz4`, and retains the backing volume when the claim is
 deleted. Follow the [production retention rehearsal](../../runbooks/trust-opentofu-bootstrap.md#5-verify-the-production-retention-policy)
-before pointing OpenBao at the class. Installation and live verification
-of this StorageClass are pending.
+before pointing OpenBao at the class.
+
+On 2026-11-19, the operator reviewed the OpenTofu plan for
+`trust-zfs-retain` and applied it on Trust. The plan and apply each
+reported a single addition with zero changes or deletions. Encrypted
+state publication for this change and the live retention rehearsal
+remain pending.
 
 ## Later platform and service milestones
 
