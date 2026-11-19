@@ -191,3 +191,35 @@ cluster before applying, especially if restoring an older state revision.
 Retain historical key generations needed by backed-up state. Preserve
 `trust-data` and use the [Trust recovery runbook](../docs/installation/02-trust.md)
 for the pool and its separate ZFS key.
+
+## 5. Verify the production retention policy
+
+The Trust infrastructure root defines the non-default
+`trust-zfs-retain` StorageClass for OpenBao's Raft data and other
+workloads that explicitly select it. It provisions ZFS filesystems on
+`trust-data` with `WaitForFirstConsumer`, `Retain`, and explicit
+`compression=lz4`. The backing dataset inherits encryption from
+`trust-data`.
+
+For an existing Trust installation whose latest plan reports no changes,
+review a new `make -C clusters/trust tofu-plan` for exactly one addition,
+`kubernetes_storage_class_v1.zfs_retain`. Apply it with the same
+`tofu-apply` workflow and commit the updated encrypted state.
+
+Rehearse the policy with a disposable claim before pointing OpenBao at it.
+
+1. In a temporary namespace, create a scratch PVC that explicitly selects
+   `trust-zfs-retain`. Mount it from a consumer pod and write a non-secret
+   fixture. Record the bound PV, its CSI volume handle, and the matching
+   ZFS dataset.
+2. Use Talos debug to confirm `encryption=aes-256-gcm`,
+   `encryptionroot=trust-data`, and `compression=lz4`.
+3. Delete the consumer and the scratch claim. Confirm that the PV moves to
+   `Released` and that the recorded ZFS dataset is still present.
+4. Confirm the released PV and dataset identities before deliberately
+   reclaiming that disposable test volume. Verify both are gone, then
+   delete the temporary namespace.
+
+Retained local volumes still depend on the Pi and mirror. The planned
+[OpenBao Raft snapshots](../docs/backup-and-restore.md#openbao-online-backups)
+cover recovery from their loss.
