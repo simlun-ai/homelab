@@ -111,13 +111,31 @@ def require_private_repository(
         raise ValueError("Private wrapped-record submodule is not initialized")
 
 
+@contextmanager
+def hsm_progress_terminal() -> Generator[int]:
+    """Route public HSM progress to the operator even when stderr is captured."""
+    try:
+        fd = os.open("/dev/tty", os.O_WRONLY | os.O_CLOEXEC)
+    except OSError:
+        yield subprocess.DEVNULL
+        return
+    try:
+        yield fd
+    finally:
+        os.close(fd)
+
+
 def capture_bundle(
-    argv: list[str], timeout: float, *, pass_fds: tuple[int, ...] = ()
+    argv: list[str],
+    timeout: float,
+    *,
+    pass_fds: tuple[int, ...] = (),
+    stderr: int = subprocess.DEVNULL,
 ) -> bytes:
     """Bound output and elapsed time; release no bytes until the child succeeds."""
     deadline = time.monotonic() + timeout
     process = subprocess.Popen(
-        argv, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, pass_fds=pass_fds
+        argv, stdout=subprocess.PIPE, stderr=stderr, pass_fds=pass_fds
     )
     try:
         assert process.stdout is not None
@@ -168,7 +186,14 @@ def initialize(talosctl: str, wrap_cli: str) -> None:
     print("Verified encrypted Trust bootstrap record created.", file=sys.stderr)
 
 
-def wrap_bundle(plaintext: bytes, wrap_cli: str, *, record: Path, key_id: str) -> None:
+def wrap_bundle(
+    plaintext: bytes,
+    wrap_cli: str,
+    *,
+    record: Path,
+    key_id: str,
+    stderr: int = subprocess.DEVNULL,
+) -> None:
     if os.path.lexists(record):
         raise FileExistsError("Talos bootstrap record already exists")
     # homelab-wrap verifies the AEAD record and creates ciphertext exclusively.
@@ -185,7 +210,7 @@ def wrap_bundle(plaintext: bytes, wrap_cli: str, *, record: Path, key_id: str) -
         ],
         input=plaintext,
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stderr=stderr,
         check=True,
         timeout=180,
     )
@@ -197,7 +222,9 @@ def require_pipe() -> None:
         raise ValueError("Plaintext recovery requires a pipe or socket")
 
 
-def recover_bundle(unwrap_cli: str, *, record: Path, key_id: str) -> bytes:
+def recover_bundle(
+    unwrap_cli: str, *, record: Path, key_id: str, stderr: int = subprocess.DEVNULL
+) -> bytes:
     if not record.is_file() or record.is_symlink():
         raise FileNotFoundError("Talos bootstrap record missing")
     return capture_bundle(
@@ -212,6 +239,7 @@ def recover_bundle(unwrap_cli: str, *, record: Path, key_id: str) -> bytes:
             "--stdout",
         ],
         timeout=180,
+        stderr=stderr,
     )
 
 

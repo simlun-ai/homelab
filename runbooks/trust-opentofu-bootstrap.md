@@ -92,9 +92,12 @@ make -C clusters/trust tofu-apply
 
 Review the new plan printed by apply and confirm it at the prompt.
 Touch the YubiKey for the Talos admin identity and each OpenTofu key
-request. The operator helper keeps the kubeconfig, working files,
-provider diagnostics and any failure-recovery state in private verified
-tmpfs. Public provider packages are cached under `clusters/trust/bin/`
+request. Follow the HSM prompts in your terminal. Keep your finger off
+the key during the no-touch check, tap when prompted, and lift your finger
+when the helper confirms the touch. Initialization and planning can each
+request the state key more than once. The operator helper keeps the
+kubeconfig, working files, provider diagnostics and any failure-recovery
+state in private verified tmpfs. Public provider packages are cached under `clusters/trust/bin/`
 so they can execute even when tmpfs is mounted `noexec`. State and plan
 encryption are enforced by the Trust root. Plans are reviewed in the
 terminal.

@@ -19,7 +19,10 @@ METADATA = {"external_data": {"key_id": KEY_ID}}
 
 
 def recover(unwrap: str) -> bytes:
-    key = secrets.recover_bundle(unwrap, record=RECORD, key_id=KEY_ID)
+    with secrets.hsm_progress_terminal() as terminal:
+        key = secrets.recover_bundle(
+            unwrap, record=RECORD, key_id=KEY_ID, stderr=terminal
+        )
     if len(key) != KEY_BYTES:
         raise ValueError("Expected a 32-byte OpenTofu AES key")
     return key
@@ -57,7 +60,10 @@ def main() -> int:
             wrap = secrets.executable(bin_dir / "homelab-wrap", "homelab-wrap")
             key = os.urandom(KEY_BYTES)
             print("Touch the YubiKey to wrap and verify the OpenTofu key.", flush=True)
-            secrets.wrap_bundle(key, wrap, record=RECORD, key_id=KEY_ID)
+            with secrets.hsm_progress_terminal() as terminal:
+                secrets.wrap_bundle(
+                    key, wrap, record=RECORD, key_id=KEY_ID, stderr=terminal
+                )
             print("Touch the YubiKey again for independent recovery.", flush=True)
             if not hmac.compare_digest(key, recover(unwrap)):
                 raise ValueError("Independently recovered OpenTofu key did not match")

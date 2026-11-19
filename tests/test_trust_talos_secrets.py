@@ -7,7 +7,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, TemporaryFile
 from unittest.mock import Mock, patch
 
 from homelab_secrets.swap import UnsafeSwapError
@@ -97,6 +97,21 @@ class TrustSecretsTests(unittest.TestCase):
             ),
             b"disposable\n",
         )
+
+    def test_capture_keeps_operator_progress_separate_from_payload(self) -> None:
+        with TemporaryFile() as progress:
+            captured = module.capture_bundle(
+                [
+                    sys.executable,
+                    "-c",
+                    "import sys; print('payload'); print('touch', file=sys.stderr)",
+                ],
+                timeout=5,
+                stderr=progress.fileno(),
+            )
+            progress.seek(0)
+            self.assertEqual(progress.read(), b"touch\n")
+        self.assertEqual(captured, b"payload\n")
 
     def test_recover_emits_nothing_on_child_failure(self) -> None:
         with TemporaryDirectory() as directory:
