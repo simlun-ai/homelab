@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Validate ZFS LocalPV v2.11.2 provisioning and encryption inheritance on `trust-data` with a disposable PVC before deploying OpenBao. Local ZFS key-loss recovery and the workstation recovery rehearsal passed.
+- **Current next step:** Apply the reviewed Trust OpenTofu plan for ZFS LocalPV v2.11.2, then verify and commit the encrypted state. The live plan showed three additions and no changes or deletions.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1470,8 +1470,17 @@ set the compression algorithm.
 Use the [Trust OpenTofu bootstrap runbook](../../runbooks/trust-opentofu-bootstrap.md)
 to enroll and verify the wrapped state key, prepare the private sibling
 state checkout, review the infrastructure plan, and install ZFS LocalPV
-v2.11.2. Live provisioning and ZFS encryption inheritance remain to be
-verified with a disposable PVC before deploying OpenBao.
+v2.11.2.
+
+On 2026-11-19, the operator ran the first live `tofu-plan`. It showed
+`3 to add, 0 to change, 0 to destroy`. The additions were the
+`openebs-zfs` namespace, the `zfs-localpv` Helm release at v2.11.2 on
+`trust-cp1`, and the non-default `trust-zfs-rehearsal` StorageClass.
+The class targets `trust-data` with native ZFS datasets,
+`WaitForFirstConsumer`, and the rehearsal's `Delete` reclaim policy.
+
+First apply, encrypted state publication, and disposable PVC provisioning
+and encryption inheritance checks remain pending.
 
 ## Later platform and service milestones
 
