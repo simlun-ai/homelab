@@ -91,13 +91,13 @@ make -C clusters/trust tofu-apply
 ```
 
 Review the new plan printed by apply and confirm it at the prompt.
-Touch the YubiKey for the Talos admin identity and each OpenTofu key
-request. Follow the HSM prompts in your terminal. Keep your finger off
-the key during the no-touch check, tap when prompted, and lift your finger
-when the helper confirms the touch. Initialization and planning can each
-request the state key more than once. The operator helper keeps the
-kubeconfig, working files, provider diagnostics and any failure-recovery
-state in private verified tmpfs. Public provider packages are cached under `clusters/trust/bin/`
+Touch the YubiKey once to recover the OpenTofu state key and once for the
+Talos admin identity. Keep your finger off the key during each no-touch
+check, tap when prompted, and lift your finger when the helper confirms
+the touch. OpenTofu reuses the recovered state key for this invocation
+over a private Unix socket in the verified RAM workspace. The helper
+keeps the kubeconfig, working files, provider diagnostics, and any
+failure-recovery state in private verified tmpfs. Public provider packages are cached under `clusters/trust/bin/`
 so they can execute even when tmpfs is mounted `noexec`. State and plan
 encryption are enforced by the Trust root. Plans are reviewed in the
 terminal.
@@ -129,11 +129,23 @@ git -C ../homelab-opentofu-state status --short &&
 
 Push after the private `simlun-ai/homelab-opentofu-state` repo and its
 remote are ready. Keep routine `.backup` and lock files out of commits.
-If an apply fails, inspect the encrypted state checkout for changes
-before retrying. If a RAM recovery file is reported, keep the workstation
-running and reconcile that file before another apply. Treat recovery
-files as secret-bearing and keep them in RAM. Avoid `tofu state pull`
-in normal operations because it prints decrypted state.
+If an apply fails, inspect the encrypted state checkout for changes before
+retrying. If the helper prints a retained `errored.tfstate` path, keep the
+workstation running and recover the state before another plan or apply.
+Run the following with the exact RAM path printed by the helper.
+
+```sh
+make -C clusters/trust tofu-state-recover \
+  TOFU_RECOVERY_FILE=/dev/shm/trust-tofu-recovery-REPLACE/errored.tfstate
+```
+
+The helper checks that the recovery file resides on tmpfs and is a private
+operator-owned file. It uses the usual local backend and encryption
+settings to push the state with OpenTofu's lineage and serial checks
+enabled. Only the wrapped state key is needed. Leave the RAM recovery copy
+in place until the encrypted state is verified and the next plan accounts
+for the resources left by the failed apply. Avoid `tofu state pull` during
+normal operations because it prints decrypted state.
 
 ## 4. Verify and recover
 

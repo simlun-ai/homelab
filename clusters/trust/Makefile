@@ -27,6 +27,7 @@ help:
 	  'tofu-tools: acquire pinned OpenTofu for the Trust infrastructure root' \
 	  'tofu-key-enroll / tofu-key-verify: enroll or verify the wrapped state key' \
 	  'tofu-validate / tofu-plan / tofu-apply: validate or operate Trust infrastructure' \
+	  'tofu-state-recover TOFU_RECOVERY_FILE=path: recover retained RAM state' \
 	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \
 	  'kms-window-open / kms-window-status / kms-window-lock: control the trust-cp1 KMS window'
 tools:
@@ -146,3 +147,10 @@ tofu-plan tofu-apply: check-tools
 tofu-validate tofu-plan tofu-apply: tofu-check
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_tofu.py" \
 	  $(patsubst tofu-%,%,$@) --ram-root "$(RAM_ROOT)"
+
+export TOFU_RECOVERY_FILE
+.PHONY: tofu-state-recover
+tofu-state-recover: tofu-check
+	@test -n "$$TOFU_RECOVERY_FILE" || { echo 'Set TOFU_RECOVERY_FILE to the retained RAM recovery file.' >&2; exit 2; }
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_tofu.py" \
+	  state-recover --ram-root "$(RAM_ROOT)" --recovery-file "$$TOFU_RECOVERY_FILE"

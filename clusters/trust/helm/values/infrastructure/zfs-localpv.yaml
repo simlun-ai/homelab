@@ -10,7 +10,15 @@ zfsNode:
   allowedTopologyKeys: kubernetes.io/hostname
   nodeSelector:
     kubernetes.io/hostname: trust-cp1
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
 
 zfsController:
   nodeSelector:
     kubernetes.io/hostname: trust-cp1
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
