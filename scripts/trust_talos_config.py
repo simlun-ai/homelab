@@ -55,9 +55,12 @@ def memory_file(content: bytes) -> Generator[int]:
 def generate(
     talosctl: str, bundle: bytes, output_type: str, *, install: bool = False
 ) -> bytes:
-    patches = ["--config-patch", "@" + str(SCOPE / "talos/rendered/trust-cp1.yaml")]
+    patches = [
+        "--config-patch-control-plane",
+        "@" + str(SCOPE / "talos/rendered/trust-cp1.yaml"),
+    ]
     if install:
-        patches.extend(["--config-patch", "@" + str(RAID_PATCH)])
+        patches.extend(["--config-patch-control-plane", "@" + str(RAID_PATCH)])
     with memory_file(bundle) as fd:
         return secrets.capture_bundle(
             [

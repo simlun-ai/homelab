@@ -6,7 +6,7 @@ See the [network overview](network.md) for VLANs, IP allocations, and the CNI an
 
 ## Trust
 
-Independent, single-node foundation. All other clusters depend on its services. Its own secrets are supplied manually so bootstrap, disk unlock, and recovery do not depend on its OpenBao instance or another cluster.
+Independent, single-node foundation. All other clusters depend on its services. The intended Talos node policy allows workloads on the control-plane node, `trust-cp1`. Its own secrets are supplied manually so bootstrap, disk unlock, and recovery do not depend on its OpenBao instance or another cluster.
 
 | Function | Components |
 | --- | --- |

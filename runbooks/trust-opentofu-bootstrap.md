@@ -72,6 +72,28 @@ locked providers. It does not require a YubiKey touch or contact the cluster.
 make -C clusters/trust tofu-validate
 ```
 
+Trust's only node runs both the control plane and workloads. Its
+`KubeNodeConfig` patch removes the standard control-plane scheduling
+taint. The install and rebuild configuration includes the patch. For an
+already installed node that still has the taint, preview the live change.
+
+```sh
+make -C clusters/trust scheduling-preview
+```
+
+Confirm that the preview removes only
+`node-role.kubernetes.io/control-plane: NoSchedule` from the node's
+taints. Apply it live.
+
+```sh
+make -C clusters/trust scheduling-apply
+```
+
+Use the Trust administration flow to confirm the taint is absent in the
+Kubernetes node's `spec.taints`. If recovering from the first failed
+LocalPV apply, recover the state below before running another OpenTofu
+plan or apply.
+
 Before applying, confirm that `trust-cp1` is `Ready` and `trust-data` is
 online and unlocked. The CSI driver uses the existing pool. Review the
 plan with an attached YubiKey:

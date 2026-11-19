@@ -12,7 +12,7 @@ help:
 	  'installer-image SCHEMATIC=path.yaml: resolve and verify the pinned ARM64 installer' \
 	  'render: regenerate committed public Talos YAML' \
 	  'check-rendered: verify committed YAML is current' \
-	  'validate: verify public bundle with pinned Talos tooling (run tools first)' \
+	  'validate: validate a disposable control-plane config with the public patches' \
 	  'install-config-apply: install Talos on the assigned trust-cp1 OS mirror' \
 	  'install-config-validate: recover the existing Trust identity and validate the full install config' \
 	  'install-config-rehearse: validate a disposable full config with RAID1 and KMS patches' \
@@ -21,6 +21,7 @@ help:
 	  'credentials-rehearse: native 24-hour client issuance on verified tmpfs (RAM_ROOT=/dev/shm)' \
 	  'recovery-rehearse: disposable YubiKey recovery, configuration and 24-hour client reissuance' \
 	  'admin-inspect: recover existing production authority and inspect a fresh client locally' \
+	  'scheduling-preview / scheduling-apply: preview or apply the Trust node taint patch' \
 	  'admin-rehearse: test administration inspection with a disposable wrapped authority' \
 	  'zfs-key-enroll / zfs-key-verify: enroll or verify the wrapped Trust ZFS key' \
 	  'zfs-key-install: deliver the enrolled key to encrypted EPHEMERAL' \
@@ -38,8 +39,6 @@ render:
 	@$(PYTHON) "$(SCOPE)/render.py" render
 check-rendered:
 	@$(PYTHON) "$(SCOPE)/render.py" check
-validate: check-rendered check-tools
-	@"$(SCOPE)/bin/talosctl" validate --config "$(SCOPE)/talos/rendered/trust-cp1.yaml" --mode metal --strict
 
 secrets-rehearse: check-tools
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_talos_secrets.py" rehearse \
@@ -90,13 +89,14 @@ kms-probe-seal kms-probe-unseal:
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_kms_tls_check.py" $(patsubst kms-probe-%,%,$@)
 
 .PHONY: install-config-rehearse
-install-config-rehearse: check-tools check-rendered
-	@bash -o pipefail -c '"$$1" gen config trust-install-rehearsal https://trust-install-rehearsal.invalid:6443 \
+install-config-rehearse: REHEARSAL_RAID := "@$(SCOPE)/talos/experiments/trust-cp1-raid1.yaml"
+validate install-config-rehearse: check-tools check-rendered
+	@bash -o pipefail -c 'talosctl="$$1"; shift; "$$talosctl" gen config trust-install-rehearsal https://trust-install-rehearsal.invalid:6443 \
 	  --install-disk /dev/REHEARSAL-DO-NOT-INSTALL \
-	  --config-patch "@$$2/talos/rendered/trust-cp1.yaml" \
-	  --config-patch "@$$2/talos/experiments/trust-cp1-raid1.yaml" \
-	  --with-docs=false --with-examples=false --output-types controlplane --output - | \
-	  "$$1" validate --mode metal --strict --config /dev/stdin' bash "$(SCOPE)/bin/talosctl" "$(SCOPE)"
+	  "$$@" --with-docs=false --with-examples=false --output-types controlplane --output - | \
+	  "$$talosctl" validate --mode metal --strict --config /dev/stdin' bash "$(SCOPE)/bin/talosctl" \
+	  --config-patch-control-plane "@$(SCOPE)/talos/rendered/trust-cp1.yaml" \
+	  $(if $(REHEARSAL_RAID),--config-patch-control-plane $(REHEARSAL_RAID))
 
 .PHONY: install-config-validate
 install-config-validate: check-tools check-rendered
@@ -154,3 +154,10 @@ tofu-state-recover: tofu-check
 	@test -n "$$TOFU_RECOVERY_FILE" || { echo 'Set TOFU_RECOVERY_FILE to the retained RAM recovery file.' >&2; exit 2; }
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_tofu.py" \
 	  state-recover --ram-root "$(RAM_ROOT)" --recovery-file "$$TOFU_RECOVERY_FILE"
+
+
+.PHONY: scheduling-preview scheduling-apply
+scheduling-preview scheduling-apply: check-tools check-rendered
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_talos_admin.py" \
+	  $@ --talosctl "$(SCOPE)/bin/talosctl" --ram-root "$(RAM_ROOT)" \
+	  --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
