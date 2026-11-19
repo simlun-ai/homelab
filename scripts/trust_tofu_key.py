@@ -5,6 +5,7 @@ import base64
 import hmac
 import json
 import os
+import socket
 import subprocess
 import sys
 from pathlib import Path
@@ -28,13 +29,24 @@ def recover(unwrap: str) -> bytes:
     return key
 
 
-def provide(unwrap: str) -> None:
+def read_session_key(address: Path) -> bytes:
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as channel:
+        channel.settimeout(5)
+        channel.connect(str(address))
+        with channel.makefile("rb") as response:
+            key = response.read(KEY_BYTES + 1)
+    if len(key) != KEY_BYTES:
+        raise ValueError("Invalid OpenTofu key session response")
+    return key
+
+
+def provide(address: Path) -> None:
     secrets.require_pipe()
     print('{"magic":"OpenTofu-External-Key-Provider","version":1}', flush=True)
     request: object = json.load(sys.stdin)
     if request is not None and request != METADATA:
         raise ValueError("Unexpected OpenTofu state key metadata")
-    encoded = base64.b64encode(recover(unwrap)).decode("ascii")
+    encoded = base64.b64encode(read_session_key(address)).decode("ascii")
     keys = {"encryption_key": encoded}
     if request is not None:
         keys["decryption_key"] = encoded
@@ -44,15 +56,19 @@ def provide(unwrap: str) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("enroll", "verify", "provide"))
+    parser.add_argument("--socket", type=Path)
     args = parser.parse_args()
+    if (args.action == "provide") != (args.socket is not None):
+        parser.error("--socket is required only for provide")
     try:
         secrets.harden()
+        if args.socket is not None:
+            provide(args.socket)
+            return 0
         secrets.require_private_repository(record=RECORD)
         bin_dir = Path(sys.executable).parent
         unwrap = secrets.executable(bin_dir / "homelab-unwrap", "homelab-unwrap")
-        if args.action == "provide":
-            provide(unwrap)
-        elif args.action == "verify":
+        if args.action == "verify":
             print("Touch the YubiKey to recover the Trust OpenTofu key.", flush=True)
             recover(unwrap)
             print("PASS: wrapped Trust OpenTofu AES key recovered.")

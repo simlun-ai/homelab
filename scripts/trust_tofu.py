@@ -6,10 +6,15 @@ import json
 import os
 import re
 import shutil
+import socket
+import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import urllib.request
+from collections.abc import Generator
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -115,7 +120,63 @@ def get_kubeconfig(ram_root: Path) -> bytes:
         )
 
 
-def run(action: str, ram_root: Path) -> None:
+@contextmanager
+def key_session(address: Path) -> Generator[None]:
+    """Serve the state key for this invocation in the private RAM directory."""
+    unwrap = recovery.secrets.executable(
+        Path(sys.executable).with_name("homelab-unwrap"), "homelab-unwrap"
+    )
+    print("Recovering the Trust OpenTofu state key for this invocation.", flush=True)
+    key = tofu_key.recover(unwrap)
+    stopped = threading.Event()
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
+        listener.bind(str(address))
+        listener.listen()
+        listener.settimeout(0.2)
+
+        def serve() -> None:
+            while not stopped.is_set():
+                try:
+                    peer, _ = listener.accept()
+                except TimeoutError:
+                    continue
+                with peer:
+                    peer.settimeout(1)
+                    try:
+                        peer.sendall(key)
+                    except OSError:
+                        # A cancelled key-provider invocation can close its connection.
+                        continue
+
+        worker = threading.Thread(target=serve)
+        worker.start()
+        try:
+            yield
+        finally:
+            stopped.set()
+            worker.join()
+
+
+def recover_state(tofu: str, path: Path, work: Path, env: dict[str, str]) -> None:
+    """Push OpenTofu's emergency state directly from verified tmpfs."""
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
+    with os.fdopen(fd, "rb") as source:
+        recovery.credentials.require_tmpfs(source.fileno())
+        info = os.fstat(source.fileno())
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_uid != os.geteuid()
+            or info.st_mode & 0o077
+        ):
+            raise recovery.secrets.PreflightError(
+                "Recovery state must be a private operator-owned regular file on tmpfs"
+            )
+        subprocess.run(
+            [tofu, "state", "push", "-"], cwd=work, env=env, stdin=source, check=True
+        )
+
+
+def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
     tofu = recovery.secrets.executable(SCOPE / "bin/tofu", "tofu")
     state = None if action == "validate" else state_path()
     if state is not None:
@@ -142,7 +203,8 @@ def run(action: str, ram_root: Path) -> None:
             SCOPE / "helm/values/infrastructure/zfs-localpv.yaml",
             work / "zfs-localpv-values.yaml",
         )
-        acquire_chart(work)
+        if recovery_file is None:
+            acquire_chart(work)
         # Keep operational files off disk. Only public provider packages use the
         # executable cache because the RAM mount may be noexec.
         for name in ("tmp", "config", "cache", "data"):
@@ -154,6 +216,7 @@ def run(action: str, ram_root: Path) -> None:
             for k, v in os.environ.items()
             if not k.startswith(("TF_", "TOFU_", "KUBE", "HELM_"))
         }
+        address = work / "state-key.sock"
         env.update(
             TF_CLI_CONFIG_FILE=str(cli_config),
             TF_PLUGIN_CACHE_DIR=str(provider_cache),
@@ -163,33 +226,36 @@ def run(action: str, ram_root: Path) -> None:
             XDG_CACHE_HOME=str(work / "cache"),
             XDG_DATA_HOME=str(work / "data"),
             TF_VAR_state_key_command=json.dumps(
-                [sys.executable, "-I", "-B", str(Path(tofu_key.__file__)), "provide"]
+                [
+                    sys.executable,
+                    "-I",
+                    "-B",
+                    str(Path(tofu_key.__file__)),
+                    "provide",
+                    "--socket",
+                    str(address),
+                ]
             ),
             TF_VAR_kubeconfig_path=str(work / "kubeconfig"),
         )
         backend = "-backend=false" if state is None else f"-backend-config=path={state}"
-        if state is not None:
-            print(
-                "Touch the YubiKey when it flashes for OpenTofu state encryption.",
-                flush=True,
-            )
-        subprocess.run(
-            [tofu, "init", "-input=false", "-lockfile=readonly", backend],
-            cwd=work,
-            env=env,
-            check=True,
-        )
-        if state is not None:
-            credential = get_kubeconfig(ram_root)
-            with (work / "kubeconfig").open("xb") as destination:
-                os.fchmod(destination.fileno(), 0o600)
-                destination.write(credential)
-            print(
-                "Touch the YubiKey when it flashes for OpenTofu state encryption.",
-                flush=True,
-            )
         try:
-            subprocess.run([tofu, action], cwd=work, env=env, check=True)
+            with key_session(address) if state is not None else nullcontext():
+                subprocess.run(
+                    [tofu, "init", "-input=false", "-lockfile=readonly", backend],
+                    cwd=work,
+                    env=env,
+                    check=True,
+                )
+                if recovery_file is not None:
+                    recover_state(tofu, recovery_file, work, env)
+                    print(f"PASS: recovered state persisted to {state}.", flush=True)
+                    return
+                if state is not None:
+                    credential = get_kubeconfig(ram_root)
+                    with (work / "kubeconfig").open("xb") as destination:
+                        destination.write(credential)
+                subprocess.run([tofu, action], cwd=work, env=env, check=True)
         finally:
             # OpenTofu can emit a state recovery file after a failed write.
             failed_state = work / "errored.tfstate"
@@ -208,13 +274,18 @@ def run(action: str, ram_root: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("validate", "plan", "apply"))
+    parser.add_argument(
+        "action", choices=("validate", "plan", "apply", "state-recover")
+    )
     parser.add_argument("--ram-root", type=Path, default=Path("/dev/shm"))
+    parser.add_argument("--recovery-file", type=Path)
     args = parser.parse_args()
+    if (args.action == "state-recover") != (args.recovery_file is not None):
+        parser.error("--recovery-file is required only for state-recover")
     try:
         recovery.secrets.harden()
         os.umask(0o077)
-        run(args.action, args.ram_root)
+        run(args.action, args.ram_root, args.recovery_file)
     except recovery.secrets.PreflightError as exc:
         print(f"Trust OpenTofu preflight failed: {exc}", file=sys.stderr)
         return 1

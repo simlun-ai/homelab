@@ -44,3 +44,9 @@ encryption:
     - slot: 0
       kms:
         endpoint: https://kms.k8s-aux.simlun.se
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+taints:
+  node-role.kubernetes.io/control-plane:
+    $patch: delete

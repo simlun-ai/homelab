@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Apply the reviewed Trust OpenTofu plan for ZFS LocalPV v2.11.2, then verify and commit the encrypted state. The live plan showed three additions and no changes or deletions.
+- **Current next step:** Recover the retained RAM state from the first ZFS LocalPV apply, preview and apply Trust’s Talos scheduling patch, then review a fresh OpenTofu plan.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1479,8 +1479,18 @@ On 2026-11-19, the operator ran the first live `tofu-plan`. It showed
 The class targets `trust-data` with native ZFS datasets,
 `WaitForFirstConsumer`, and the rehearsal's `Delete` reclaim policy.
 
-First apply, encrypted state publication, and disposable PVC provisioning
-and encryption inheritance checks remain pending.
+The first apply created the `openebs-zfs` namespace. Helm timed out
+waiting for the controller because `trust-cp1` has the
+`node-role.kubernetes.io/control-plane:NoSchedule` taint. Helm's atomic
+cleanup removed the release workloads. A subsequent YubiKey recovery
+failed during state persistence, and OpenTofu retained `errored.tfstate`
+on tmpfs. Recover that state before retrying. The Trust node patch
+removes the control-plane scheduling taint through Talos so `trust-cp1`
+can run workloads as a single-node cluster. The bootstrap runbook
+covers previewing and applying the patch to the installed node.
+
+Encrypted state publication, disposable PVC provisioning, and encryption
+inheritance checks remain pending.
 
 ## Later platform and service milestones
 

@@ -1,9 +1,10 @@
-"""Inspect a fresh 24-hour Trust client without exposing or persisting credentials."""
+"""Use a fresh Trust admin client without persisting credentials."""
 
 import argparse
 import ipaddress
 import json
 import signal
+import subprocess
 import sys
 from pathlib import Path
 from typing import cast
@@ -93,6 +94,41 @@ def inspect(
     return public
 
 
+def configure_workload_scheduling(
+    talosctl: str, unwrap_cli: str, root: Path, *, dry_run: bool
+) -> None:
+    secrets.require_private_repository()
+    node = node_address()
+    patch = config.SCOPE / "talos/patches/nodes/trust-cp1/workload-scheduling.yaml"
+    with secrets.hsm_progress_terminal() as terminal:
+        bundle = secrets.recover_bundle(
+            unwrap_cli, record=secrets.RECORD, key_id=secrets.KEY_ID, stderr=terminal
+        )
+    ca, key = recovery.talos_ca(bundle)
+    client = credentials.issue(talosctl, ca, key, root, context=CONTEXT, node=node)
+    with config.memory_file(client) as fd:
+        subprocess.run(
+            [
+                talosctl,
+                "patch",
+                "machineconfig",
+                "--talosconfig",
+                f"/proc/self/fd/{fd}",
+                "--endpoints",
+                node,
+                "--nodes",
+                node,
+                "--mode=no-reboot",
+                "--patch",
+                f"@{patch}",
+                *(["--dry-run"] if dry_run else []),
+            ],
+            pass_fds=(fd,),
+            check=True,
+            timeout=60,
+        )
+
+
 def rehearse(talosctl: str, wrap_cli: str, unwrap_cli: str, root: Path) -> None:
     with credentials.ram_directory(root):
         pass
@@ -126,7 +162,10 @@ def rehearse(talosctl: str, wrap_cli: str, unwrap_cli: str, root: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("inspect", "rehearse"))
+    parser.add_argument(
+        "action",
+        choices=("inspect", "rehearse", "scheduling-preview", "scheduling-apply"),
+    )
     parser.add_argument("--talosctl", type=Path, required=True)
     parser.add_argument("--unwrap", type=Path, required=True)
     parser.add_argument("--wrap", type=Path)
@@ -150,7 +189,15 @@ def main() -> int:
         else:
             if args.wrap is not None:
                 raise secrets.PreflightError("Inspection accepts no wrapping tool")
-            inspect(talosctl, unwrap, args.ram_root)
+            if args.action == "inspect":
+                inspect(talosctl, unwrap, args.ram_root)
+            else:
+                configure_workload_scheduling(
+                    talosctl,
+                    unwrap,
+                    args.ram_root,
+                    dry_run=args.action == "scheduling-preview",
+                )
     except secrets.PreflightError as exc:
         print(f"Administration preflight failed: {exc}", file=sys.stderr)
         return 1
