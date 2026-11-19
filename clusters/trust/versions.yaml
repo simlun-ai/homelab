@@ -6,3 +6,5 @@ kubernetes:
   version: v1.37.1
 kubectl:
   version: v1.37.1
+opentofu:
+  version: v1.13.9

@@ -12,3 +12,14 @@ url = "https://dl.k8s.io/release/{version}/bin/linux/{arch}/kubectl"
 [kubectl.sha256]
 amd64 = "65691ff77eb6fa44c908b77a1082c9f092c3b9733b5cefabec0d1104890e21a8"
 arm64 = "ff749f4b78d9c4f1ec87307df9b50119ed819e2094aa9810cb9acffc3286c8c7"
+
+[tofu]
+url = "https://github.com/opentofu/opentofu/releases/download/{version}/tofu_{release}_linux_{arch}.zip"
+
+[tofu.sha256]
+amd64 = "9ce9173bf161f6466ef57dab7edebe8f55089fdf81caa967415323c25d004990"
+arm64 = "aeb19f94f41268f14bbb4771ece083e91ee871a77221b126048166864426d9d3"
+
+[tofu.archive_sha256]
+amd64 = "bc44eb6b06446ba83bd4072114891987f590f66cca712737a7f1147c50c539ce"
+arm64 = "04f7c93828b859d420269ed30f923ffebf09157b5d7fb95bf8d88a4d208b7fa3"

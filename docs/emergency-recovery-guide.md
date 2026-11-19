@@ -89,6 +89,15 @@ Replacement programming must use the same key/settings with **touch required**, 
 
 Use the [Trust Pi rebuild checklist](installation/02-trust.md#trust-pi-rebuild-checklist) when the repository is available. It distinguishes booting intact OS disks, replacing one mirror member, and reinstalling Talos.
 
+For the Trust OpenTofu infrastructure pilot, restore the encrypted
+`trust-infrastructure.tfstate` in the private sibling checkout
+`homelab-opentofu-state` and the wrapped state key
+`secrets/wrapped/trust-opentofu-state-r1.json`. Recover both independently
+of Trust, OpenBao, and `ups-aux`. Review the state against the live cluster
+using the [Trust OpenTofu bootstrap runbook](../runbooks/trust-opentofu-bootstrap.md)
+before applying. Preserve the existing `trust-data` pool and its separate
+wrapped key.
+
 OpenBao backups are online Raft snapshots uploaded by a job inside Trust to Cloudflare R2. Required targets are a full Trust rebuild on a replacement Raspberry Pi 4 and temporary OpenBao recovery in a Linux container on a trusted workstation. Both require documented, tested procedures; neither is verified yet. Start with the OpenBao version recorded for the snapshot and independently obtainable configuration/tools.
 
 1. Recover R2 access and any wrapped/decryption material.

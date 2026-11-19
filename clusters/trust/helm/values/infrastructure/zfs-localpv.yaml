@@ -1,0 +1,16 @@
+analytics:
+  enabled: false
+
+zfs:
+  bin: /usr/local/sbin/zfs
+
+zfsNode:
+  kubeletDir: /var/lib/kubelet/
+  encrKeysDir: /var/lib/openebs/zfs-keys
+  allowedTopologyKeys: kubernetes.io/hostname
+  nodeSelector:
+    kubernetes.io/hostname: trust-cp1
+
+zfsController:
+  nodeSelector:
+    kubernetes.io/hostname: trust-cp1
