@@ -12,7 +12,7 @@
 - **Decided identity:** cluster `trust`, control-plane node `trust-cp1`, FQDN `trust-cp1.k8s-aux.lundmark.internal`, static IP `10.10.0.10/24`; coordinator `ups-aux` at `10.10.0.5`.
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
-- **Current next step:** Commit the updated encrypted OpenTofu state and verify `trust-zfs-retain` with a disposable claim before deploying OpenBao. The StorageClass apply passed.
+- **Current next step:** Plan the initial OpenBao deployment on Trust using the verified `trust-zfs-retain` StorageClass for Raft data.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1499,8 +1499,7 @@ a reboot. The subsequent node check and OpenTofu plan passed, with
 
 The operator verified the encrypted Trust state envelope at serial 3
 and committed it locally in the private sibling checkout (`41c016f`).
-A fresh OpenTofu plan read the state and reported no changes. Remote
-state publication remains pending.
+A fresh OpenTofu plan read the state and reported no changes.
 
 ### Verify LocalPV persistence and reclamation
 
@@ -1528,9 +1527,21 @@ before pointing OpenBao at the class.
 
 On 2026-11-19, the operator reviewed the OpenTofu plan for
 `trust-zfs-retain` and applied it on Trust. The plan and apply each
-reported a single addition with zero changes or deletions. Encrypted
-state publication for this change and the live retention rehearsal
-remain pending.
+reported a single addition with zero changes or deletions. The operator
+published the updated encrypted state and the local state backup ignore
+rule in the private sibling checkout.
+
+A disposable 1 GiB claim using `trust-zfs-retain` bound on `trust-cp1`.
+Its consumer wrote and read back a fixture. Talos debug confirmed the
+backing dataset used `aes-256-gcm` under the `trust-data` encryption
+root and reported `compression=lz4` with source `local`.
+
+Deleting the consumer and claim moved the PV to `Released` while the
+matching ZFS dataset remained present. For cleanup, the operator
+changed only the released scratch PV's policy to `Delete`. CSI reclaimed
+that PV and Talos debug confirmed its dataset was gone. The
+`trust-data` pool and recovery fixture remained present, and the test
+namespace was deleted.
 
 ## Later platform and service milestones
 
