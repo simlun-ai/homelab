@@ -2,7 +2,7 @@
 
 Trust's first OpenTofu root installs the OpenEBS ZFS LocalPV 2.11.2 driver
 and a disposable-test StorageClass on the existing `trust-data` pool.
-The deployment uses OpenTofu 1.13.0, the locked Helm and Kubernetes
+The deployment uses OpenTofu 1.13.9, the locked Helm and Kubernetes
 providers, and the upstream chart whose SHA-256 is pinned in
 [`zfs-localpv.json`](../clusters/trust/tofu/zfs-localpv.json).
 The cluster-specific [Helm values](../clusters/trust/helm/values/infrastructure/zfs-localpv.yaml)
