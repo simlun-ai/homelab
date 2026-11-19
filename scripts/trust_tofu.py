@@ -88,9 +88,10 @@ def get_kubeconfig(ram_root: Path) -> bytes:
     )
     secrets.require_private_repository()
     print("Touch the YubiKey to recover the Trust Talos identity.", flush=True)
-    bundle = secrets.recover_bundle(
-        unwrap, record=secrets.RECORD, key_id=secrets.KEY_ID
-    )
+    with secrets.hsm_progress_terminal() as terminal:
+        bundle = secrets.recover_bundle(
+            unwrap, record=secrets.RECORD, key_id=secrets.KEY_ID, stderr=terminal
+        )
     ca, key = recovery.talos_ca(bundle)
     client = recovery.credentials.issue(
         talosctl, ca, key, ram_root, context="trust", node=NODE
