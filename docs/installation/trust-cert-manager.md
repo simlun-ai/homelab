@@ -3,8 +3,8 @@
 Trust's infrastructure OpenTofu root installs cert-manager and owns the
 shared `letsencrypt-staging` and `letsencrypt-production` ClusterIssuers.
 Each issuer has its own ACME account Secret. The Cloudflare solver handles
-names in the public `simlun.se` zone. This configuration is ready for
-operator deployment. Live issuance is pending.
+names in the public `simlun.se` zone. The operator verified deployment and
+staging issuance. The first production certificate is planned for OpenBao.
 
 The [chart pin](../../clusters/trust/tofu/cert-manager.json) records the
 upstream cert-manager version and its OCI manifest digest at
@@ -144,8 +144,11 @@ PYTHON
 ```
 
 A Ready ClusterIssuer confirms ACME account registration. The Ready staging
-Certificate confirms the DNS-01 workflow. Production issuance is first tested
-when the OpenBao workload requests its real certificate.
+Certificate confirms the DNS-01 workflow. The operator observed both issuers
+ready, a successful staging issuance, and deletion of the test namespace.
+A fresh OpenTofu plan reported no changes, and the updated encrypted state
+was pushed. Production issuance is first tested when the OpenBao workload
+requests its real certificate.
 
 ## Planned cross-cluster certificate delivery
 
@@ -160,8 +163,7 @@ and consumption steps will be documented with the later rollout.
 ## OpenBao network prerequisites
 
 OpenBao's future workload root will own its `Certificate` for
-`bao.k8s-aux.simlun.se` and use `letsencrypt-production`. Once the private
-HTTPS endpoint IP is assigned, add the UniFi A record and cross-VLAN rules
-described in the [network overview](../network.md#openbao-client-access).
-Verify DNS resolution and HTTPS from each dependent VLAN before configuring
-clients. The OpenBao address and workload are pending.
+`bao.k8s-aux.simlun.se` and use `letsencrypt-production`. MetalLB reserves
+`10.10.0.200` for the OpenBao HTTPS Service. See the
+[MetalLB runbook](trust-metallb.md#use-the-address-when-deploying-openbao)
+for the UniFi A record and client access checks.

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: trust-metallb-config
+description: MetalLB Layer 2 configuration for Trust on VLAN 10
+type: application
+version: 0.1.0

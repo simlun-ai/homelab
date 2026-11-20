@@ -1,0 +1,7 @@
+frrk8s:
+  enabled: false
+speaker:
+  frr:
+    enabled: false
+  # Trust's only node is a control-plane node and must advertise service IPs.
+  ignoreExcludeLB: true
