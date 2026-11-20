@@ -27,6 +27,8 @@ CONFIG = SCOPE / "tofu"
 STATE_NAME = "trust-infrastructure.tfstate"
 STATE_REPO = ROOT.parent / "homelab-opentofu-state"
 NODE = "10.10.0.10"
+CLOUDFLARE_RECORD = ROOT / "secrets/wrapped/trust-cert-manager-cloudflare.json"
+CLOUDFLARE_KEY_ID = "homelab/v1/trust/cert-manager/dns-api/cloudflare/r1"
 
 
 def state_path() -> Path:
@@ -65,24 +67,41 @@ def state_path() -> Path:
     return path
 
 
-def acquire_chart(work: Path) -> None:
-    pin = json.loads((CONFIG / "zfs-localpv.json").read_text())
+def acquire_chart(work: Path, chart: str) -> None:
+    pin = json.loads((CONFIG / f"{chart}.json").read_text())
     release, repository, checksum = (
         str(pin[k]) for k in ("version", "repository", "sha256")
     )
     if (
-        not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", release)
+        not re.fullmatch(r"v?[0-9]+\.[0-9]+\.[0-9]+", release)
         or not repository.startswith("https://")
         or not re.fullmatch(r"[0-9a-f]{64}", checksum)
     ):
-        raise ValueError("Invalid LocalPV chart pin")
-    name = f"zfs-localpv-{release}.tgz"
-    print(f"Fetching checksum-pinned ZFS LocalPV {release} chart.", flush=True)
+        raise ValueError(f"Invalid {chart} chart pin")
+    name = f"{chart}-{release}.tgz"
+    print(f"Fetching checksum-pinned {chart} {release} chart.", flush=True)
     with urllib.request.urlopen(f"{repository}/{name}", timeout=30) as response:
         archive = response.read(4 * 1024 * 1024 + 1)
     if hashlib.sha256(archive).hexdigest() != checksum:
-        raise ValueError("ZFS LocalPV chart SHA-256 mismatch")
+        raise ValueError(f"{chart} chart SHA-256 mismatch")
     (work / name).write_bytes(archive)
+
+
+def recover_cloudflare_token() -> str:
+    secrets = recovery.secrets
+    unwrap = secrets.executable(
+        Path(sys.executable).with_name("homelab-unwrap"), "homelab-unwrap"
+    )
+    print("Touch the YubiKey to recover the Trust cert-manager DNS token.", flush=True)
+    with secrets.hsm_progress_terminal() as terminal:
+        token = secrets.recover_bundle(
+            unwrap, record=CLOUDFLARE_RECORD, key_id=CLOUDFLARE_KEY_ID, stderr=terminal
+        )
+    if not re.fullmatch(rb"[!-~]{1,512}", token):
+        raise recovery.secrets.PreflightError(
+            "The wrapped cert-manager record must contain only the Cloudflare token"
+        )
+    return token.decode("ascii")
 
 
 def get_kubeconfig(ram_root: Path) -> bytes:
@@ -219,11 +238,19 @@ def recover_state(tofu: str, path: Path, work: Path, env: dict[str, str]) -> Non
 def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
     tofu = recovery.secrets.executable(SCOPE / "bin/tofu", "tofu")
     state = None if action == "validate" else state_path()
+    needs_cluster = action in ("plan", "apply")
     if state is not None:
         recovery.secrets.require_private_repository(record=tofu_key.RECORD)
         if tofu_key.RECORD.is_symlink() or not tofu_key.RECORD.is_file():
             raise recovery.secrets.PreflightError(
                 "Enroll the wrapped OpenTofu key first"
+            )
+
+    if needs_cluster:
+        recovery.secrets.require_private_repository(record=CLOUDFLARE_RECORD)
+        if CLOUDFLARE_RECORD.is_symlink() or not CLOUDFLARE_RECORD.is_file():
+            raise recovery.secrets.PreflightError(
+                "Enroll the Trust cert-manager DNS token first"
             )
 
     provider_cache = SCOPE / "bin/tofu-provider-cache"
@@ -237,14 +264,19 @@ def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
         work = Path(os.readlink(anchored))
         for source in CONFIG.glob("*.tf"):
             shutil.copyfile(source, work / source.name)
-        for name in (".terraform.lock.hcl", "zfs-localpv.json"):
-            shutil.copyfile(CONFIG / name, work / name)
-        shutil.copyfile(
-            SCOPE / "helm/values/infrastructure/zfs-localpv.yaml",
-            work / "zfs-localpv-values.yaml",
+        shutil.copyfile(CONFIG / ".terraform.lock.hcl", work / ".terraform.lock.hcl")
+        for chart in ("zfs-localpv", "cert-manager"):
+            shutil.copyfile(CONFIG / f"{chart}.json", work / f"{chart}.json")
+            shutil.copyfile(
+                SCOPE / f"helm/values/infrastructure/{chart}.yaml",
+                work / f"{chart}-values.yaml",
+            )
+            if recovery_file is None:
+                acquire_chart(work, chart)
+        shutil.copytree(
+            SCOPE / "helm/charts/trust-acme-issuers",
+            work / "trust-acme-issuers",
         )
-        if recovery_file is None:
-            acquire_chart(work)
         # Keep operational files off disk. Only public provider packages use the
         # executable cache because the RAM mount may be noexec.
         for name in ("tmp", "config", "cache", "data"):
@@ -285,10 +317,14 @@ def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
                     recover_state(tofu, recovery_file, work, env)
                     print(f"PASS: recovered state persisted to {state}.", flush=True)
                     return
-                if state is not None:
+                if needs_cluster:
                     credential = get_kubeconfig(ram_root)
                     with (work / "kubeconfig").open("xb") as destination:
                         destination.write(credential)
+                    # Keep this variable out of init and state-recovery environments.
+                    env["TF_VAR_cert_manager_cloudflare_token"] = (
+                        recover_cloudflare_token()
+                    )
                 subprocess.run([tofu, action], cwd=work, env=env, check=True)
         finally:
             # OpenTofu can emit a state recovery file after a failed write.

@@ -19,7 +19,7 @@ public inbound listener.
 4. Reserve `_acme-challenge.kms.k8s-aux.simlun.se` for Certbot. Certbot adds
    and removes the temporary TXT value during validation. Keep the owner
    available for that workflow.
-5. When Trust cert-manager is set up, issue a separate API token scoped to
+5. When [setting up Trust cert-manager](trust-cert-manager.md), issue a separate API token scoped to
    `simlun.se` with **Zone → DNS → Edit** and **Zone → Zone → Read**. Give
    cert-manager its own ACME account and renewal state. It will issue for
    application names using distinct challenge records. Both tokens have

@@ -144,11 +144,15 @@ These inherit YubiKey protection through wrapped OpenBao unseal material. Their 
 
 OpenBao mount names, secret paths, transit-key names, and authentication mappings are not yet defined. Add their exact references here when established.
 
+Trust cert-manager ACME account keys and issued certificates live in
+Kubernetes Secrets. The independent
+[wrapped Cloudflare DNS token](../installation/trust-cert-manager.md) uses
+`homelab/v1/trust/cert-manager/dns-api/cloudflare/r1`.
+
 ## Bootstrap coverage still to resolve
 
 Specify storage, delivery, and any direct lookup identifiers for:
 
-- Trust cert-manager DNS/ACME credentials.
 - R2 upload and OpenBao snapshot-job credentials.
 - KMS adapter authentication and TLS bootstrap material.
 - OpenBao recovery administration access.

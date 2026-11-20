@@ -1,0 +1,6 @@
+crds:
+  enabled: true
+  keep: true
+
+# ClusterIssuer account and DNS credential Secrets live in this namespace.
+clusterResourceNamespace: cert-manager

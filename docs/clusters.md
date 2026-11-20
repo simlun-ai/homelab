@@ -14,7 +14,7 @@ Independent, single-node foundation. All other clusters depend on its services. 
 | Storage | Local persistent volumes via ZFS LocalPV on the [Trust data mirror](inventory.md#trust), separate from the OS mirror. |
 | Observability | kube-prometheus-stack (Prometheus, Grafana, Alertmanager), with Telegram notifications; Headlamp for cluster visibility. |
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
-| Certificates | cert-manager with Let's Encrypt and Cloudflare DNS-01; External Secrets Operator PushSecret publishes certificates to OpenBao, and dependent clusters pull them through External Secrets Operator. |
+| Certificates | [cert-manager with Let's Encrypt and Cloudflare DNS-01](installation/trust-cert-manager.md) is configured in Trust infrastructure, pending deployment verification. Planned External Secrets Operator PushSecret publishes certificates to OpenBao, and dependent clusters pull them through External Secrets Operator. |
 
 Backup, Pi, and Metal use separate [Talos KMS adapters](security/security.md#talos-kms-adapter)
 on `ups-aux`, `ups-pi`, and `ups-metal` respectively. All three call the shared
