@@ -8,10 +8,10 @@ exclusion label. The speaker uses host networking in the `metallb-system`
 namespace.
 
 A separate Helm release installs the address pool and Layer 2 advertisement
-after MetalLB's CRDs and controller are ready. The pool `trust-openbao`
-contains only `10.10.0.200/32` and disables automatic allocation. The
-remaining addresses in Trust's assigned range are available for future
-configuration. See the [VLAN 10 pool assignments](../network.md#kubernetes-networking).
+after MetalLB's CRDs and controller are ready. The `trust-services` pool
+covers Trust's reserved range of `10.10.0.200`–`10.10.0.209` and disables
+automatic allocation. OpenBao will explicitly request `10.10.0.200`.
+See the [VLAN 10 pool assignments](../network.md#kubernetes-networking).
 
 ## Install from the operator workstation
 
@@ -30,7 +30,7 @@ On the existing Trust installation, expect three additions. They are the
 make -C clusters/trust tofu-apply
 ```
 
-After apply, wait for the controller and speaker and confirm the dedicated
+After apply, wait for the controller and speaker and confirm the Trust
 pool and Layer 2 advertisement. This uses the existing Trust admin flow.
 
 ```sh
@@ -58,15 +58,15 @@ with trust.recovery.config.memory_file(kubeconfig) as fd:
         pass_fds=(fd,), check=True, timeout=30,
     )
     subprocess.run(
-        [*base, "get", "ipaddresspool/trust-openbao",
-         "l2advertisement/trust-openbao", "-o", "yaml"],
+        [*base, "get", "ipaddresspool/trust-services",
+         "l2advertisement/trust-services", "-o", "yaml"],
         pass_fds=(fd,), check=True, timeout=30,
     )
 PYTHON
 ```
 
 Expect the speaker to be ready on `trust-cp1`, the pool to contain
-`10.10.0.200/32` with `autoAssign: false`, and the advertisement to
+`10.10.0.200-10.10.0.209` with `autoAssign: false`, and the advertisement to
 reference that pool. Run a fresh plan and publish the encrypted state
 following the [OpenTofu runbook](../../runbooks/trust-opentofu-bootstrap.md#3-validate-plan-and-install).
 

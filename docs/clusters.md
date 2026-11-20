@@ -10,7 +10,7 @@ Independent, single-node foundation. All other clusters depend on its services. 
 
 | Function | Components |
 | --- | --- |
-| Ingress | Traefik. Trust's [MetalLB Layer 2 configuration](installation/trust-metallb.md) reserves `10.10.0.200` for OpenBao's HTTPS Service. Deployment verification is pending. |
+| Ingress | Traefik. Trust's [MetalLB Layer 2 configuration](installation/trust-metallb.md) covers `10.10.0.200`–`10.10.0.209`. OpenBao's HTTPS Service will request `10.10.0.200`. Deployment verification is pending. |
 | Storage | Local persistent volumes via ZFS LocalPV on the [Trust data mirror](inventory.md#trust), separate from the OS mirror. |
 | Observability | kube-prometheus-stack (Prometheus, Grafana, Alertmanager), with Telegram notifications; Headlamp for cluster visibility. |
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |

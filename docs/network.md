@@ -112,7 +112,7 @@ All four clusters are independent, including Trust and Backup on VLAN 10. The CN
 | Pi | 11 | Multiple nodes | Cilium | Cilium | `10.130.0.0/16` | `10.242.0.0/16` |
 | Metal | 12 | Multiple nodes | Cilium | Cilium | `10.131.0.0/16` | `10.243.0.0/16` |
 
-On the shared VLAN, reserve `10.10.0.200`–`10.10.0.209` for Trust and `10.10.0.210`–`10.10.0.219` for Backup. Trust's [MetalLB configuration](installation/trust-metallb.md) reserves `10.10.0.200` for OpenBao in a dedicated pool with automatic allocation disabled. The remaining individual assignments are TBD. The separate [Metal storage network](clusters.md#dedicated-storage-network) has its own addressing TBD.
+On the shared VLAN, reserve `10.10.0.200`–`10.10.0.209` for Trust and `10.10.0.210`–`10.10.0.219` for Backup. Trust's [MetalLB configuration](installation/trust-metallb.md) puts its full reserved range in `trust-services` with automatic allocation disabled. OpenBao will explicitly request `10.10.0.200`. The remaining individual assignments are TBD. The separate [Metal storage network](clusters.md#dedicated-storage-network) has its own addressing TBD.
 
 ## Gateway and UPS outages
 
