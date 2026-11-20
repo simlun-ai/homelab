@@ -147,6 +147,16 @@ A Ready ClusterIssuer confirms ACME account registration. The Ready staging
 Certificate confirms the DNS-01 workflow. Production issuance is first tested
 when the OpenBao workload requests its real certificate.
 
+## Planned cross-cluster certificate delivery
+
+Trust will also run External Secrets Operator as part of the
+[certificate factory](../clusters.md#certificate-factory). It will publish
+selected cert-manager TLS Secrets to OpenBao using one `PushSecret` per
+certificate. Backup's Garage HTTPS endpoint will be the first consumer,
+using an `ExternalSecret` in Backup to fetch and refresh its local TLS Secret.
+This runbook installs cert-manager and its shared issuers. The publication
+and consumption steps will be documented with the later rollout.
+
 ## OpenBao network prerequisites
 
 OpenBao's future workload root will own its `Certificate` for

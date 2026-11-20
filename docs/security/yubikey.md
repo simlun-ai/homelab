@@ -140,7 +140,7 @@ These inherit YubiKey protection through wrapped OpenBao unseal material. Their 
 | Backup, Pi, and Metal Talos system-volume unlock material | Python KMS adapter using OpenBao transit. |
 | Transit keys and required historical versions | Retained in OpenBao and recoverable snapshots. |
 | Application/service credentials | OpenBao reads, including External Secrets Operator integration. |
-| Published certificates and private keys | cert-manager PushSecret into OpenBao; dependent clusters pull them. |
+| Published certificates and private keys | Trust cert-manager issues them. External Secrets Operator publishes selected TLS Secrets to OpenBao via `PushSecret`; each dependent cluster pulls its own via `ExternalSecret`. See the [certificate factory](../clusters.md#certificate-factory). |
 
 OpenBao mount names, secret paths, transit-key names, and authentication mappings are not yet defined. Add their exact references here when established.
 

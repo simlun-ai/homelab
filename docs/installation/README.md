@@ -15,7 +15,8 @@ Keep detailed TODOs and verification results in the owning runbook. Update this 
 Later milestones; split and number their runbooks when the next step is concrete:
 
 - [ ] Prepare Trust's OpenBao-backed KMS service for dependent clusters.
-- [ ] Install Backup and its services.
+- [ ] Set up Trust's [certificate factory](../clusters.md#certificate-factory) with External Secrets Operator and OpenBao after OpenBao is deployed.
+- [ ] Install Backup and its services. Verify Garage serves the certificate delivered by the factory and picks up a renewal.
 - [ ] Install Pi, its coordinator, and home automation workloads.
 - [ ] Install Metal, its coordinator, and heavier workloads.
 

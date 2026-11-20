@@ -14,7 +14,7 @@ Independent, single-node foundation. All other clusters depend on its services. 
 | Storage | Local persistent volumes via ZFS LocalPV on the [Trust data mirror](inventory.md#trust), separate from the OS mirror. |
 | Observability | kube-prometheus-stack (Prometheus, Grafana, Alertmanager), with Telegram notifications; Headlamp for cluster visibility. |
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
-| Certificates | [cert-manager with Let's Encrypt and Cloudflare DNS-01](installation/trust-cert-manager.md) is configured in Trust infrastructure, pending deployment verification. Planned External Secrets Operator PushSecret publishes certificates to OpenBao, and dependent clusters pull them through External Secrets Operator. |
+| Certificates | [cert-manager with Let's Encrypt and Cloudflare DNS-01](installation/trust-cert-manager.md) is configured in Trust infrastructure, pending deployment verification. Cross-cluster delivery is planned through the [certificate factory](#certificate-factory). |
 
 Backup, Pi, and Metal use separate [Talos KMS adapters](security/security.md#talos-kms-adapter)
 on `ups-aux`, `ups-pi`, and `ups-metal` respectively. All three call the shared
@@ -27,9 +27,34 @@ records the selected SSDs and their ATA device links.
 
 OpenBao storage, backups, and recovery are specified in [backup-and-restore.md](backup-and-restore.md#openbao-online-backups).
 
+### Certificate factory
+
+Trust is the planned central DNS-01 certificate issuer for the homelab.
+For each certificate needed in another cluster:
+
+1. A cert-manager `Certificate` in Trust requests issuance through the shared
+   Let's Encrypt issuer. cert-manager maintains the certificate chain and
+   private key in a Kubernetes TLS Secret and updates it on renewal.
+2. External Secrets Operator in Trust uses a `PushSecret` for that
+   certificate to publish the TLS Secret's chain and private key to OpenBao.
+3. External Secrets Operator in the consuming cluster uses an
+   `ExternalSecret` to read that entry and maintain a local Kubernetes TLS
+   Secret for the service.
+
+Garage's HTTPS endpoint on Backup will be the first consumer. OpenBao's own
+HTTPS certificate comes directly from cert-manager in Trust so that bringing
+up OpenBao does not depend on reading from it. The coordinator KMS certificate
+continues to use its independent [Certbot flow](installation/trust-kms-cloudflare.md).
+
+The delivery rollout will define OpenBao paths and access policies so that
+each consumer can read only the certificate material it needs. For Garage,
+verify initial delivery and that a renewal reaches Backup and is served by the
+HTTPS endpoint. External Secrets Operator installation, OpenBao integration,
+and service reload behavior are later work.
+
 ## Backup
 
-Single-node cluster on the [Lenovo ThinkCentre M93p Tiny](inventory.md#backup), using its manually prepared ZFS mirror. Depends on Trust. Garage is planned for backup storage. Backup clients, retention, and storage integration remain TBD in the [backup design](backup-and-restore.md#other-backup-coverage).
+Single-node cluster on the [Lenovo ThinkCentre M93p Tiny](inventory.md#backup), using its manually prepared ZFS mirror. Depends on Trust. Garage is planned for backup storage and will receive its TLS certificate from Trust's [certificate factory](#certificate-factory). Backup clients, retention, and storage integration remain TBD in the [backup design](backup-and-restore.md#other-backup-coverage).
 
 ## Shared infrastructure
 

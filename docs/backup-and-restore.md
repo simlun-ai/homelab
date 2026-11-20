@@ -72,7 +72,7 @@ Backup storage and procedures for wrapped credential records are deferred until 
 
 ## Other backup coverage
 
-Garage is planned on the Backup cluster for periodic backups. Its coverage, clients, schedules, retention, and restore procedures remain TBD. Trust's OpenBao Raft snapshots use Cloudflare R2 as described above. Manual pools, cluster state, and supporting hosts still need explicit coverage. The inventory's restore disk does not establish a backup policy.
+Garage is planned on the Backup cluster for periodic backups. Its HTTPS endpoint will be the first consumer of Trust's [certificate factory](clusters.md#certificate-factory). Its coverage, clients, schedules, retention, and restore procedures remain TBD. Trust's OpenBao Raft snapshots use Cloudflare R2 as described above. Manual pools, cluster state, and supporting hosts still need explicit coverage. The inventory's restore disk does not establish a backup policy.
 
 ## Planned work
 
