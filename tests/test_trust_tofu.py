@@ -1,7 +1,10 @@
-"""Test the OpenTofu state-key lifetime with disposable bytes."""
+"""Test Trust OpenTofu chart downloads and secret handling."""
 
+import hashlib
+import json
 import unittest
 from contextlib import nullcontext
+from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -10,6 +13,55 @@ import trust_tofu
 
 
 class TrustTofuTests(unittest.TestCase):
+    def test_oci_chart_verifies_manifest_and_layer(self) -> None:
+        repository = "oci://registry.example/charts/test"
+        archive = b"valid chart bytes"
+        digest = f"sha256:{hashlib.sha256(archive).hexdigest()}"
+        manifest = json.dumps(
+            {
+                "schemaVersion": 2,
+                "config": {"mediaType": trust_tofu.HELM_CONFIG},
+                "layers": [
+                    {"mediaType": "application/vnd.cncf.helm.chart.provenance.v1.prov"},
+                    {
+                        "mediaType": trust_tofu.HELM_CHART,
+                        "digest": digest,
+                        "size": len(archive),
+                    },
+                ],
+            }
+        ).encode()
+        manifest_digest = f"sha256:{hashlib.sha256(manifest).hexdigest()}"
+        with patch(
+            "trust_tofu.urllib.request.urlopen",
+            side_effect=(BytesIO(manifest), BytesIO(archive)),
+        ) as fetch:
+            self.assertEqual(
+                trust_tofu.fetch_oci_chart(repository, manifest_digest), archive
+            )
+            self.assertEqual(
+                fetch.call_args_list[0].args[0].full_url,
+                f"https://registry.example/v2/charts/test/manifests/{manifest_digest}",
+            )
+            self.assertEqual(
+                fetch.call_args_list[1].args[0],
+                f"https://registry.example/v2/charts/test/blobs/{digest}",
+            )
+
+        with patch(
+            "trust_tofu.urllib.request.urlopen", return_value=BytesIO(manifest + b" ")
+        ) as fetch:
+            with self.assertRaisesRegex(ValueError, "manifest digest mismatch"):
+                trust_tofu.fetch_oci_chart(repository, manifest_digest)
+            fetch.assert_called_once()
+
+        with patch(
+            "trust_tofu.urllib.request.urlopen",
+            side_effect=(BytesIO(manifest), BytesIO(b"wrong chart bytes")),
+        ):
+            with self.assertRaisesRegex(ValueError, "content digest or size mismatch"):
+                trust_tofu.fetch_oci_chart(repository, manifest_digest)
+
     def test_key_session_reuses_one_recovery_for_multiple_provider_requests(
         self,
     ) -> None:

@@ -16,6 +16,7 @@ import urllib.request
 from collections.abc import Generator
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
+from typing import cast
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import trust_talos_recovery as recovery  # noqa: E402
@@ -29,6 +30,11 @@ STATE_REPO = ROOT.parent / "homelab-opentofu-state"
 NODE = "10.10.0.10"
 CLOUDFLARE_RECORD = ROOT / "secrets/wrapped/trust-cert-manager-cloudflare.json"
 CLOUDFLARE_KEY_ID = "homelab/v1/trust/cert-manager/dns-api/cloudflare/r1"
+OCI_MANIFEST = "application/vnd.oci.image.manifest.v1+json"
+HELM_CONFIG = "application/vnd.cncf.helm.config.v1+json"
+HELM_CHART = "application/vnd.cncf.helm.chart.content.v1.tar+gzip"
+SHA256_DIGEST = r"sha256:[0-9a-f]{64}"
+MAX_CHART_BYTES = 4 * 1024 * 1024
 
 
 def state_path() -> Path:
@@ -67,23 +73,82 @@ def state_path() -> Path:
     return path
 
 
+def fetch_oci_chart(repository: str, manifest_digest: str) -> bytes:
+    location = re.fullmatch(r"oci://([a-z0-9.-]+)/([a-z0-9_./-]+)", repository)
+    if not location or not re.fullmatch(SHA256_DIGEST, manifest_digest):
+        raise ValueError("Invalid OCI chart pin")
+    registry, path = location.groups()
+    endpoint = f"https://{registry}/v2/{path}"
+    request = urllib.request.Request(
+        f"{endpoint}/manifests/{manifest_digest}",
+        headers={"Accept": OCI_MANIFEST},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        manifest = response.read(64 * 1024 + 1)
+    if f"sha256:{hashlib.sha256(manifest).hexdigest()}" != manifest_digest:
+        raise ValueError("OCI chart manifest digest mismatch")
+
+    data: object = json.loads(manifest)
+    match data:
+        case {
+            "schemaVersion": 2,
+            "config": {"mediaType": str(media_type)},
+        } if media_type == HELM_CONFIG:
+            layers = cast(dict[str, object], data).get("layers")
+        case _:
+            raise ValueError("Expected an OCI Helm chart manifest")
+    if not isinstance(layers, list):
+        raise ValueError("Expected OCI Helm chart layers")
+    charts: list[tuple[str, int]] = []
+    for layer in cast(list[object], layers):
+        match layer:
+            case {
+                "mediaType": str(layer_type),
+                "digest": str(digest),
+                "size": int(size),
+            } if layer_type == HELM_CHART:
+                charts.append((digest, size))
+            case _:
+                continue
+    if len(charts) != 1:
+        raise ValueError("Expected one Helm chart content layer")
+    chart_digest, chart_size = charts[0]
+    if not (
+        re.fullmatch(SHA256_DIGEST, chart_digest) and 0 < chart_size <= MAX_CHART_BYTES
+    ):
+        raise ValueError("Invalid OCI Helm chart content descriptor")
+    with urllib.request.urlopen(
+        f"{endpoint}/blobs/{chart_digest}", timeout=30
+    ) as response:
+        archive = response.read(chart_size + 1)
+    if (
+        len(archive) != chart_size
+        or f"sha256:{hashlib.sha256(archive).hexdigest()}" != chart_digest
+    ):
+        raise ValueError("OCI Helm chart content digest or size mismatch")
+    return archive
+
+
 def acquire_chart(work: Path, chart: str) -> None:
     pin = json.loads((CONFIG / f"{chart}.json").read_text())
-    release, repository, checksum = (
-        str(pin[k]) for k in ("version", "repository", "sha256")
-    )
-    if (
-        not re.fullmatch(r"v?[0-9]+\.[0-9]+\.[0-9]+", release)
-        or not repository.startswith("https://")
-        or not re.fullmatch(r"[0-9a-f]{64}", checksum)
-    ):
-        raise ValueError(f"Invalid {chart} chart pin")
+    release, repository = (str(pin[k]) for k in ("version", "repository"))
+    if not re.fullmatch(r"v?[0-9]+\.[0-9]+\.[0-9]+", release):
+        raise ValueError(f"Invalid {chart} chart version")
     name = f"{chart}-{release}.tgz"
-    print(f"Fetching checksum-pinned {chart} {release} chart.", flush=True)
-    with urllib.request.urlopen(f"{repository}/{name}", timeout=30) as response:
-        archive = response.read(4 * 1024 * 1024 + 1)
-    if hashlib.sha256(archive).hexdigest() != checksum:
-        raise ValueError(f"{chart} chart SHA-256 mismatch")
+    if repository.startswith("oci://"):
+        print(f"Fetching digest-pinned {chart} {release} OCI chart.", flush=True)
+        archive = fetch_oci_chart(repository, str(pin.get("manifest_digest", "")))
+    else:
+        checksum = str(pin.get("sha256", ""))
+        if not repository.startswith("https://") or not re.fullmatch(
+            r"[0-9a-f]{64}", checksum
+        ):
+            raise ValueError(f"Invalid {chart} chart pin")
+        print(f"Fetching checksum-pinned {chart} {release} chart.", flush=True)
+        with urllib.request.urlopen(f"{repository}/{name}", timeout=30) as response:
+            archive = response.read(MAX_CHART_BYTES + 1)
+        if hashlib.sha256(archive).hexdigest() != checksum:
+            raise ValueError(f"{chart} chart SHA-256 mismatch")
     (work / name).write_bytes(archive)
 
 

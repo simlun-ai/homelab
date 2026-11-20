@@ -1,5 +1,5 @@
 {
   "version": "v1.21.2",
-  "repository": "https://charts.jetstack.io/charts",
-  "sha256": "73a56e1728edd6c99f1f31082618c3259d279a76b7ebd3d4bdc5475c2442d34a"
+  "repository": "oci://quay.io/jetstack/charts/cert-manager",
+  "manifest_digest": "sha256:634dce9c13b56677a2c05e2ab76c312d0be2664022d5dd05815da67e1fd5f610"
 }

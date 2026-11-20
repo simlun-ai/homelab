@@ -6,6 +6,12 @@ Each issuer has its own ACME account Secret. The Cloudflare solver handles
 names in the public `simlun.se` zone. This configuration is ready for
 operator deployment. Live issuance is pending.
 
+The [chart pin](../../clusters/trust/tofu/cert-manager.json) records the
+upstream cert-manager version and its OCI manifest digest at
+`oci://quay.io/jetstack/charts/cert-manager`. The runner fetches the manifest
+by digest and verifies both the manifest and chart layer before handing
+the verified archive to OpenTofu.
+
 ## Prepare the wrapped token
 
 In Cloudflare, create a dedicated API token named
