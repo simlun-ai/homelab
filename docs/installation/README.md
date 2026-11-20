@@ -8,14 +8,15 @@ Main TODO list for installing the homelab and implementing its helpers and repos
 | --- | --- | --- | --- |
 | [00 - YubiKey setup](00-yubikey-setup.md) | Verified procedure | Offline setup helpers, shared wrapping library/CLI and external virtualenv | PASS 2026-11-04: all four tokens, cross-token/software unwrap and independent replica retrieval |
 | [01 - Main coordinator](01-main-coordinator.md) | Shared base setup linked; additional KMS TODO | Base inventory, scoped tools, bootstrap/hardening/verification, wrapped administrator password and shared SSH key workflows; KMS TODO | `ups-aux` base setup verified on 2026-11-06. Locked production TLS verified on 2026-11-11; live-node authorization pending. |
-| [02 - Trust](02-trust.md) | Living encrypted Talos/Kubernetes bootstrap roadmap and draft Pi 4 UEFI experiment | Roadmap started; locked coordinator TLS verified; Trust node provisioning pending | Trust node installation not tried |
+| [02 - Trust](02-trust.md) | Living encrypted Talos/Kubernetes bootstrap roadmap and draft Pi 4 UEFI experiment | Encrypted Talos, Kubernetes, and ZFS LocalPV configured; [cert-manager and ACME issuers](trust-cert-manager.md) ready to apply | Encrypted boot, Kubernetes and retained LocalPV verified; ACME issuance pending |
 
 Keep detailed TODOs and verification results in the owning runbook. Update this table as work progresses; written instructions or configuration alone do not establish a verified installation.
 
 Later milestones; split and number their runbooks when the next step is concrete:
 
 - [ ] Prepare Trust's OpenBao-backed KMS service for dependent clusters.
-- [ ] Install Backup and its services.
+- [ ] Set up Trust's [certificate factory](../clusters.md#certificate-factory) with External Secrets Operator and OpenBao after OpenBao is deployed.
+- [ ] Install Backup and its services. Verify Garage serves the certificate delivered by the factory and picks up a renewal.
 - [ ] Install Pi, its coordinator, and home automation workloads.
 - [ ] Install Metal, its coordinator, and heavier workloads.
 

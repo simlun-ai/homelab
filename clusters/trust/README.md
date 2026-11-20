@@ -350,9 +350,10 @@ It checks the maintenance UUID and sends the validated config in memory to
 `10.10.0.10`. Open the Trust KMS window immediately before applying. See the
 [install procedure](../../docs/installation/02-trust.md#apply-the-initial-trust-install-configuration).
 
-## OpenTofu infrastructure pilot
+## OpenTofu infrastructure
 
 The [Trust OpenTofu bootstrap runbook](../../runbooks/trust-opentofu-bootstrap.md)
 covers key enrollment, encrypted state in the private sibling checkout,
-and LocalPV installation. Use the scoped `tofu-tools`, `tofu-validate`,
+and LocalPV installation. See the [cert-manager runbook](../../docs/installation/trust-cert-manager.md)
+for the wrapped Cloudflare token and staging verification. Use the scoped `tofu-tools`, `tofu-validate`,
 `tofu-plan`, and `tofu-apply` Make targets.

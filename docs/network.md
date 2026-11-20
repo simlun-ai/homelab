@@ -77,6 +77,23 @@ getent ahostsv4 trust-api.k8s-aux.lundmark.internal
 Both resolved to `10.10.0.10`. Clients must use the gateway's DNS service,
 directly or through a resolver forwarding this domain to it.
 
+## OpenBao client access
+
+After assigning the private OpenBao HTTPS address, add the A record above and
+permit TCP 443 from the Pi and Metal cluster clients and their UPS coordinators.
+Scope the UniFi rules to the assigned private OpenBao IP and place them ahead
+of the inter-VLAN deny policy.
+
+| Source | Destination | Access |
+| --- | --- | --- |
+| Pi cluster and `ups-pi` on VLAN 11 (`10.11.0.0/24`) | Private OpenBao endpoint on VLAN 10 | TCP 443 |
+| Metal cluster and `ups-metal` on VLAN 12 (`10.12.0.0/24`) | Private OpenBao endpoint on VLAN 10 | TCP 443 |
+| Backup and `ups-aux` on VLAN 10 (`10.10.0.0/24`) | Private OpenBao endpoint on VLAN 10 | Same VLAN. Verify local access. |
+
+Resolve `bao.k8s-aux.simlun.se` from each client network and verify HTTPS
+with normal certificate validation. Let's Encrypt verifies the public
+DNS-01 TXT record. The OpenBao HTTPS listener uses private addressing.
+
 ## Kubernetes API endpoint
 
 Trust's client URL is `https://trust-api.k8s-aux.lundmark.internal:6443`.

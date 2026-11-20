@@ -1,0 +1,5 @@
+apiVersion: v2
+name: trust-acme-issuers
+description: Trust's shared Let's Encrypt DNS-01 issuers
+type: application
+version: 0.1.0

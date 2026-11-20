@@ -7,7 +7,7 @@ providers, and the upstream chart whose SHA-256 is pinned in
 [`zfs-localpv.json`](../clusters/trust/tofu/zfs-localpv.json).
 The cluster-specific [Helm values](../clusters/trust/helm/values/infrastructure/zfs-localpv.yaml)
 configure the host ZFS binary, kubelet path, and placement on `trust-cp1`.
-This is an infrastructure pilot. Workload deployment is still open.
+The same infrastructure root also owns [Trust cert-manager and its ACME issuers](../docs/installation/trust-cert-manager.md). OpenBao will use a separate workload root and state.
 
 ## 1. Prepare tools and the state checkout
 
@@ -65,7 +65,7 @@ non-secret key ID in encryption metadata.
 
 ## 3. Validate, plan, and install
 
-The validation command downloads and checks the chart and installs the
+The validation command downloads and checks the charts and installs the
 locked providers. It does not require a YubiKey touch or contact the cluster.
 
 ```sh
@@ -96,7 +96,7 @@ plan or apply.
 
 Before applying, confirm that `trust-cp1` is `Ready` and `trust-data` is
 online and unlocked. The CSI driver uses the existing pool. Review the
-plan with an attached YubiKey:
+plan with an attached YubiKey. First prepare the [wrapped cert-manager token](../docs/installation/trust-cert-manager.md#prepare-the-wrapped-token), which plan and apply now recover automatically:
 
 ```sh
 make -C clusters/trust tofu-plan
@@ -106,7 +106,7 @@ Expect the `openebs-zfs` namespace, the standalone `zfs-localpv` Helm
 release, and the non-default `trust-zfs-rehearsal` StorageClass to be
 created on the first run. The class uses `trust-data`, native ZFS
 datasets, `WaitForFirstConsumer`, and `Delete` for the disposable test.
-Check for unexpected changes before applying.
+The [cert-manager runbook](../docs/installation/trust-cert-manager.md#review-and-apply-trust-infrastructure) lists that installation's additions. Check for unexpected changes before applying.
 
 ```sh
 make -C clusters/trust tofu-apply
@@ -114,7 +114,7 @@ make -C clusters/trust tofu-apply
 
 Review the new plan printed by apply and confirm it at the prompt.
 Touch the YubiKey once to recover the OpenTofu state key and once for the
-Talos admin identity. Keep your finger off the key during each no-touch
+Talos admin identity, plus one touch for the cert-manager token. Keep your finger off the key during each no-touch
 check, tap when prompted, and lift your finger when the helper confirms
 the touch. OpenTofu reuses the recovered state key for this invocation
 over a private Unix socket in the verified RAM workspace. The helper
