@@ -14,7 +14,7 @@ Trust ran ZFS extension `2.4.4-v1.14.5` and loaded the kernel module on
 | ZFS (Talos system extension) | v2.4.4 | v2.4.4 | v2.4.4 | v2.4.4 | v2.4.4 |
 | Cilium | v1.20.2 |  |  | v1.20.2 | v1.20.2 |
 | Flannel | v0.28.9 | v0.28.9 | v0.28.9 |  |  |
-| MetalLB | v0.16.0 | v0.16.0 | v0.16.0 |  |  |
+| [MetalLB](installation/trust-metallb.md) | v0.16.2 | v0.16.2 | v0.16.0 |  |  |
 | Traefik | v3.7.14 | v3.7.14 |  |  |  |
 | kube-prometheus-stack (Helm chart) | v92.3.0 | v92.3.0 |  |  |  |
 | Loki | v3.7.8 |  |  |  |  |

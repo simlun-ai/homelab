@@ -330,7 +330,7 @@ def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
         for source in CONFIG.glob("*.tf"):
             shutil.copyfile(source, work / source.name)
         shutil.copyfile(CONFIG / ".terraform.lock.hcl", work / ".terraform.lock.hcl")
-        for chart in ("zfs-localpv", "cert-manager"):
+        for chart in ("zfs-localpv", "cert-manager", "metallb"):
             shutil.copyfile(CONFIG / f"{chart}.json", work / f"{chart}.json")
             shutil.copyfile(
                 SCOPE / f"helm/values/infrastructure/{chart}.yaml",
@@ -338,10 +338,8 @@ def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
             )
             if recovery_file is None:
                 acquire_chart(work, chart)
-        shutil.copytree(
-            SCOPE / "helm/charts/trust-acme-issuers",
-            work / "trust-acme-issuers",
-        )
+        for chart in ("trust-acme-issuers", "trust-metallb-config"):
+            shutil.copytree(SCOPE / "helm/charts" / chart, work / chart)
         # Keep operational files off disk. Only public provider packages use the
         # executable cache because the RAM mount may be noexec.
         for name in ("tmp", "config", "cache", "data"):

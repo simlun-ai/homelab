@@ -51,7 +51,7 @@ Individual Pi and Metal node addresses and the addresses for `ups-pi` and `ups-m
 | A | `trust-api.k8s-aux.lundmark.internal` | `10.10.0.10` | Trust Kubernetes API | Configured; resolution verified 2026-11-08 |
 | A | `ups-aux.k8s-aux.lundmark.internal` | `10.10.0.5` | Coordinator SSH and Ansible | UniFi device **Local DNS Record** enabled. Ansible connected using the name on 2026-11-09. |
 | A | `kms.k8s-aux.simlun.se` | `10.10.0.5` | Trust coordinator KMS TLS endpoint | UniFi resolver `10.10.0.1` returned `10.10.0.5` from `simlun-x1`; the Pi also resolved the name during its static network rehearsal (2026-11-09) |
-| A | `bao.k8s-aux.simlun.se` | TBD (private OpenBao endpoint IP) | Trust OpenBao HTTPS endpoint using Let's Encrypt DNS-01 | Planned. Add the UniFi DNS policy after assigning the endpoint IP, then verify resolution before clients use the endpoint. |
+| A | `bao.k8s-aux.simlun.se` | `10.10.0.200` | Trust OpenBao HTTPS endpoint using Let's Encrypt DNS-01 | Planned. Add the UniFi DNS policy for this reserved MetalLB address before clients use the endpoint. |
 
 ### Configure on the UniFi gateway
 
@@ -79,16 +79,15 @@ directly or through a resolver forwarding this domain to it.
 
 ## OpenBao client access
 
-After assigning the private OpenBao HTTPS address, add the A record above and
-permit TCP 443 from the Pi and Metal cluster clients and their UPS coordinators.
-Scope the UniFi rules to the assigned private OpenBao IP and place them ahead
-of the inter-VLAN deny policy.
+Add the A record above and permit TCP 443 from the Pi and Metal cluster
+clients and their UPS coordinators. Scope the UniFi rules to the OpenBao
+MetalLB address `10.10.0.200` and place them ahead of the inter-VLAN deny policy.
 
 | Source | Destination | Access |
 | --- | --- | --- |
-| Pi cluster and `ups-pi` on VLAN 11 (`10.11.0.0/24`) | Private OpenBao endpoint on VLAN 10 | TCP 443 |
-| Metal cluster and `ups-metal` on VLAN 12 (`10.12.0.0/24`) | Private OpenBao endpoint on VLAN 10 | TCP 443 |
-| Backup and `ups-aux` on VLAN 10 (`10.10.0.0/24`) | Private OpenBao endpoint on VLAN 10 | Same VLAN. Verify local access. |
+| Pi cluster and `ups-pi` on VLAN 11 (`10.11.0.0/24`) | `10.10.0.200` on VLAN 10 | TCP 443 |
+| Metal cluster and `ups-metal` on VLAN 12 (`10.12.0.0/24`) | `10.10.0.200` on VLAN 10 | TCP 443 |
+| Backup and `ups-aux` on VLAN 10 (`10.10.0.0/24`) | `10.10.0.200` on VLAN 10 | Same VLAN. Verify local access. |
 
 Resolve `bao.k8s-aux.simlun.se` from each client network and verify HTTPS
 with normal certificate validation. Let's Encrypt verifies the public
@@ -113,7 +112,7 @@ All four clusters are independent, including Trust and Backup on VLAN 10. The CN
 | Pi | 11 | Multiple nodes | Cilium | Cilium | `10.130.0.0/16` | `10.242.0.0/16` |
 | Metal | 12 | Multiple nodes | Cilium | Cilium | `10.131.0.0/16` | `10.243.0.0/16` |
 
-On the shared VLAN, reserve `10.10.0.200`–`10.10.0.209` for Trust's MetalLB pool and `10.10.0.210`–`10.10.0.219` for Backup's. Individual service addresses remain TBD. The separate [Metal storage network](clusters.md#dedicated-storage-network) has its own addressing TBD.
+On the shared VLAN, reserve `10.10.0.200`–`10.10.0.209` for Trust and `10.10.0.210`–`10.10.0.219` for Backup. Trust's [MetalLB configuration](installation/trust-metallb.md) reserves `10.10.0.200` for OpenBao in a dedicated pool with automatic allocation disabled. The remaining individual assignments are TBD. The separate [Metal storage network](clusters.md#dedicated-storage-network) has its own addressing TBD.
 
 ## Gateway and UPS outages
 

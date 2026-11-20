@@ -1,0 +1,18 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: trust-openbao
+  namespace: {{ .Release.Namespace }}
+spec:
+  addresses:
+    - 10.10.0.200/32
+  autoAssign: false
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: trust-openbao
+  namespace: {{ .Release.Namespace }}
+spec:
+  ipAddressPools:
+    - trust-openbao
