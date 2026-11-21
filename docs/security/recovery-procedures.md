@@ -13,11 +13,11 @@ and restore targets.
 | --- | --- |
 | Token failure | Recover with another token; separately test the Level 1 golden-key software fallback. |
 | Coordinator loss | Rebuild without Trust/OpenBao, deploy wrapped records, restore independent SSH access and verified host identity, and authorize the existing node KMS key from the workstation. |
-| Trust loss | Restore to a replacement Raspberry Pi 4, preserving manual storage and restoring OpenBao from R2 with the corresponding unseal material. |
-| Emergency secret access | Restore OpenBao into a RAM-backed Linux container on a trusted workstation, without the original Trust or coordinator. |
+| OpenBao disaster recovery | Restore an R2 snapshot into a disposable second instance on the existing Trust cluster. Verify snapshot integrity, unseal, administrative access, and fixture readback while production stays online. |
 
-Perform drills in isolation from production integrations and without
-relying on the failed infrastructure. Keep secrets and snapshots off
+Perform drills in isolation from production integrations. The OpenBao
+restore rehearsal uses the existing Trust Kubernetes cluster and independently
+held credentials. Keep secrets and snapshots off
 workstation disk under the [handling policy](security.md#secret-handling-boundary).
 
 Internet access for R2, DNS, and public NTP remains an accepted dependency.
@@ -38,6 +38,6 @@ required target. Written commands alone do not establish verified recovery.
 
 ## Remaining implementation work
 
-Write and test acquisition, coordinator rebuild, Pi and container restore,
+Write and test acquisition, coordinator rebuild, OpenBao restore on Trust,
 and failure-handling commands. Record actual hardware/runtime
 details and resource requirements; complete the standalone recovery guide.

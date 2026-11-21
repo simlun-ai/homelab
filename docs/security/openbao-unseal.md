@@ -24,9 +24,9 @@ memory, and submits it to OpenBao over verified TLS. Follow the
 This is manual, operator-driven unseal; no auto-unseal is planned.
 
 Preserve the corresponding unseal material for retained snapshots.
-Validate restoration to both required recovery targets using that
-material; exact initialization, restore, and unseal ordering remains
-pending in [recovery procedures](recovery-procedures.md).
+Validate restoration into a disposable second OpenBao instance on Trust
+using that material. The exact initialization, restore, and unseal sequence
+remains pending in [recovery procedures](recovery-procedures.md).
 
 ## Recovery administration
 

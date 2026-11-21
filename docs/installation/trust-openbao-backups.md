@@ -34,7 +34,7 @@ defines the recovery requirements.
    available and verified in R2. A failed or partial upload must leave no
    artifact eligible for restore.
 
-## First restore rehearsal on Trust
+## Disaster recovery rehearsal on Trust
 
 Run a second single-replica OpenBao 2.7.3 instance on `trust-cp1` in a
 dedicated rehearsal namespace. Use separate, disposable Raft storage, a
@@ -65,9 +65,8 @@ result. Remove the rehearsal workload, temporary credentials, and its
 disposable storage. As transit is added, include a fixture that proves
 decryption of a payload sealed before the backup.
 
-This rehearsal covers R2 retrieval and OpenBao restore on existing Trust.
-Recovery after losing Trust remains a separate milestone under
-[required recovery targets](../backup-and-restore.md#required-recovery-targets).
+This is the sole OpenBao disaster recovery rehearsal. Its scope is R2
+retrieval and application restore on the existing Trust cluster.
 
 ## After the rehearsal
 

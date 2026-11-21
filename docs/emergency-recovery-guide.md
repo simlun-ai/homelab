@@ -15,7 +15,7 @@ All entries must be non-secret.
 | Effective challenge bytes, encoding, purpose identifiers, length/padding | V1 construction below; all four devices verified; exact production recovery identifiers TBD. |
 | Derivation/wrapping algorithms, output encoding, public parameters | HKDF-SHA-256 + AES-256-GCM; JSON/JCS and padded Base64 as specified below. |
 | Snapshot OpenBao version, ARM64 Pi and workstation recovery images/tools; independent acquisition locations | TBD. |
-| Container memory mounts, required RAM, runtime/swap/logging checks; tested Pi/container procedures | TBD. |
+| OpenBao rehearsal namespace, storage and memory limits, and tested restore procedure | TBD. |
 | Tool and backup integrity/checksum verification | TBD. |
 | R2 account, endpoint, bucket, object convention; snapshot selection | TBD. |
 | Additional backup-encryption details | TBD. |
@@ -101,21 +101,21 @@ before applying. For the OpenBao workload root, restore
 `make -C clusters/trust tofu-workload-plan` on the designated workstation.
 Preserve the existing `trust-data` pool and its separate wrapped key.
 
-OpenBao backups are online Raft snapshots uploaded by a job inside Trust to Cloudflare R2. Required targets are a full Trust rebuild on a replacement Raspberry Pi 4 and temporary OpenBao recovery in a Linux container on a trusted workstation. Both require documented, tested procedures; neither is verified yet. Start with the OpenBao version recorded for the snapshot and independently obtainable configuration/tools.
+OpenBao backups are online Raft snapshots uploaded by a job inside Trust to Cloudflare R2. The sole OpenBao disaster recovery rehearsal restores one of those snapshots into a disposable second OpenBao instance on the existing Trust Pi Kubernetes cluster. Start with the OpenBao version recorded for the snapshot and independently obtainable tools. The rehearsal depends on a functioning Trust Kubernetes cluster.
 
 1. Recover R2 access and any wrapped/decryption material.
 2. Select a snapshot and validate its recorded identity/integrity; do not stage it on workstation disk.
-3. Choose a target. **Full Pi 4 rebuild:** recover/start the coordinator, establish time/DNS/public KMS TLS, authorize the one-hour KMS boot window over SSH using a YubiKey in the workstation, and bootstrap/unlock Talos while preserving manual ZFS storage. **Temporary container:** run a normal single-node Raft-backed OpenBao server with data, snapshot input, secret-bearing configuration, and temporary files on verified memory-backed mounts. It needs no Talos/coordinator. Prevent disk writes through writable layers, host volumes, unprotected swap/hibernation, dumps, and engine metadata/logs; account for VM-backed runtimes. Exact commands and resource sizing remain TBD.
+3. For the rehearsal, start a single-replica OpenBao instance in a dedicated Trust namespace with separate disposable Raft storage and a loopback-only API. Keep production OpenBao on its existing claim. Use authenticated Kubernetes exec and keep the rehearsal isolated from production integrations. Exact launch commands and resource sizing remain TBD.
 4. Restore the snapshot with its corresponding seal/unseal material. Use the workstation helper and a touched YubiKey (or the software fallback) to unwrap and submit the required unseal material in memory. **Exact initialization, restore, and unseal ordering is TBD and must be validated; new-instance material may not unlock an older snapshot.**
-5. Verify recovery administration access, expected secrets/authentication/policies, and transit decryption of previously sealed test material. Keep drills isolated from production integrations. For full Pi recovery, also verify certificate distribution and resumed encrypted snapshot uploads. For a temporary container, preserve any required changes in a fresh encrypted snapshot through compliant transfer before teardown; memory-backed state is lost when the container ends.
+5. Verify recovery administration and read the known fixture from the restored instance. When transit is in use, verify decryption of previously sealed test material. Check production OpenBao health and remove the rehearsal resources and disposable storage.
 6. For full recovery, restore and unseal OpenBao in Trust and verify the required Transit key versions. Restore each dependent cluster's KMS adapter on its coordinator and verify its independent OpenBao login, early-boot network access, and TLS trust before starting nodes. An older OpenBao snapshot may lack Transit keys required by newer disks. Trust unlocks using its independent coordinator KMS.
-7. After foundation services are restored and verified, start dependent clusters manually, one machine at a time, checking KMS unlock, dependencies, and storage. A temporary OpenBao container alone does not restore the cluster's KMS endpoints or other services.
+7. After foundation services are restored and verified, start dependent clusters manually, one machine at a time, checking KMS unlock, dependencies, and storage.
 
 ## Complete before relying on this guide
 
-Test token failure and the Level 1 fallback, coordinator rebuild with independent SSH access, replacement-Pi restore, and RAM-backed container restore. Record the repository commit, snapshot identity, key generations, tool versions, result, and recovery time without secrets. A procedure is verified only after successful testing on its required target.
+Test token failure and the Level 1 fallback, coordinator rebuild with independent SSH access, and the OpenBao restore on Trust. Record the repository commit, snapshot identity, key generations, tool versions, result, and recovery time without secrets.
 
-Fill every recovery-critical field and embed exact acquisition, operating, and failure-handling commands in this file. Test touch enforcement and matching responses across all tokens and the software fallback without recording secret output. Prove both replacement-Pi and workstation-container R2 restores using a separately held token and the guide, then the golden-key fallback, without the original Trust/coordinator or workstation-disk plaintext secrets.
+Fill every recovery-critical field and embed exact acquisition, operating, and failure-handling commands in this file. Test touch enforcement and matching responses across all tokens and the software fallback without recording secret output. Verify the OpenBao restore from R2 on the disposable Trust instance, keeping credentials and snapshots off workstation disk.
 
 ## Maintenance references
 

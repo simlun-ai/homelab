@@ -41,22 +41,20 @@ Use the [YubiKey or offline golden-key path](security/security.md#core-secret-fo
 
 Wrapped credential records live in the private `homelab-secrets` submodule; coordinator records are also deployed locally under the [storage policy](security/encrypted-record-storage.md). Recreatable coordinator ACME/TLS state is an exception: its ciphertext and archives live only on the coordinator; SD-card loss uses explicit recreation with the preserved Cloudflare credential. Exact mappings for other recovery artifacts remain TBD. Proposed credential lookups belong in [yubikey.md](security/yubikey.md); secret custody and handling in [security.md](security/security.md).
 
-## Required recovery targets
+## OpenBao disaster recovery rehearsal
 
-Both paths restore OpenBao from an R2 Raft snapshot and independently held, YubiKey-wrapped unseal material. Neither path is implemented or tested.
+The sole OpenBao restore test uses a disposable second instance on the
+existing Trust Pi Kubernetes cluster. Restore a snapshot retrieved from R2
+using the matching YubiKey-wrapped unseal material. The rehearsal verifies
+OpenBao recovery from backup on a functioning cluster. It depends on Trust
+Kubernetes being available.
 
-| Target | Required outcome |
-| --- | --- |
-| Replacement Raspberry Pi 4 | Rebuild the full single-node Talos Trust cluster, including independent coordinator KMS access, manually managed encrypted ZFS storage, OpenBao, and foundation services. |
-| Linux container on a trusted workstation | Recover a temporary single-node OpenBao instance without Talos, Kubernetes, ZFS, or the coordinator; allow recovery access to secrets and transit keys. |
-
-Start with the OpenBao version recorded for the snapshot and a pinned, independently obtainable recovery image/binary. Preserve non-secret server configuration and required plugin/secret references separately: a Raft snapshot is not a complete host or Kubernetes backup.
-
-The container uses a normal Raft-backed server with its storage, snapshot input, secret-bearing configuration, and temporary files on verified memory-backed mounts, not development mode or the in-memory storage backend. Prevent writes to the container's disk-backed writable layer, host volumes, engine credential metadata/logs, unprotected swap, hibernation, and dumps. Verify the actual workstation/container runtime, including any VM-backed engine; RAM capacity and exact launch configuration remain TBD. Termination loses the temporary restored state; preserve any required recovery changes as a fresh encrypted snapshot through a compliant transfer before teardown.
-
-Document both branches in `/runbooks/restore-openbao.md`. Prove snapshot retrieval and identity/integrity, the exact initialize/restore/reseal/unseal sequence, recovery administration access, representative secret reads, and transit decryption of previously sealed test material. New-instance unseal material does not replace the material associated with the snapshot; any forced restore bypasses consistency checks, not encryption.
-
-Run isolated restore drills without the original Trust/coordinator or other clusters. Test ARM64 Pi restoration and the actual workstation architecture/runtime, a separately held token and the guide, and the offline golden-key fallback. Record snapshot identity/version, recovery time, required RAM, and verification results without secret output; check workstation-disk compliance. Pi recovery additionally verifies manual-storage preservation, cold boot, dependent-node unlock, and resumed backups.
+Document the operator commands in `runbooks/restore-openbao.md`. Prove
+snapshot retrieval and integrity, the initialization and restore sequence,
+unseal, administrative access, and readback of the known fixture. Include
+transit decryption once transit is in use. Record the snapshot identity,
+OpenBao version, recovery time, resource usage, and outcome without secrets.
+See the [Trust restore plan](installation/trust-openbao-backups.md#disaster-recovery-rehearsal-on-trust).
 
 ## Trust restore outline
 
