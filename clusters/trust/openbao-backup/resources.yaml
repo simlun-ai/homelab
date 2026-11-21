@@ -1,0 +1,180 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openbao-backup
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: openbao-backup
+  namespace: openbao-backup
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: trust-openbao-backup-token-review
+rules:
+  - apiGroups: [authentication.k8s.io]
+    resources: [tokenreviews]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: trust-openbao-backup-token-review
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: trust-openbao-backup-token-review
+subjects:
+  - kind: ServiceAccount
+    name: openbao
+    namespace: openbao
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: openbao-backup
+  namespace: openbao-backup
+spec:
+  schedule: "30 2 * * *"
+  timeZone: Etc/UTC
+  suspend: true
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 7
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 1200
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: openbao-backup
+          automountServiceAccountToken: false
+          nodeSelector:
+            kubernetes.io/hostname: trust-cp1
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            - name: stage-bao
+              image: quay.io/openbao/openbao:2.7.3@sha256:ba4b133eb9586630024e71a617e66f37f29cc3534cdd46a6233e098ceded8dc9
+              command: ["/bin/sh", "-ec", "cp $(command -v bao) /tools/bao"]
+              securityContext: &containerSecurity
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              resources: &toolsResources
+                requests:
+                  cpu: 25m
+                  memory: 16Mi
+                limits:
+                  memory: 64Mi
+              volumeMounts:
+                - name: tools
+                  mountPath: /tools
+            - name: stage-restic
+              image: docker.io/restic/restic:0.18.1@sha256:39d9072fb5651c80d75c7a811612eb60b4c06b32ffe87c2e9f3c7222e1797e76
+              command: ["/bin/sh", "-ec", "cp $(command -v restic) /tools/restic"]
+              securityContext: *containerSecurity
+              resources: *toolsResources
+              volumeMounts:
+                - name: tools
+                  mountPath: /tools
+            - name: backup
+              image: &runtime docker.io/library/python:3.13.5-slim-bookworm@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419
+              command: &python ["python3", "-I", "-B", "/pipeline/pipeline.py"]
+              args: [backup]
+              securityContext: *containerSecurity
+              resources: &jobResources
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  memory: 512Mi
+              envFrom: &settings
+                - configMapRef:
+                    name: openbao-backup-settings
+              env:
+                - name: POD_UID
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.uid
+              volumeMounts:
+                - &pipelineMount
+                  name: pipeline
+                  mountPath: /pipeline
+                  readOnly: true
+                - &toolsMount
+                  name: tools
+                  mountPath: /tools
+                  readOnly: true
+                - &workMount
+                  name: work
+                  mountPath: /work
+                - name: writer
+                  mountPath: /credentials
+                  readOnly: true
+                - name: identity
+                  mountPath: /identity
+                  readOnly: true
+            - name: download
+              image: *runtime
+              command: *python
+              args: [download]
+              securityContext: *containerSecurity
+              resources: *jobResources
+              envFrom: *settings
+              volumeMounts:
+                - *pipelineMount
+                - *toolsMount
+                - *workMount
+                - name: reader
+                  mountPath: /credentials
+                  readOnly: true
+          containers:
+            - name: restore
+              image: *runtime
+              command: *python
+              args: [restore]
+              securityContext: *containerSecurity
+              resources: *jobResources
+              envFrom: *settings
+              volumeMounts:
+                - *pipelineMount
+                - *toolsMount
+                - *workMount
+          volumes:
+            - name: pipeline
+              configMap:
+                name: openbao-backup-pipeline
+            - name: tools
+              emptyDir:
+                sizeLimit: 128Mi
+            - name: work
+              emptyDir:
+                medium: Memory
+                sizeLimit: 256Mi
+            - name: writer
+              secret:
+                secretName: openbao-backup-writer
+                defaultMode: 0440
+            - name: reader
+              secret:
+                secretName: openbao-backup-reader
+                defaultMode: 0440
+            - name: identity
+              projected:
+                sources:
+                  - serviceAccountToken:
+                      audience: trust-openbao-backup
+                      expirationSeconds: 1200
+                      path: token

@@ -33,6 +33,7 @@ help:
 	  'tofu-workload-validate / tofu-workload-plan / tofu-workload-apply: operate Trust workloads' \
 	  'tofu-workload-state-recover TOFU_RECOVERY_FILE=path: recover retained workload RAM state' \
 	  'openbao-status / openbao-initialize / openbao-unseal: operate the staged Trust OpenBao server' \
+	  'openbao-backup-enroll / configure / init-repo / enable / disable / status / verify: operate backups' \
 	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \
 	  'kms-window-open / kms-window-status / kms-window-lock: control the trust-cp1 KMS window'
 tools:
@@ -185,3 +186,11 @@ scheduling-preview scheduling-apply: check-tools check-rendered
 openbao-status openbao-initialize openbao-unseal: check-tools
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" \
 	  $(patsubst openbao-%,%,$@) --ram-root "$(RAM_ROOT)"
+
+export R2_REPOSITORY RESTORE_SNAPSHOT_ID
+.PHONY: openbao-backup-enroll openbao-backup-configure openbao-backup-init-repo
+.PHONY: openbao-backup-enable openbao-backup-disable openbao-backup-status openbao-backup-verify
+openbao-backup-configure openbao-backup-init-repo openbao-backup-enable openbao-backup-disable openbao-backup-status openbao-backup-verify: check-tools
+openbao-backup-enroll openbao-backup-configure openbao-backup-init-repo openbao-backup-enable openbao-backup-disable openbao-backup-status openbao-backup-verify:
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao_backup.py" \
+	  $(patsubst openbao-backup-%,%,$@) --ram-root "$(RAM_ROOT)"

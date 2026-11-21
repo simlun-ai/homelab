@@ -105,7 +105,7 @@ OpenBao backups are online Raft snapshots backed up with restic by a job inside 
 
 1. Recover R2 access and any wrapped/decryption material.
 2. Select a snapshot and validate its recorded identity/integrity; do not stage it on workstation disk.
-3. For the rehearsal, start a single-replica OpenBao instance in a dedicated Trust namespace with separate disposable Raft storage and a loopback-only API. Keep production OpenBao on its existing claim. Use authenticated Kubernetes exec and keep the rehearsal isolated from production integrations. Exact launch commands and resource sizing remain TBD.
+3. For the rehearsal, start a single-replica OpenBao instance in a dedicated Trust namespace with separate disposable Raft storage and a loopback-only API. Keep production OpenBao on its existing claim. Use authenticated Kubernetes exec and keep the rehearsal isolated from production integrations. Use the OpenBao backup operations runbook for the live command sequence and sizing limits.
 4. Restore the snapshot with its corresponding seal/unseal material. Use the workstation helper and a touched YubiKey (or the software fallback) to unwrap and submit the required unseal material in memory. **Exact initialization, restore, and unseal ordering is TBD and must be validated; new-instance material may not unlock an older snapshot.**
 5. Verify recovery administration and read the known fixture from the restored instance. When transit is in use, verify decryption of previously sealed test material. Check production OpenBao health and remove the rehearsal resources and disposable storage.
 6. For full recovery, restore and unseal OpenBao in Trust and verify the required Transit key versions. Restore each dependent cluster's KMS adapter on its coordinator and verify its independent OpenBao login, early-boot network access, and TLS trust before starting nodes. An older OpenBao snapshot may lack Transit keys required by newer disks. Trust unlocks using its independent coordinator KMS.
@@ -124,6 +124,7 @@ These references do not replace embedded emergency instructions.
 - Policies: `docs/security/security.md` and `docs/backup-and-restore.md`.
 - Credential catalogue and v1 challenge format: `docs/security/yubikey.md`; wrapping specification: `docs/security/security.md`. Keep the embedded protocol synchronized and add exact recovery-critical identifiers before distributing the guide.
 - Installation plan and runbooks: `docs/installation/README.md`, `docs/installation/00-yubikey-setup.md`, `docs/installation/01-main-coordinator.md`, `docs/installation/02-trust.md`. Step 00 completed physical programming, cross-token/software checks and independent replica retrieval on 2026-11-04.
-- Planned operating runbooks: `runbooks/restore-openbao.md`, `runbooks/unseal-openbao.md`, `runbooks/operate-talos-kms.md`, `runbooks/operate-trust-bootstrap-kms.md`.
+- OpenBao backup and restore: [Trust operator runbook](installation/trust-openbao-backup-operations.md).
+- Other planned operating runbooks: `runbooks/unseal-openbao.md`, `runbooks/operate-talos-kms.md`, `runbooks/operate-trust-bootstrap-kms.md`.
 - [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/).
 - [YubiKey Manager OTP commands](https://docs.yubico.com/software/yubikey/tools/ykman/OTP_Commands.html) and [OTP implementation](https://github.com/Yubico/yubikey-manager/blob/5.9.2/yubikit/yubiotp.py).

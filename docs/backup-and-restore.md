@@ -1,6 +1,6 @@
 # Backup and Restore
 
-**Planned design.** Backup jobs, schedules, and restore runbooks are not implemented or tested.
+**OpenBao backup implementation is ready for live verification.** Other backup jobs and restore procedures remain planned.
 
 ## Recovery goals
 
@@ -10,7 +10,7 @@ Recovery follows the [secret-handling boundary](security/security.md#secret-hand
 
 ## OpenBao online backups
 
-**Decision:** Trust's OpenBao uses integrated Raft storage. A scheduled job inside Trust exports application-consistent online Raft snapshots through the snapshot API while OpenBao runs, then backs them up with restic directly to **Cloudflare R2**. The [Trust snapshot milestone](installation/trust-openbao-backups.md) covers the first upload and a restore into a disposable second OpenBao instance on the existing Trust cluster.
+**Decision:** Trust's OpenBao uses integrated Raft storage. A scheduled job inside Trust exports application-consistent online Raft snapshots through the snapshot API while OpenBao runs, then backs them up with restic directly to **Cloudflare R2**. The [Trust snapshot milestone](installation/trust-openbao-backups.md) covers the scheduled backup, automatic sealed restore, and YubiKey verification on the existing Trust cluster.
 
 | Item | Requirement / open decision |
 | --- | --- |
@@ -18,7 +18,7 @@ Recovery follows the [secret-handling boundary](security/security.md#secret-hand
 | Encryption | Restic encrypts the repository. Keep its password independently recoverable. |
 | Transfer | Stage the Raft snapshot on Trust in bounded memory-backed storage and back it up directly to R2. |
 | Authentication | Scoped snapshot access and R2 upload credentials; provisioning and lifecycle TBD. |
-| Schedule / retention | TBD. |
+| Schedule / retention | Daily at 02:30 UTC. Restic retention and pruning remain operator-managed. |
 | Verification | Failed/partial exports or uploads must not count as success. Report failures and prove usability through a separate restore exercise; exact checks TBD. |
 
 Provision job credentials without circular recovery dependencies. R2 restore credentials may differ from upload credentials. Keep public destination/object metadata in the recovery guide; protect actual credentials under the [HMAC wrapping protocol](security/security.md#challenges-derivation-and-wrapped-credentials).
@@ -51,7 +51,7 @@ using the matching YubiKey-wrapped unseal material. The rehearsal verifies
 OpenBao recovery from backup on a functioning cluster. It depends on Trust
 Kubernetes being available.
 
-Document the operator commands in `runbooks/restore-openbao.md`. Prove
+Use the [Trust backup operator runbook](installation/trust-openbao-backup-operations.md). Prove
 snapshot retrieval and integrity, the initialization and restore sequence,
 unseal, administrative access, and readback of the known fixture. Include
 transit decryption once transit is in use. Record the snapshot identity,
@@ -62,7 +62,7 @@ See the [Trust restore plan](installation/trust-openbao-backups.md#disaster-reco
 
 Recover/verify the [coordinator bootstrap KMS](security/security.md#trust-bootstrap-kms) before Trust system-volume unlock. Router/network, DNS, and public NTP must work independently; Internet is an accepted cold-start dependency. Coordinator-loss recovery and expired-certificate renewal must be tested without OpenBao or workstation-disk plaintext secrets. The [draft KMS recovery gate](security/trust-bootstrap-kms.md#independent-coordinator-loss-recovery-gate) proposes rebuilding from preserved wrapped node-key generations and lists the still-unresolved recovery copies, locations, UUID-change and LUKS-header requirements; it does not establish a working restore procedure.
 
-Coordinate [Trust installation](installation/02-trust.md), `/runbooks/operate-trust-bootstrap-kms.md`, and `/runbooks/restore-openbao.md` with the [Emergency Recovery Guide's restore outline](emergency-recovery-guide.md#restore-trust-and-openbao).
+Coordinate [Trust installation](installation/02-trust.md), `/runbooks/operate-trust-bootstrap-kms.md`, and the [OpenBao backup runbook](installation/trust-openbao-backup-operations.md) with the [Emergency Recovery Guide's restore outline](emergency-recovery-guide.md#restore-trust-and-openbao).
 
 After restoring OpenBao, verify transit key versions and KMS adapter readiness before starting dependent nodes. Verify snapshot coverage after transit key creation/rotation; an older snapshot may lack keys required by newer disks. The [startup dependency](security/security.md#talos-kms-adapter) must not depend on an encrypted Backup, Pi, or Metal node.
 
