@@ -76,6 +76,11 @@ git pull --ff-only --no-recurse-submodules &&
   git push origin feat/trust-bootstrap
 ```
 
+On 2026-11-21, the operator initialized the staged OpenBao server and
+independently verified both wrapped records with the YubiKey. The records
+were published to the private repository at `8932b41` and pinned on
+`feat/trust-bootstrap` at [`a05d3b1`](https://github.com/simlun-ai/homelab/commit/a05d3b1).
+
 ## Unseal and verify
 
 ```sh
