@@ -101,7 +101,11 @@ workload state key and the Trust Talos identity.
 
 On 2026-11-21, the operator confirmed the workload plan showed `2 to add,
 0 to change, 0 to destroy` and the apply completed with `2 added, 0 changed,
-0 destroyed`. Kubernetes verification and encrypted state publication follow.
+0 destroyed`. The production-issuer Certificate reached `Ready`, the 10 GiB
+`trust-zfs-retain` claim bound, and `openbao-0` ran on `trust-cp1` with zero
+restarts. MetalLB assigned `10.10.0.200` for TCP 443. The EndpointSlice reported
+`ready: false` and `serving: false`, as expected before initialization.
+The clean follow-up plan and encrypted state publication are pending.
 
 ## Verify and publish
 
