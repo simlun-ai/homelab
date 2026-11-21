@@ -14,3 +14,6 @@ dist/
 
 /clusters/trust/tofu/.terraform/
 /clusters/trust/tofu/*.tfstate*
+
+/clusters/trust/tofu-workload/.terraform/
+/clusters/trust/tofu-workload/*.tfstate*

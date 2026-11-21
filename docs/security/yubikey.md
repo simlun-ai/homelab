@@ -123,13 +123,18 @@ These records wrap ZFS keys for the manual unlock helper. Pool preparation and r
 
 Pi and Metal `piraeus` storage also require encryption, but their key-delivery scheme is unresolved. Direct YubiKey identifiers must be added if that scheme requires them.
 
-## Trust OpenTofu state key
+## Trust OpenTofu state keys
 
 The Trust infrastructure pilot uses the directly wrapped 32-byte key
 `homelab/v1/trust/opentofu/state/infrastructure/r1` with `golden-1`.
 Its record is `secrets/wrapped/trust-opentofu-state-r1.json`. Enroll the
 record and verify recovery using the
 [Trust OpenTofu runbook](../../runbooks/trust-opentofu-bootstrap.md).
+
+The workload root uses the separately wrapped 32-byte key
+`homelab/v1/trust/opentofu/state/workload/r1` with `golden-1`. Its record
+is `secrets/wrapped/trust-opentofu-workload-state-r1.json`. See
+[workload key enrollment](../installation/trust-openbao.md#enroll-the-workload-state-key).
 
 ## Secrets protected through OpenBao
 
@@ -156,7 +161,7 @@ Specify storage, delivery, and any direct lookup identifiers for:
 - R2 upload and OpenBao snapshot-job credentials.
 - KMS adapter authentication and TLS bootstrap material.
 - OpenBao recovery administration access.
-- OpenTofu state-encryption and backend credentials for any scope beyond the Trust pilot.
+- OpenTofu state-encryption and backend credentials for scopes outside Trust.
 - UPS service/shutdown credentials (local administrator passwords are covered above).
 - YubiKey programming access codes are deferred to [future improvements](../future.md).
 

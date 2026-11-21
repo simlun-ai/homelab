@@ -13,7 +13,8 @@
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
 - **Verified:** [Trust cert-manager and its ACME issuers](trust-cert-manager.md) are installed. Staging DNS-01 issuance passed, and the encrypted OpenTofu state was pushed after a clean plan.
-- **Current next step:** Install and [verify Trust MetalLB](trust-metallb.md) for OpenBao's reserved address `10.10.0.200`. OpenBao will use the verified `trust-zfs-retain` StorageClass for Raft data.
+- **Completed:** [Trust MetalLB](trust-metallb.md) was applied and its encrypted infrastructure state was published.
+- **Current next step:** Install the [OpenBao workload](trust-openbao.md) with Raft on the verified `trust-zfs-retain` StorageClass, a production TLS certificate, and a Service requesting `10.10.0.200`. Initialize and unseal OpenBao before enabling the network listener.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
