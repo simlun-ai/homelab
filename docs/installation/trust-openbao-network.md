@@ -52,8 +52,9 @@ HTTPS through MetalLB at `10.10.0.200:443` returned HTTP 200 with
 the production TLS hostname using an explicit IP override. After the local
 A record was configured, UniFi resolver `10.10.0.1` and the workstation's
 normal resolver both returned `10.10.0.200`. HTTPS without an IP override
-returned HTTP 200 with OpenBao initialized, unsealed, and active. Pi and
-Metal client-network checks remain pending.
+returned HTTP 200 with OpenBao initialized, unsealed, and active. The
+operator deferred Pi and Metal DNS and HTTPS checks until those client VLANs
+are set up.
 
 ## Wait for the replacement and unseal
 
@@ -141,8 +142,8 @@ curl --fail --silent --show-error --noproxy '*' --max-time 10 --write-out '\nHTT
 ```
 
 Expect HTTP 200 with `"initialized":true` and `"sealed":false`.
-Then verify local DNS and HTTPS from VLAN 10 and from the permitted Pi and
-Metal client networks.
+Then verify local DNS and HTTPS from VLAN 10. Repeat the same check from
+permitted Pi and Metal clients when their VLANs are available.
 
 ```sh
 getent ahostsv4 bao.k8s-aux.simlun.se &&
