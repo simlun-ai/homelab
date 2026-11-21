@@ -4,7 +4,7 @@
 
 **Primary milestone:** Install `trust-cp1` as an encrypted Talos single-node Kubernetes cluster on `k8s-aux` (VLAN 10), with system-volume unlock provided by the independent KMS on `ups-aux`. This is the initial installation, **not** a disposable unencrypted bootstrap. OpenBao and other application workloads are later milestones.
 
-**Working branch:** `feat/trust-bootstrap`. Work in small, reviewable commits on this branch. Before each change, agree on the next decision, implement only that slice, test it where possible, and update this roadmap with evidence. Do not mark physical tests complete from configuration or documentation alone.
+**Working branch:** `feat/trust-bootstrap`. Work in small, reviewable commits on this branch. Before each change, agree on the next decision, implement only that slice, test it where possible, and update this roadmap with evidence. Do not mark physical tests complete from configuration or documentation alone. Commit operator-confirmed progress directly to `feat/trust-bootstrap` after each completed milestone.
 
 ### Current position
 
@@ -13,7 +13,7 @@
 - **Verified firmware boot:** SD-first EEPROM configuration and first UEFI setup boot passed on 2026-11-08. On 2026-11-09 the operator confirmed UEFI Firmware v1.53 and returned to setup after a full power cycle without changing settings. Talos subsequently reached maintenance mode via manual USB selection on 2026-11-09. Disabling the 3 GB RAM cap and cold booting subsequently yielded memory TOTAL `7748` with unchanged UUID and working Ethernet. EEPROM version/exact BOOT_ORDER, other modified settings and automatic USB selection remain unverified.
 - **Verified:** Talos cold-booted from the installed two-member OS mirror and unlocked encrypted `STATE` and `EPHEMERAL` through KMS. Kubernetes bootstrap and initial readiness passed.
 - **Verified:** [Trust cert-manager and its ACME issuers](trust-cert-manager.md) are installed. Staging DNS-01 issuance passed, and the encrypted OpenTofu state was pushed after a clean plan.
-- **Completed:** [Trust MetalLB](trust-metallb.md) was applied and its encrypted infrastructure state was published.
+- **Completed (2026-11-21):** [Trust MetalLB](trust-metallb.md) applied with `3 added, 0 changed, 0 destroyed`. The encrypted infrastructure state was [published](https://github.com/simlun-ai/homelab-opentofu-state/commit/1ca23c33c1578d0919fe47eabda72037f062602e).
 - **Current next step:** Install the [OpenBao workload](trust-openbao.md) with Raft on the verified `trust-zfs-retain` StorageClass, a production TLS certificate, and a Service requesting `10.10.0.200`. Initialize and unseal OpenBao before enabling the network listener.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the

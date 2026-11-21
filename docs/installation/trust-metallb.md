@@ -70,6 +70,15 @@ Expect the speaker to be ready on `trust-cp1`, the pool to contain
 reference that pool. Run a fresh plan and publish the encrypted state
 following the [OpenTofu runbook](../../runbooks/trust-opentofu-bootstrap.md#3-validate-plan-and-install).
 
+## Rollout record
+
+On 2026-11-21, the operator confirmed `3 to add, 0 to change, 0 to destroy`
+in the plan and `3 added, 0 changed, 0 destroyed` after apply for
+[PR #47](https://github.com/simlun-ai/homelab/pull/47). The encrypted
+infrastructure state was
+[published](https://github.com/simlun-ai/homelab-opentofu-state/commit/1ca23c33c1578d0919fe47eabda72037f062602e).
+The workload rollout will verify OpenBao's address assignment and HTTPS.
+
 ## Use the address when deploying OpenBao
 
 Confirm `10.10.0.200` is free on VLAN 10 before deploying the OpenBao Service.
