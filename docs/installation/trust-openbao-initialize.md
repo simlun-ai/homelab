@@ -98,3 +98,6 @@ make -C clusters/trust openbao-status
 Expect `Initialized: True. Sealed: False.` The network rollout will enable
 the listener on the already-initialized Raft claim. After a restart, use the
 same workstation unseal command.
+
+On 2026-11-21, the operator unsealed the live server using the YubiKey-wrapped
+share. The helper confirmed that OpenBao was initialized and unsealed.
