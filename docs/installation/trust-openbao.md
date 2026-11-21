@@ -99,6 +99,10 @@ make -C clusters/trust tofu-workload-apply
 Review the preview again before confirming apply. Plan and apply recover the
 workload state key and the Trust Talos identity.
 
+On 2026-11-21, the operator confirmed the workload plan showed `2 to add,
+0 to change, 0 to destroy` and the apply completed with `2 added, 0 changed,
+0 destroyed`. Kubernetes verification and encrypted state publication follow.
+
 ## Verify and publish
 
 Check the certificate, claim, server process and Service using the existing
