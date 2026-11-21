@@ -78,6 +78,11 @@ git -C secrets/wrapped add -- trust-opentofu-workload-state-r1.json &&
   git push origin feat/trust-bootstrap
 ```
 
+On 2026-11-21, the operator enrolled the workload state key and independently
+recovered it with the YubiKey. The wrapped record was published to the private
+records repository at `2e765b1` and pinned in the parent repository at
+[`3512dbd`](https://github.com/simlun-ai/homelab/commit/3512dbd).
+
 ## Plan and apply
 
 ```sh
