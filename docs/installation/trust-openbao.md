@@ -8,11 +8,11 @@ cert-manager's `letsencrypt-production` ClusterIssuer for
 `bao.k8s-aux.simlun.se`. OpenBao reloads the mounted TLS certificate and key
 when cert-manager renews them.
 
-The first deployment binds the API to pod loopback and leaves the pod out of
-the HTTPS Service's ready endpoints. OpenTofu records the release once Helm
-submits the resources. The checks below verify the first deployment.
-[YubiKey-backed initialization and unseal](trust-openbao-initialize.md)
-and enabling the network listener are the next rollout.
+Trust's first deployment bound the API to pod loopback while the operator
+[initialized and unsealed OpenBao](trust-openbao-initialize.md). The
+[network listener rollout](trust-openbao-network.md) enables service traffic
+on the initialized Raft claim. The preparation and apply sections below record the staged deployment.
+Use the network listener runbook for the current upgrade.
 
 ## Prepare the operator workstation
 
@@ -113,7 +113,7 @@ workload state envelope at serial 1. The encrypted state was
 
 Check the certificate, claim, server process and Service using the existing
 Trust admin flow. The pod runs but stays out of the Service's ready endpoints
-until the initialization rollout.
+at this stage because its listener binds to pod loopback.
 
 ```sh
 make -C clusters/trust check-tools &&
@@ -145,8 +145,9 @@ PYTHON
 
 Expect a bound `trust-zfs-retain` claim, the pod on `trust-cp1`, the
 Service's external IP `10.10.0.200` on TCP 443, and no ready endpoint.
-Verify the external HTTPS listener after the initialization rollout, using
-the [OpenBao network plan](../network.md#openbao-client-access).
+Verify HTTPS using the [network listener runbook](trust-openbao-network.md).
+
+## Publish encrypted workload state
 
 Run a fresh plan and expect no changes.
 

@@ -5,6 +5,8 @@ injector:
   enabled: false
 
 server:
+  updateStrategyType: OnDelete
+  configAnnotation: true
   authDelegator:
     enabled: false
   serviceAccount:
@@ -53,8 +55,7 @@ server:
       setNodeId: true
       config: |
         listener "tcp" {
-          # Keep the initialization API private to the pod.
-          address         = "127.0.0.1:8200"
+          address         = "0.0.0.0:8200"
           cluster_address = "127.0.0.1:8201"
           tls_cert_file   = "/openbao/tls/tls.crt"
           tls_key_file    = "/openbao/tls/tls.key"
