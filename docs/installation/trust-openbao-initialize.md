@@ -101,3 +101,5 @@ same workstation unseal command.
 
 On 2026-11-21, the operator unsealed the live server using the YubiKey-wrapped
 share. The helper confirmed that OpenBao was initialized and unsealed.
+A separate `make -C clusters/trust openbao-status` check returned
+`Initialized: True. Sealed: False.`
