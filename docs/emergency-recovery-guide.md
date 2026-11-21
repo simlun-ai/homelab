@@ -19,7 +19,7 @@ All entries must be non-secret.
 | Tool and backup integrity/checksum verification | TBD. |
 | R2 account, endpoint, bucket, object convention; snapshot selection | TBD. |
 | Additional backup-encryption details | TBD. |
-| Independent encrypted-payload references | Wrapped records in the private `secrets/wrapped/` submodule, with public manifest `secrets/manifest.json` in the parent clone. OpenBao Shamir seal: one share, threshold one; identifier `homelab/v1/trust/openbao-unseal/share-1/r1`. Exact filenames and recovery administration credential TBD. Accessible without Trust, GitHub, or existing R2 credentials. |
+| Independent encrypted-payload references | Wrapped records in the private `secrets/wrapped/` submodule, with public manifest `secrets/manifest.json` in the parent clone. OpenBao Shamir seal: one share, threshold one; identifier `homelab/v1/trust/openbao-unseal/share-1/r1`. Wrapped share file `trust-openbao-unseal-share-1-r1.json`. Bootstrap root token file `trust-openbao-initial-root-token-r1.json` is held separately. Recovery administration credential TBD. Accessible without Trust, GitHub, or existing R2 credentials. |
 | Golden-key retrieval procedure reference | Level 1 Password Management system; exact retrieval steps outside this repository. Never record the key here. |
 | Auxiliary network and static hosts | `k8s-aux` (VLAN 10), `10.10.0.0/24`, gateway `10.10.0.1`. `ups-aux` is `10.10.0.5`, the Trust Talos node is `10.10.0.10`, and the Backup Talos node is `10.10.0.15`. |
 | Trust coordinator KMS endpoint, public TLS/DNS-01, preboot DNS/NTP, session controls | TBD; include service acquisition, independent wrapped-payload references, and coordinator rebuild instructions. |

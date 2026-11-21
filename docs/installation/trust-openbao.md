@@ -11,7 +11,7 @@ when cert-manager renews them.
 The first deployment binds the API to pod loopback and leaves the pod out of
 the HTTPS Service's ready endpoints. OpenTofu records the release once Helm
 submits the resources. The checks below verify the first deployment.
-[YubiKey-backed initialization and unseal](../security/openbao-unseal.md)
+[YubiKey-backed initialization and unseal](trust-openbao-initialize.md)
 and enabling the network listener are the next rollout.
 
 ## Prepare the operator workstation

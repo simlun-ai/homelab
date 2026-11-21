@@ -136,6 +136,15 @@ The workload root uses the separately wrapped 32-byte key
 is `secrets/wrapped/trust-opentofu-workload-state-r1.json`. See
 [workload key enrollment](../installation/trust-openbao.md#enroll-the-workload-state-key).
 
+## OpenBao bootstrap records
+
+| Material | Wrapped identifier | Record under `secrets/wrapped/` |
+| --- | --- | --- |
+| Shamir unseal share | `homelab/v1/trust/openbao-unseal/share-1/r1` | `trust-openbao-unseal-share-1-r1.json` |
+| Initial root token for bootstrap administration | `homelab/v1/trust/openbao-bootstrap/initial-root-token/r1` | `trust-openbao-initial-root-token-r1.json` |
+
+Both use `golden-1`. See the [OpenBao operator runbook](../installation/trust-openbao-initialize.md).
+
 ## Secrets protected through OpenBao
 
 These inherit YubiKey protection through wrapped OpenBao unseal material. Their normal retrieval uses OpenBao.
