@@ -30,6 +30,11 @@ git switch feat/trust-bootstrap &&
   make -C clusters/trust tofu-workload-validate
 ```
 
+On 2026-11-21, the operator validated the workload configuration on the
+Trust workstation. OpenTofu 1.13.9 verified the OpenBao 0.30.8 chart checksum,
+initialized the locked Helm and Kubernetes providers, and reported a valid
+configuration.
+
 The workload root uses the existing sibling
 `../homelab-opentofu-state` checkout with a separate encrypted
 `trust-workload.tfstate`. Use the designated single-writer checkout, updated to
