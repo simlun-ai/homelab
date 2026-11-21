@@ -42,6 +42,11 @@ make -C clusters/trust tofu-workload-apply
 Confirm the same plan in the apply preview. Helm returns when the release
 is submitted so the operator can unseal the replacement before readiness.
 
+On 2026-11-21, the operator confirmed the listener upgrade plan showed
+`0 to add, 1 to change, 0 to destroy`. The apply completed with
+`0 added, 1 changed, 0 destroyed`. Pod replacement, unseal, and HTTPS
+verification follow.
+
 ## Wait for the replacement and unseal
 
 Run the following from the checkout root. It waits for the StatefulSet to
