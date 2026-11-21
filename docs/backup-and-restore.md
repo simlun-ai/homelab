@@ -10,7 +10,7 @@ Recovery follows the [secret-handling boundary](security/security.md#secret-hand
 
 ## OpenBao online backups
 
-**Decision:** Trust's OpenBao uses integrated Raft storage. A scheduled job inside Trust exports application-consistent online Raft snapshots through the snapshot API while OpenBao runs, then uploads them to **Cloudflare R2**.
+**Decision:** Trust's OpenBao uses integrated Raft storage. A scheduled job inside Trust exports application-consistent online Raft snapshots through the snapshot API while OpenBao runs, then uploads them to **Cloudflare R2**. The [Trust snapshot milestone](installation/trust-openbao-backups.md) covers the first upload and isolated restore rehearsal.
 
 | Item | Requirement / open decision |
 | --- | --- |

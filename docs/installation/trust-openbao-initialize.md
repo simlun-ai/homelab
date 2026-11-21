@@ -44,8 +44,8 @@ workload state key to check YubiKey access. It then initializes Shamir with
 one share and threshold one. It captures the initialization response in memory,
 wraps the share and initial root token separately, and independently unwraps
 both to verify the saved ciphertext. The initial root token is held for
-bootstrap administration. Its eventual replacement and revocation belong
-with the administration setup.
+[occasional manual bootstrap](../security/openbao-unseal.md#manual-root-token-use).
+Its revocation will be revisited after the first backup and restore rehearsal.
 
 Keep the command running until both records verify. If wrapping or verification
 fails, correct the problem and retry at the helper prompt, while the response

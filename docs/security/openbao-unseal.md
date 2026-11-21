@@ -33,12 +33,29 @@ pending in [recovery procedures](recovery-procedures.md).
 Initialization wraps the initial root token separately in
 `secrets/wrapped/trust-openbao-initial-root-token-r1.json` under
 `homelab/v1/trust/openbao-bootstrap/initial-root-token/r1`. This token is
-for bootstrap administration and is held until replacement access is verified.
+for occasional manual bootstrap under the decision below.
 
 Unsealing does not grant administrative login. The proposed recovery
 path uses a separately wrapped administration credential, accessible
 without OpenBao. Its authentication method, identifier, permissions,
 and lifecycle remain TBD.
+
+## Manual root-token use
+
+**Decision (2026-11-21).** Retain the wrapped initial root token for occasional
+manual bootstrap on the Trust operator workstation. Defer a separate operator
+login. Recover the token with a YubiKey and keep it in memory for the duration
+of the task. The initial root token does not expire and grants unrestricted
+OpenBao access.
+
+Use dedicated, scoped credentials for the R2 backup job, External Secrets
+Operator, and Talos KMS adapter. Revisit revoking the initial root token after
+the R2 snapshot and restore rehearsal establishes a verified recovery path.
+OpenBao supports generating a fresh root token with the unseal share for
+emergency access. The recovery administration design remains open.
+
+See [OpenBao token guidance](https://openbao.org/docs/concepts/tokens/) and
+the [snapshot and restore milestone](../installation/trust-openbao-backups.md).
 
 ## Remaining implementation work
 
