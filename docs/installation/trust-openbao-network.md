@@ -54,7 +54,9 @@ A record was configured, UniFi resolver `10.10.0.1` and the workstation's
 normal resolver both returned `10.10.0.200`. HTTPS without an IP override
 returned HTTP 200 with OpenBao initialized, unsealed, and active. The
 operator deferred Pi and Metal DNS and HTTPS checks until those client VLANs
-are set up.
+are set up. The follow-up OpenTofu plan reported no changes. The operator
+verified the encrypted workload state envelope at serial 2 and
+[published the state](https://github.com/simlun-ai/homelab-opentofu-state/commit/b57bfc6c2d1f514be3c80de05bb399ec70d0694b).
 
 ## Wait for the replacement and unseal
 
