@@ -32,6 +32,7 @@ help:
 	  'tofu-workload-key-enroll / tofu-workload-key-verify: enroll or verify the workload state key' \
 	  'tofu-workload-validate / tofu-workload-plan / tofu-workload-apply: operate Trust workloads' \
 	  'tofu-workload-state-recover TOFU_RECOVERY_FILE=path: recover retained workload RAM state' \
+	  'openbao-status / openbao-initialize / openbao-unseal: operate the staged Trust OpenBao server' \
 	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \
 	  'kms-window-open / kms-window-status / kms-window-lock: control the trust-cp1 KMS window'
 tools:
@@ -179,3 +180,8 @@ scheduling-preview scheduling-apply: check-tools check-rendered
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_talos_admin.py" \
 	  $@ --talosctl "$(SCOPE)/bin/talosctl" --ram-root "$(RAM_ROOT)" \
 	  --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
+
+.PHONY: openbao-status openbao-initialize openbao-unseal
+openbao-status openbao-initialize openbao-unseal: check-tools
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" \
+	  $(patsubst openbao-%,%,$@) --ram-root "$(RAM_ROOT)"

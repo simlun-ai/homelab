@@ -237,7 +237,7 @@ Approved topic decisions and remaining implementation work:
 - [YubiKey setup](yubikey-setup.md) — configured and physically verified on all four tokens.
 - [Yubico CLI fallback](yubico-fallback.md) — manually verify, debug, and sanity-check our Python implementation with Ubuntu-packaged Yubico tools; reference only, not selected or hardware-tested.
 - [Golden-key custody](golden-key-custody.md) — initial generation custody, replication and independent replica retrieval verified.
-- [OpenBao unseal](openbao-unseal.md) — unseal decision approved; implementation, recovery administration, and restore verification pending.
+- [OpenBao unseal](openbao-unseal.md) — workstation initialization and unseal implemented. Live verification, recovery administration, and restore verification are pending.
 - [Credential catalogue](yubikey.md#record-and-maintenance-requirements) — catalogue rules approved; production entries and consumer integrations pending.
 - [Coordinator sessions](coordinator-sessions.md) — decision approved; implementation and verification pending.
 - [Trust bootstrap KMS contract](trust-bootstrap-kms.md) — payload/session behavior, endpoint and five-step sequence approved; envelope/session software core tested; local wire/process integration and hardware verification pending.
