@@ -95,8 +95,11 @@ For the Trust OpenTofu infrastructure pilot, restore the encrypted
 `secrets/wrapped/trust-opentofu-state-r1.json`. Recover both independently
 of Trust, OpenBao, and `ups-aux`. Review the state against the live cluster
 using the [Trust OpenTofu bootstrap runbook](../runbooks/trust-opentofu-bootstrap.md)
-before applying. Preserve the existing `trust-data` pool and its separate
-wrapped key.
+before applying. For the OpenBao workload root, restore
+`trust-workload.tfstate` from the same private checkout and recover
+`secrets/wrapped/trust-opentofu-workload-state-r1.json`. Review with
+`make -C clusters/trust tofu-workload-plan` on the designated workstation.
+Preserve the existing `trust-data` pool and its separate wrapped key.
 
 OpenBao backups are online Raft snapshots uploaded by a job inside Trust to Cloudflare R2. Required targets are a full Trust rebuild on a replacement Raspberry Pi 4 and temporary OpenBao recovery in a Linux container on a trusted workstation. Both require documented, tested procedures; neither is verified yet. Start with the OpenBao version recorded for the snapshot and independently obtainable configuration/tools.
 

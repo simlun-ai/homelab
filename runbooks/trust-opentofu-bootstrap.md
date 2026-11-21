@@ -7,7 +7,7 @@ providers, and the upstream chart whose SHA-256 is pinned in
 [`zfs-localpv.json`](../clusters/trust/tofu/zfs-localpv.json).
 The cluster-specific [Helm values](../clusters/trust/helm/values/infrastructure/zfs-localpv.yaml)
 configure the host ZFS binary, kubelet path, and placement on `trust-cp1`.
-The same infrastructure root also owns [Trust cert-manager and its ACME issuers](../docs/installation/trust-cert-manager.md). OpenBao will use a separate workload root and state.
+The same infrastructure root also owns [Trust cert-manager and its ACME issuers](../docs/installation/trust-cert-manager.md). The [OpenBao workload](../docs/installation/trust-openbao.md) uses a separate root and state.
 
 ## 1. Prepare tools and the state checkout
 
@@ -31,7 +31,7 @@ restore the current private state checkout in that location instead.
 git init --initial-branch=main ../homelab-opentofu-state
 ```
 
-The only state file to commit is
+The state file for this infrastructure root is
 `../homelab-opentofu-state/trust-infrastructure.tfstate`.
 This is the live, single-writer state. Use the designated checkout and
 finish publishing any pending revision before applying from a different

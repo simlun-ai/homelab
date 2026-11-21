@@ -1,4 +1,4 @@
-"""Run the Trust OpenTofu root from a verified RAM workspace."""
+"""Run a Trust OpenTofu root from a verified RAM workspace."""
 
 import argparse
 import hashlib
@@ -24,8 +24,6 @@ import trust_tofu_key as tofu_key  # noqa: E402
 
 ROOT = recovery.secrets.ROOT
 SCOPE = ROOT / "clusters/trust"
-CONFIG = SCOPE / "tofu"
-STATE_NAME = "trust-infrastructure.tfstate"
 STATE_REPO = ROOT.parent / "homelab-opentofu-state"
 NODE = "10.10.0.10"
 CLOUDFLARE_RECORD = ROOT / "secrets/wrapped/trust-cert-manager-cloudflare.json"
@@ -37,7 +35,8 @@ SHA256_DIGEST = r"sha256:[0-9a-f]{64}"
 MAX_CHART_BYTES = 4 * 1024 * 1024
 
 
-def state_path() -> Path:
+def state_path(scope: tofu_key.StateScope) -> Path:
+    name = f"trust-{scope.value}.tfstate"
     if STATE_REPO.is_symlink() or not STATE_REPO.is_dir():
         raise recovery.secrets.PreflightError(
             "Initialize ../homelab-opentofu-state first"
@@ -53,7 +52,7 @@ def state_path() -> Path:
         raise recovery.secrets.PreflightError(
             "The state checkout must be its own Git root"
         )
-    path = STATE_REPO / STATE_NAME
+    path = STATE_REPO / name
     for candidate in (path, path.with_suffix(".tfstate.backup")):
         if candidate.is_symlink() or (candidate.exists() and not candidate.is_file()):
             raise recovery.secrets.PreflightError(
@@ -61,7 +60,7 @@ def state_path() -> Path:
             )
     if not path.exists():
         tracked = subprocess.run(
-            ["git", "-C", STATE_REPO, "ls-files", "--error-unmatch", "--", STATE_NAME],
+            ["git", "-C", STATE_REPO, "ls-files", "--error-unmatch", "--", name],
             capture_output=True,
             check=False,
             timeout=10,
@@ -130,7 +129,7 @@ def fetch_oci_chart(repository: str, manifest_digest: str) -> bytes:
 
 
 def acquire_chart(work: Path, chart: str) -> None:
-    pin = json.loads((CONFIG / f"{chart}.json").read_text())
+    pin = json.loads((work / f"{chart}.json").read_text())
     release, repository = (str(pin[k]) for k in ("version", "repository"))
     if not re.fullmatch(r"v?[0-9]+\.[0-9]+\.[0-9]+", release):
         raise ValueError(f"Invalid {chart} chart version")
@@ -205,13 +204,13 @@ def get_kubeconfig(ram_root: Path) -> bytes:
 
 
 @contextmanager
-def key_session(address: Path) -> Generator[None]:
+def key_session(address: Path, scope: tofu_key.StateScope) -> Generator[None]:
     """Serve the state key for this invocation in the private RAM directory."""
     unwrap = recovery.secrets.executable(
         Path(sys.executable).with_name("homelab-unwrap"), "homelab-unwrap"
     )
-    print("Recovering the Trust OpenTofu state key for this invocation.", flush=True)
-    key = tofu_key.recover(unwrap)
+    print(f"Recovering the Trust {scope.value} OpenTofu state key.", flush=True)
+    key = tofu_key.recover(unwrap, scope)
     stopped = threading.Event()
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
         listener.bind(str(address))
@@ -300,23 +299,43 @@ def recover_state(tofu: str, path: Path, work: Path, env: dict[str, str]) -> Non
         )
 
 
-def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
+def run(
+    action: str,
+    ram_root: Path,
+    recovery_file: Path | None = None,
+    *,
+    scope: tofu_key.StateScope = tofu_key.StateScope.INFRASTRUCTURE,
+) -> None:
     tofu = recovery.secrets.executable(SCOPE / "bin/tofu", "tofu")
-    state = None if action == "validate" else state_path()
+    state = None if action == "validate" else state_path(scope)
     needs_cluster = action in ("plan", "apply")
+    infrastructure = scope is tofu_key.StateScope.INFRASTRUCTURE
+    needs_cloudflare_token = needs_cluster and infrastructure
     if state is not None:
-        recovery.secrets.require_private_repository(record=tofu_key.RECORD)
-        if tofu_key.RECORD.is_symlink() or not tofu_key.RECORD.is_file():
+        record = scope.record
+        recovery.secrets.require_private_repository(record=record)
+        if record.is_symlink() or not record.is_file():
             raise recovery.secrets.PreflightError(
-                "Enroll the wrapped OpenTofu key first"
+                f"Enroll the wrapped Trust {scope.value} OpenTofu key first"
             )
 
-    if needs_cluster:
+    if needs_cloudflare_token:
         recovery.secrets.require_private_repository(record=CLOUDFLARE_RECORD)
         if CLOUDFLARE_RECORD.is_symlink() or not CLOUDFLARE_RECORD.is_file():
             raise recovery.secrets.PreflightError(
                 "Enroll the Trust cert-manager DNS token first"
             )
+
+    config = SCOPE / ("tofu" if infrastructure else "tofu-workload")
+    values = (
+        SCOPE / "helm/values" / ("infrastructure" if infrastructure else "workloads")
+    )
+    charts = (
+        ("zfs-localpv", "cert-manager", "metallb") if infrastructure else ("openbao",)
+    )
+    local_charts = (
+        ("trust-acme-issuers", "trust-metallb-config") if infrastructure else ()
+    )
 
     provider_cache = SCOPE / "bin/tofu-provider-cache"
     if provider_cache.parent.is_symlink() or provider_cache.is_symlink():
@@ -327,18 +346,15 @@ def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
 
     with recovery.credentials.ram_directory(ram_root) as (anchored, _):
         work = Path(os.readlink(anchored))
-        for source in CONFIG.glob("*.tf"):
+        for source in config.glob("*.tf"):
             shutil.copyfile(source, work / source.name)
-        shutil.copyfile(CONFIG / ".terraform.lock.hcl", work / ".terraform.lock.hcl")
-        for chart in ("zfs-localpv", "cert-manager", "metallb"):
-            shutil.copyfile(CONFIG / f"{chart}.json", work / f"{chart}.json")
-            shutil.copyfile(
-                SCOPE / f"helm/values/infrastructure/{chart}.yaml",
-                work / f"{chart}-values.yaml",
-            )
+        shutil.copyfile(config / ".terraform.lock.hcl", work / ".terraform.lock.hcl")
+        for chart in charts:
+            shutil.copyfile(config / f"{chart}.json", work / f"{chart}.json")
+            shutil.copyfile(values / f"{chart}.yaml", work / f"{chart}-values.yaml")
             if recovery_file is None:
                 acquire_chart(work, chart)
-        for chart in ("trust-acme-issuers", "trust-metallb-config"):
+        for chart in local_charts:
             shutil.copytree(SCOPE / "helm/charts" / chart, work / chart)
         # Keep operational files off disk. Only public provider packages use the
         # executable cache because the RAM mount may be noexec.
@@ -367,6 +383,8 @@ def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
                     "-B",
                     str(Path(tofu_key.__file__)),
                     "provide",
+                    "--scope",
+                    scope.value,
                     "--socket",
                     str(address),
                 ]
@@ -374,7 +392,7 @@ def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
             TF_VAR_kubeconfig_path=str(work / "kubeconfig"),
         )
         try:
-            with key_session(address) if state is not None else nullcontext():
+            with key_session(address, scope) if state is not None else nullcontext():
                 init_backend(tofu, work, env, state)
                 if recovery_file is not None:
                     recover_state(tofu, recovery_file, work, env)
@@ -384,6 +402,7 @@ def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
                     credential = get_kubeconfig(ram_root)
                     with (work / "kubeconfig").open("xb") as destination:
                         destination.write(credential)
+                if needs_cloudflare_token:
                     # Keep this variable out of init and state-recovery environments.
                     env["TF_VAR_cert_manager_cloudflare_token"] = (
                         recover_cloudflare_token()
@@ -394,7 +413,9 @@ def run(action: str, ram_root: Path, recovery_file: Path | None = None) -> None:
             failed_state = work / "errored.tfstate"
             if failed_state.is_file():
                 rescue = Path(
-                    tempfile.mkdtemp(prefix="trust-tofu-recovery-", dir=work.parent)
+                    tempfile.mkdtemp(
+                        prefix=f"trust-{config.name}-recovery-", dir=work.parent
+                    )
                 )
                 failed_state.rename(rescue / failed_state.name)
                 print(
@@ -411,6 +432,12 @@ def main() -> int:
         "action", choices=("validate", "plan", "apply", "state-recover")
     )
     parser.add_argument("--ram-root", type=Path, default=Path("/dev/shm"))
+    parser.add_argument(
+        "--scope",
+        type=tofu_key.StateScope,
+        choices=tuple(tofu_key.StateScope),
+        default=tofu_key.StateScope.INFRASTRUCTURE,
+    )
     parser.add_argument("--recovery-file", type=Path)
     args = parser.parse_args()
     if (args.action == "state-recover") != (args.recovery_file is not None):
@@ -418,7 +445,12 @@ def main() -> int:
     try:
         recovery.secrets.harden()
         os.umask(0o077)
-        run(args.action, args.ram_root, args.recovery_file)
+        run(
+            args.action,
+            args.ram_root,
+            args.recovery_file,
+            scope=tofu_key.StateScope(args.scope),
+        )
     except recovery.secrets.PreflightError as exc:
         print(f"Trust OpenTofu preflight failed: {exc}", file=sys.stderr)
         return 1

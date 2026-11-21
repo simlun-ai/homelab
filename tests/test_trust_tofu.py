@@ -3,8 +3,8 @@
 import hashlib
 import json
 import unittest
-from contextlib import nullcontext
-from io import BytesIO
+from contextlib import nullcontext, redirect_stdout
+from io import BytesIO, StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -66,6 +66,7 @@ class TrustTofuTests(unittest.TestCase):
         self,
     ) -> None:
         key = bytes(range(32))
+        scope = trust_tofu.tofu_key.StateScope.INFRASTRUCTURE
         with (
             TemporaryDirectory() as directory,
             patch.object(
@@ -77,7 +78,7 @@ class TrustTofuTests(unittest.TestCase):
         ):
             address = Path(directory) / "key.sock"
             try:
-                with trust_tofu.key_session(address):
+                with trust_tofu.key_session(address, scope):
                     for _ in range(4):
                         self.assertEqual(
                             trust_tofu.tofu_key.read_session_key(address), key
@@ -86,9 +87,52 @@ class TrustTofuTests(unittest.TestCase):
                 if address.exists():
                     raise
                 self.skipTest("This environment forbids local Unix sockets")
-            recover.assert_called_once_with("/disposable/homelab-unwrap")
+            recover.assert_called_once_with("/disposable/homelab-unwrap", scope)
             with self.assertRaises(ConnectionRefusedError):
                 trust_tofu.tofu_key.read_session_key(address)
+
+    def test_workload_key_provider_rejects_infrastructure_state_metadata(self) -> None:
+        key_provider = trust_tofu.tofu_key
+        infrastructure_metadata = {
+            "external_data": {
+                "key_id": "homelab/v1/trust/opentofu/state/infrastructure/r1"
+            }
+        }
+        workload_metadata = {
+            "external_data": {"key_id": "homelab/v1/trust/opentofu/state/workload/r1"}
+        }
+        address = Path("/disposable/key.sock")
+        scope = key_provider.StateScope.WORKLOAD
+
+        with (
+            patch.object(key_provider.secrets, "require_pipe"),
+            patch.object(
+                key_provider, "read_session_key", return_value=bytes(32)
+            ) as read,
+            patch("sys.stdin", StringIO(json.dumps(infrastructure_metadata))),
+            redirect_stdout(StringIO()),
+        ):
+            with self.assertRaisesRegex(
+                ValueError, "Unexpected OpenTofu state key metadata"
+            ):
+                key_provider.provide(address, scope)
+            read.assert_not_called()
+
+        with (
+            patch.object(key_provider.secrets, "require_pipe"),
+            patch.object(
+                key_provider, "read_session_key", return_value=bytes(32)
+            ) as read,
+            patch("sys.stdin", StringIO(json.dumps(workload_metadata))),
+            redirect_stdout(StringIO()) as output,
+        ):
+            key_provider.provide(address, scope)
+            read.assert_called_once_with(address)
+        response = json.loads(output.getvalue().splitlines()[1])
+        self.assertEqual(response["meta"], workload_metadata)
+        self.assertEqual(
+            response["keys"]["encryption_key"], response["keys"]["decryption_key"]
+        )
 
     def test_cert_manager_token_recovery_uses_dedicated_record(self) -> None:
         with (

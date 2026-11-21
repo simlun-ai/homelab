@@ -80,10 +80,11 @@ Trust uses `clusters/trust/tofu/` for LocalPV, StorageClasses, cert-manager,
 the shared ACME issuers, and MetalLB. Cluster-specific chart values and
 upstream chart pins are kept with the Trust scope. Its encrypted state is
 held in the separate single-writer checkout `../homelab-opentofu-state`.
-OpenBao will use a separate Trust workload OpenTofu root and state. Its TLS
-Certificate will reference the production ClusterIssuer, and its Service
-will request the reserved MetalLB address. The wider workload deployment
-policy remains open.
+The [OpenBao workload](installation/trust-openbao.md) uses
+`clusters/trust/tofu-workload/` and its own encrypted
+`trust-workload.tfstate` in that checkout. Its Certificate uses the
+production ClusterIssuer and its Service requests the reserved MetalLB
+address. The wider workload deployment policy remains open.
 See [Trust OpenTofu bootstrap](../runbooks/trust-opentofu-bootstrap.md).
 
 ## Shared implementation

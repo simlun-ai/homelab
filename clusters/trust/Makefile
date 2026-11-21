@@ -28,7 +28,10 @@ help:
 	  'tofu-tools: acquire pinned OpenTofu for the Trust infrastructure root' \
 	  'tofu-key-enroll / tofu-key-verify: enroll or verify the wrapped state key' \
 	  'tofu-validate / tofu-plan / tofu-apply: validate or operate Trust infrastructure' \
-	  'tofu-state-recover TOFU_RECOVERY_FILE=path: recover retained RAM state' \
+	  'tofu-state-recover TOFU_RECOVERY_FILE=path: recover retained infrastructure RAM state' \
+	  'tofu-workload-key-enroll / tofu-workload-key-verify: enroll or verify the workload state key' \
+	  'tofu-workload-validate / tofu-workload-plan / tofu-workload-apply: operate Trust workloads' \
+	  'tofu-workload-state-recover TOFU_RECOVERY_FILE=path: recover retained workload RAM state' \
 	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \
 	  'kms-window-open / kms-window-status / kms-window-lock: control the trust-cp1 KMS window'
 tools:
@@ -155,6 +158,21 @@ tofu-state-recover: tofu-check
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_tofu.py" \
 	  state-recover --ram-root "$(RAM_ROOT)" --recovery-file "$$TOFU_RECOVERY_FILE"
 
+.PHONY: tofu-workload-key-enroll tofu-workload-key-verify
+tofu-workload-key-enroll tofu-workload-key-verify:
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_tofu_key.py" \
+	  $(patsubst tofu-workload-key-%,%,$@) --scope workload
+
+.PHONY: tofu-workload-validate tofu-workload-plan tofu-workload-apply tofu-workload-state-recover
+tofu-workload-plan tofu-workload-apply: check-tools
+tofu-workload-validate tofu-workload-plan tofu-workload-apply: tofu-check
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_tofu.py" \
+	  $(patsubst tofu-workload-%,%,$@) --scope workload --ram-root "$(RAM_ROOT)"
+
+tofu-workload-state-recover: tofu-check
+	@test -n "$$TOFU_RECOVERY_FILE" || { echo 'Set TOFU_RECOVERY_FILE to the retained RAM recovery file.' >&2; exit 2; }
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_tofu.py" \
+	  state-recover --scope workload --ram-root "$(RAM_ROOT)" --recovery-file "$$TOFU_RECOVERY_FILE"
 
 .PHONY: scheduling-preview scheduling-apply
 scheduling-preview scheduling-apply: check-tools check-rendered

@@ -82,12 +82,11 @@ The workload rollout will verify OpenBao's address assignment and HTTPS.
 ## Use the address when deploying OpenBao
 
 Confirm `10.10.0.200` is free on VLAN 10 before deploying the OpenBao Service.
-In the separate Trust workload root, give OpenBao a `LoadBalancer` Service
-that exposes its HTTPS API on TCP 443 and explicitly requests the IP with
+The [OpenBao workload](trust-openbao.md) defines a `LoadBalancer` Service
+for TCP 443 and requests the IP with
 `metallb.io/loadBalancerIPs: "10.10.0.200"`. MetalLB advertises the address
-when the Service has a usable endpoint. The current installation prepares
-the pool and advertisement. Service assignment and reachability are
-verified with the OpenBao workload.
+when the Service has a ready endpoint. Verify assignment during workload
+deployment and reachability after initialization enables the network listener.
 
 In UniFi, create the local A record `bao.k8s-aux.simlun.se` → `10.10.0.200`
 and allow TCP 443 to that address from the Pi and Metal cluster clients

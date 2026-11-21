@@ -19,9 +19,9 @@ Trust ran ZFS extension `2.4.4-v1.14.5` and loaded the kernel module on
 | kube-prometheus-stack (Helm chart) | v92.3.0 | v92.3.0 |  |  |  |
 | Loki | v3.7.8 |  |  |  |  |
 | ZFS LocalPV | v2.11.2 | v2.11.2 |  |  |  |
-| OpenBao | v2.7.1 | v2.7.1 |  |  |  |
+| [OpenBao](installation/trust-openbao.md) | v2.7.3 | v2.7.3 (Helm chart 0.30.8) |  |  |  |
 | [Talos KMS adapter](security/security.md#talos-kms-adapter) (repository-owned Python service) | TBD | TBD |  |  |  |
-| OpenTofu | v1.13.9 | v1.13.9 (infrastructure pilot) |  |  |  |
+| OpenTofu | v1.13.9 | v1.13.9 (infrastructure and workload roots) |  |  |  |
 | External Secrets Operator | v2.11.0 | v2.11.0 | v2.11.0 | v2.11.0 | v2.11.0 |
 | [cert-manager](installation/trust-cert-manager.md) | v1.21.2 | v1.21.2 |  |  |  |
 | Garage | v2.4.1 |  | v2.4.1 |  |  |
