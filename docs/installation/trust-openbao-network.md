@@ -49,8 +49,11 @@ revision `openbao-6999b88b66`, and the YubiKey unseal helper confirmed that
 OpenBao was initialized and unsealed. From the operator workstation,
 HTTPS through MetalLB at `10.10.0.200:443` returned HTTP 200 with
 `initialized: true`, `sealed: false`, and `standby: false`. The probe verified
-the production TLS hostname using an explicit IP override. Local DNS and
-client-network checks follow.
+the production TLS hostname using an explicit IP override. After the local
+A record was configured, UniFi resolver `10.10.0.1` and the workstation's
+normal resolver both returned `10.10.0.200`. HTTPS without an IP override
+returned HTTP 200 with OpenBao initialized, unsealed, and active. Pi and
+Metal client-network checks remain pending.
 
 ## Wait for the replacement and unseal
 
