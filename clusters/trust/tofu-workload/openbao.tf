@@ -14,7 +14,6 @@ resource "helm_release" "openbao" {
   chart     = "./openbao-${local.openbao.version}.tgz"
   values    = [file("${path.module}/openbao-values.yaml")]
 
-  # The first deployment keeps the pod out of Service endpoints until the
-  # separate initialization rollout brings up its network listener.
+  # The restarted server needs a manual unseal before it becomes ready.
   wait = false
 }

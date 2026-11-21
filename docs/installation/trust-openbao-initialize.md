@@ -95,7 +95,7 @@ and checks the resulting seal status. Expect
 make -C clusters/trust openbao-status
 ```
 
-Expect `Initialized: True. Sealed: False.` The network rollout will enable
+Expect `Initialized: True. Sealed: False.` The [network rollout](trust-openbao-network.md) enables
 the listener on the already-initialized Raft claim. After a restart, use the
 same workstation unseal command.
 

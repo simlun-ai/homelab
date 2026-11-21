@@ -86,7 +86,7 @@ The [OpenBao workload](trust-openbao.md) defines a `LoadBalancer` Service
 for TCP 443 and requests the IP with
 `metallb.io/loadBalancerIPs: "10.10.0.200"`. MetalLB advertises the address
 when the Service has a ready endpoint. Verify assignment during workload
-deployment and reachability after initialization enables the network listener.
+deployment and use the [OpenBao network listener runbook](trust-openbao-network.md) to verify reachability.
 
 In UniFi, create the local A record `bao.k8s-aux.simlun.se` → `10.10.0.200`
 and allow TCP 443 to that address from the Pi and Metal cluster clients
