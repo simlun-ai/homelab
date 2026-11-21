@@ -1,6 +1,6 @@
 # OpenBao unseal
 
-The [Trust operator runbook](../installation/trust-openbao-initialize.md) covers initialization and manual unseal. Live verification is pending.
+The [Trust operator runbook](../installation/trust-openbao-initialize.md) covers initialization and manual unseal. The operator verified both on the live staged server on 2026-11-21.
 
 ## Seal and wrapped material
 
@@ -42,7 +42,6 @@ and lifecycle remain TBD.
 
 ## Remaining implementation work
 
-- Verify initialization, wrapping, and unseal on Trust.
 - Implement and verify unseal through every token and the software fallback.
 - Select and test recovery administration access.
 - Test snapshot restoration with the corresponding unseal material.
