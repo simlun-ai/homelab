@@ -44,8 +44,9 @@ is submitted so the operator can unseal the replacement before readiness.
 
 On 2026-11-21, the operator confirmed the listener upgrade plan showed
 `0 to add, 1 to change, 0 to destroy`. The apply completed with
-`0 added, 1 changed, 0 destroyed`. Pod replacement, unseal, and HTTPS
-verification follow.
+`0 added, 1 changed, 0 destroyed`. The replacement pod started at
+revision `openbao-6999b88b66`, and the YubiKey unseal helper confirmed that
+OpenBao was initialized and unsealed. HTTPS verification follows.
 
 ## Wait for the replacement and unseal
 
