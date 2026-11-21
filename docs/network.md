@@ -51,7 +51,7 @@ Individual Pi and Metal node addresses and the addresses for `ups-pi` and `ups-m
 | A | `trust-api.k8s-aux.lundmark.internal` | `10.10.0.10` | Trust Kubernetes API | Configured; resolution verified 2026-11-08 |
 | A | `ups-aux.k8s-aux.lundmark.internal` | `10.10.0.5` | Coordinator SSH and Ansible | UniFi device **Local DNS Record** enabled. Ansible connected using the name on 2026-11-09. |
 | A | `kms.k8s-aux.simlun.se` | `10.10.0.5` | Trust coordinator KMS TLS endpoint | UniFi resolver `10.10.0.1` returned `10.10.0.5` from `simlun-x1`; the Pi also resolved the name during its static network rehearsal (2026-11-09) |
-| A | `bao.k8s-aux.simlun.se` | `10.10.0.200` | Trust OpenBao HTTPS endpoint using Let's Encrypt DNS-01 | Planned. Add the UniFi DNS policy for this reserved MetalLB address before clients use the endpoint. |
+| A | `bao.k8s-aux.simlun.se` | `10.10.0.200` | Trust OpenBao HTTPS endpoint using Let's Encrypt DNS-01 | Configured in UniFi. Resolver `10.10.0.1` and workstation `simlun-x1` returned `10.10.0.200`, and HTTPS returned HTTP 200 on 2026-11-21. |
 
 ### Configure on the UniFi gateway
 
