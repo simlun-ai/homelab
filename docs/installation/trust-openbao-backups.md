@@ -11,8 +11,8 @@ defines the recovery requirements.
 ## First implementation
 
 1. Provision a private R2 bucket dedicated to Trust backups. Record the endpoint,
-   bucket and object naming convention in the emergency recovery guide. Use a
-   unique UTC-based object key for each snapshot. Create separate bucket-scoped
+   bucket and restic repository path in the emergency recovery guide. Create
+   separate bucket-scoped
    credentials for the in-cluster uploader and the read-only restore operator.
    Keep the wrapped recovery credential independently available before Trust
    starts.
@@ -22,17 +22,23 @@ defines the recovery requirements.
    cannot restore snapshots or administer secrets. Use a short-lived job token.
    Decide how the job obtains that token and how the R2 credential reaches the
    pod using the existing wrapped-record workflow.
-3. Choose the snapshot transfer and encryption implementation. Prefer an
-   independently recoverable encryption key for the uploaded artifact, with
-   encryption before upload and a verified memory-backed staging path if
-   needed. Set a size limit and define cleanup, deadlines, and failure
-   reporting. Evaluate the pinned upstream snapshot tooling against this flow
-   before adding a custom uploader.
-4. Run a single backup job in Trust. Record the snapshot identity, OpenBao
-   version, object size and integrity digest without disclosing credentials.
-   Count the run as successful only after the complete encrypted object is
-   available and verified in R2. A failed or partial upload must leave no
-   artifact eligible for restore.
+3. Run restic directly against the private R2 bucket using its S3 backend.
+   Stage the native Raft snapshot in bounded memory-backed storage in the
+   Trust job and upload it as an encrypted restic backup. Set job deadlines,
+   cleanup, and failure reporting. Keep the restic repository password
+   independently recoverable through the wrapped-record workflow.
+4. Run a single backup job in Trust. Record the Raft snapshot identity, OpenBao
+   version, digest, and restic snapshot ID. Count the backup as successful
+   after restic publishes the snapshot and its contents can be verified.
+
+## Offline copy of R2
+
+Use direct R2 access with a bucket-scoped job credential. The operator will
+regularly copy all R2 data to a separate drive kept offline between copy runs.
+The offline copy protects against accidental deletion and malware. Copy the
+complete encrypted restic repository, including its metadata, and retain a
+previous usable copy when refreshing it so deletions in R2 do not erase the
+offline recovery point. The copy schedule and tooling remain to be decided.
 
 ## Disaster recovery rehearsal on Trust
 
@@ -47,12 +53,12 @@ for operator access. Keep the rehearsal instance outside production DNS,
 MetalLB, and service discovery. Verify how to isolate restored workloads from
 production integrations before starting the rehearsal. Use a separate
 one-shot R2 downloader so the restore server needs neither the R2 credential
-nor outbound access. Stage the downloaded object and decrypted snapshot in
+nor outbound access. Restore the Raft snapshot from the encrypted restic repository into
 bounded, memory-backed storage on Trust.
 
-Retrieve the object with the independently held, read-only R2 credential
-and verify its integrity. Recover the matching wrapped unseal share and any
-backup decryption material through the workstation's YubiKey workflow.
+Recover the read-only R2 credential, restic repository password, and
+matching wrapped unseal share through the workstation's YubiKey workflow.
+Use the recovery credential and password to retrieve and verify the snapshot.
 Develop and verify the initialization, restore, reseal, and unseal sequence
 using disposable data before restoring the R2 artifact. Use the rehearsal
 namespace and loopback endpoint for every restore command.
@@ -70,9 +76,10 @@ retrieval and application restore on the existing Trust cluster.
 
 ## After the rehearsal
 
-Automate the proven job. Set the schedule and R2 lifecycle retention using the
-acceptable recovery point and observed snapshot sizes. A daily backup with
-30 days of retention is the starting proposal. Record how failures surface and
+Automate the proven job. Use restic retention for the live repository and
+choose the schedule from the acceptable recovery point and measured backup
+sizes. Daily backups with 30 days of restic retention are the starting
+proposal. Record how failures surface and
 how the operator verifies the newest successful backup. Revisit retirement of
 the initial root token once the recovery path has been rehearsed.
 

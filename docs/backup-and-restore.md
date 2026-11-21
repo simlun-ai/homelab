@@ -10,18 +10,20 @@ Recovery follows the [secret-handling boundary](security/security.md#secret-hand
 
 ## OpenBao online backups
 
-**Decision:** Trust's OpenBao uses integrated Raft storage. A scheduled job inside Trust exports application-consistent online Raft snapshots through the snapshot API while OpenBao runs, then uploads them to **Cloudflare R2**. The [Trust snapshot milestone](installation/trust-openbao-backups.md) covers the first upload and a restore into a disposable second OpenBao instance on the existing Trust cluster.
+**Decision:** Trust's OpenBao uses integrated Raft storage. A scheduled job inside Trust exports application-consistent online Raft snapshots through the snapshot API while OpenBao runs, then backs them up with restic directly to **Cloudflare R2**. The [Trust snapshot milestone](installation/trust-openbao-backups.md) covers the first upload and a restore into a disposable second OpenBao instance on the existing Trust cluster.
 
 | Item | Requirement / open decision |
 | --- | --- |
-| Destination | R2 account, endpoint, bucket, and object naming TBD. |
-| Encryption | Keep backups encrypted; additional encryption and key delivery TBD. |
-| Transfer | Streaming or server-side staging TBD; no workstation-disk staging. |
+| Destination | Private R2 bucket with a dedicated restic repository. Account, endpoint, bucket, and repository path TBD. |
+| Encryption | Restic encrypts the repository. Keep its password independently recoverable. |
+| Transfer | Stage the Raft snapshot on Trust in bounded memory-backed storage and back it up directly to R2. |
 | Authentication | Scoped snapshot access and R2 upload credentials; provisioning and lifecycle TBD. |
 | Schedule / retention | TBD. |
 | Verification | Failed/partial exports or uploads must not count as success. Report failures and prove usability through a separate restore exercise; exact checks TBD. |
 
 Provision job credentials without circular recovery dependencies. R2 restore credentials may differ from upload credentials. Keep public destination/object metadata in the recovery guide; protect actual credentials under the [HMAC wrapping protocol](security/security.md#challenges-derivation-and-wrapped-credentials).
+
+The operator will regularly copy all R2 data to a drive kept offline between runs. Preserve a previous usable copy when refreshing the encrypted repository so deletions in R2 do not erase the offline recovery point.
 
 ## Independent recovery material
 
@@ -31,7 +33,7 @@ Use the [YubiKey or offline golden-key path](security/security.md#core-secret-fo
 | --- | --- |
 | R2 restore credentials and wrapped payload | Retrieve snapshots before OpenBao is restored; R2 cannot hold the only copy of its own access payload. |
 | OpenBao unseal/recovery material and wrapped payload | Access restored data without the original Trust instance or disks. |
-| Additional backup-decryption material, if used | Available before opening the backup. |
+| Restic repository password | Recover independently before opening an R2 or offline repository copy. |
 | Disk-unlock material | Access surviving or replacement storage without relying on that storage already being unlocked. |
 | OpenBao transit key versions and Talos sealed payloads | Restore KMS unlock for Backup, Pi, and Metal; retain every key version needed by surviving disks. |
 | KMS adapter configuration/bootstrap credentials | Re-establish its endpoint, TLS, and authorized transit access before dependent nodes unlock. |

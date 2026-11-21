@@ -40,7 +40,7 @@ Use one working YubiKey, the required wrapped records, and a recovery workstatio
 
 ## Recovery repository and local records
 
-Use the checked-out repositories and their Git history to find `secrets/wrapped/` and the public identifier-to-file manifest at `secrets/manifest.json`, this guide, and helper source without GitHub or OpenBao. Shared wrap/unwrap source and dependency pins live at `tools/homelab-hsm/homelab_secrets/`; homelab-hsm also owns generation and token programming/verification, while application-specific delivery remains in the parent. Snapshot backups remain in R2; required binaries/dependencies still need the specified acquisition procedure.
+Use the checked-out repositories and their Git history to find `secrets/wrapped/` and the public identifier-to-file manifest at `secrets/manifest.json`, this guide, and helper source without GitHub or OpenBao. Shared wrap/unwrap source and dependency pins live at `tools/homelab-hsm/homelab_secrets/`; homelab-hsm also owns generation and token programming/verification, while application-specific delivery remains in the parent. The restic repository lives in R2 and will be copied to a separate drive kept offline between copy runs. Keep the repository password independently recoverable. Required binaries and dependencies still need an acquisition procedure.
 
 The coordinator uses its own locally deployed wrapped records at startup; planned Ansible provisioning copies ciphertext without decrypting it. Implementation remains pending.
 
@@ -101,7 +101,7 @@ before applying. For the OpenBao workload root, restore
 `make -C clusters/trust tofu-workload-plan` on the designated workstation.
 Preserve the existing `trust-data` pool and its separate wrapped key.
 
-OpenBao backups are online Raft snapshots uploaded by a job inside Trust to Cloudflare R2. The sole OpenBao disaster recovery rehearsal restores one of those snapshots into a disposable second OpenBao instance on the existing Trust Pi Kubernetes cluster. Start with the OpenBao version recorded for the snapshot and independently obtainable tools. The rehearsal depends on a functioning Trust Kubernetes cluster.
+OpenBao backups are online Raft snapshots backed up with restic by a job inside Trust directly to Cloudflare R2. The sole OpenBao disaster recovery rehearsal restores one of those snapshots into a disposable second OpenBao instance on the existing Trust Pi Kubernetes cluster. Start with the OpenBao version recorded for the snapshot and independently obtainable tools. The rehearsal depends on a functioning Trust Kubernetes cluster.
 
 1. Recover R2 access and any wrapped/decryption material.
 2. Select a snapshot and validate its recorded identity/integrity; do not stage it on workstation disk.
