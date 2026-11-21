@@ -105,7 +105,9 @@ On 2026-11-21, the operator confirmed the workload plan showed `2 to add,
 `trust-zfs-retain` claim bound, and `openbao-0` ran on `trust-cp1` with zero
 restarts. MetalLB assigned `10.10.0.200` for TCP 443. The EndpointSlice reported
 `ready: false` and `serving: false`, as expected before initialization.
-The clean follow-up plan and encrypted state publication are pending.
+The operator confirmed a clean follow-up plan and verified the encrypted
+workload state envelope at serial 1. The encrypted state was
+[published](https://github.com/simlun-ai/homelab-opentofu-state/commit/3871097755a0b79987547db244c433054d23cc0f).
 
 ## Verify and publish
 
