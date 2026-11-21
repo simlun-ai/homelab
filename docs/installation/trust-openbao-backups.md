@@ -1,8 +1,9 @@
 # Trust OpenBao snapshot and restore milestone
 
 Status on 2026-11-21. Planning. The first implementation is a manually
-triggered Raft snapshot to Cloudflare R2, followed by an isolated restore on
-the operator workstation. HTTPS and YubiKey-backed manual unseal are
+triggered Raft snapshot to Cloudflare R2, followed by a restore into a
+disposable second OpenBao instance on the Trust Kubernetes cluster. HTTPS
+and YubiKey-backed manual unseal are
 [verified on Trust](trust-openbao-network.md). The
 [backup and restore design](../backup-and-restore.md#openbao-online-backups)
 defines the recovery requirements.
@@ -33,21 +34,40 @@ defines the recovery requirements.
    available and verified in R2. A failed or partial upload must leave no
    artifact eligible for restore.
 
-## First restore rehearsal
+## First restore rehearsal on Trust
 
-Use a pinned OpenBao 2.7.3 instance on a trusted Linux workstation with
-isolated networking and verified memory-backed storage. Fetch the object with
-the recovery credential and verify its integrity. Recover the matching wrapped
-unseal share and any backup decryption material independently of the running
-Trust instance. Develop and verify the exact initialization, restore, reseal,
-and unseal sequence against disposable data before using it on the R2 artifact.
-The rehearsal targets a disposable restore instance only.
+Run a second single-replica OpenBao 2.7.3 instance on `trust-cp1` in a
+dedicated rehearsal namespace. Use separate, disposable Raft storage, a
+distinct Kubernetes identity, and explicit resource limits sized against the
+snapshot and available Pi capacity. The production OpenBao instance stays
+online on its existing claim throughout the drill.
 
-Before the backup, create a non-secret verification fixture in Trust. After
-restore, verify administrative access and read back that fixture. Record the
-snapshot identity, elapsed time, memory usage and outcome. As transit is added,
-include a fixture that proves decryption of a payload sealed before the backup.
-Keep the replacement-Pi drill as a separate acceptance target.
+Bind the rehearsal API to pod loopback. Use authenticated Kubernetes exec
+for operator access. Keep the rehearsal instance outside production DNS,
+MetalLB, and service discovery. Verify how to isolate restored workloads from
+production integrations before starting the rehearsal. Use a separate
+one-shot R2 downloader so the restore server needs neither the R2 credential
+nor outbound access. Stage the downloaded object and decrypted snapshot in
+bounded, memory-backed storage on Trust.
+
+Retrieve the object with the independently held, read-only R2 credential
+and verify its integrity. Recover the matching wrapped unseal share and any
+backup decryption material through the workstation's YubiKey workflow.
+Develop and verify the initialization, restore, reseal, and unseal sequence
+using disposable data before restoring the R2 artifact. Use the rehearsal
+namespace and loopback endpoint for every restore command.
+
+Before the backup, create a non-secret fixture in production OpenBao. After
+restore, verify administrative access to the rehearsal instance, read back
+the fixture, and confirm the production endpoint still passes its health
+check. Record the snapshot identity, elapsed time, resource usage, and
+result. Remove the rehearsal workload, temporary credentials, and its
+disposable storage. As transit is added, include a fixture that proves
+decryption of a payload sealed before the backup.
+
+This rehearsal covers R2 retrieval and OpenBao restore on existing Trust.
+Recovery after losing Trust remains a separate milestone under
+[required recovery targets](../backup-and-restore.md#required-recovery-targets).
 
 ## After the rehearsal
 
