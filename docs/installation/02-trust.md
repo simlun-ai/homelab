@@ -16,7 +16,7 @@
 - **Completed (2026-11-21):** [Trust MetalLB](trust-metallb.md) applied with `3 added, 0 changed, 0 destroyed`. The encrypted infrastructure state was [published](https://github.com/simlun-ai/homelab-opentofu-state/commit/1ca23c33c1578d0919fe47eabda72037f062602e).
 - **Verified (2026-11-21):** The staged [OpenBao workload](trust-openbao.md) is installed. Its Raft claim is bound, the production-issuer Certificate is ready, and MetalLB assigned `10.10.0.200:443`. The follow-up plan reported no changes and the encrypted workload state was published.
 - **Verified (2026-11-21):** [OpenBao initialization and YubiKey-backed unseal](trust-openbao-initialize.md) passed on the staged server. Both wrapped bootstrap records were verified, published, and pinned.
-- **Current next step:** Apply and verify the [OpenBao network listener](trust-openbao-network.md).
+- **Verified (2026-11-21):** The [OpenBao network listener](trust-openbao-network.md) is active through MetalLB. Local DNS and production TLS returned HTTP 200 from the operator workstation. The follow-up plan was clean and encrypted workload state serial 2 was published. Pi and Metal client checks are deferred until their VLANs are set up.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
