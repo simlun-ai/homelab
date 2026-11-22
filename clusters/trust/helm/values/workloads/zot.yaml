@@ -48,7 +48,8 @@ configFiles:
     {
       "storage": {
         "rootDirectory": "/var/lib/registry",
-        "dedupe": true
+        "dedupe": true,
+        "commit": true
       },
       "http": {
         "address": "0.0.0.0",
