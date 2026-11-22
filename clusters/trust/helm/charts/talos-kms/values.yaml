@@ -1,0 +1,6 @@
+cluster: ""
+hostname: ""
+serviceIP: ""
+image: ""
+nodes: {}
+openbaoAddress: https://bao.k8s-aux.simlun.se

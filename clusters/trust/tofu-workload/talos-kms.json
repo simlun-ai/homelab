@@ -1,0 +1,10 @@
+{
+  "image": "",
+  "clusters": {
+    "backup": {
+      "hostname": "kms-backup.k8s-aux.simlun.se",
+      "serviceIP": "10.10.0.201",
+      "nodes": {}
+    }
+  }
+}

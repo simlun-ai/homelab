@@ -1,0 +1,113 @@
+{{- $cluster := required "cluster is required" .Values.cluster -}}
+{{- $name := printf "talos-%s" $cluster -}}
+{{- $tls := printf "%s-tls" $name -}}
+{{- $hostname := required "hostname is required" .Values.hostname -}}
+{{- $image := required "image is required" .Values.image -}}
+{{- if not (regexMatch "@sha256:[a-f0-9]{64}$" $image) -}}
+{{- fail "image must be pinned by digest" -}}
+{{- end -}}
+{{- if not .Values.nodes -}}
+{{- fail "at least one node UUID and boot IP registration is required" -}}
+{{- end }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+automountServiceAccountToken: false
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $name }}
+spec:
+  secretName: {{ $tls }}
+  dnsNames:
+    - {{ $hostname | quote }}
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+    group: cert-manager.io
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $name }}
+    spec:
+      serviceAccountName: {{ $name }}
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: adapter
+          image: {{ $image | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: grpc-tls
+              containerPort: 8443
+          readinessProbe:
+            tcpSocket:
+              port: grpc-tls
+          env:
+            - name: OPENBAO_ADDR
+              value: {{ .Values.openbaoAddress | quote }}
+            - name: KMS_CLUSTER
+              value: {{ $cluster | quote }}
+            - name: KMS_NODES
+              value: {{ .Values.nodes | toJson | quote }}
+          volumeMounts:
+            - name: identity
+              mountPath: /var/run/openbao
+              readOnly: true
+            - name: tls
+              mountPath: /var/run/kms-tls
+              readOnly: true
+      volumes:
+        - name: identity
+          projected:
+            defaultMode: 0440
+            sources:
+              - serviceAccountToken:
+                  audience: {{ $name | quote }}
+                  expirationSeconds: 600
+                  path: token
+        - name: tls
+          secret:
+            secretName: {{ $tls }}
+            defaultMode: 0440
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  annotations:
+    metallb.io/loadBalancerIPs: {{ required "serviceIP is required" .Values.serviceIP | quote }}
+spec:
+  type: LoadBalancer
+  allocateLoadBalancerNodePorts: false
+  externalTrafficPolicy: Local
+  ports:
+    - name: grpc-tls
+      port: 443
+      targetPort: grpc-tls
+  selector:
+    app.kubernetes.io/name: {{ $name }}
