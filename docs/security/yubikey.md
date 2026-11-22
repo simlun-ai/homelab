@@ -174,7 +174,7 @@ Kubernetes Secrets. The independent
 
 Specify storage, delivery, and any direct lookup identifiers for:
 
-- KMS adapter authentication and TLS bootstrap material.
+- TLS issuance and recovery for the [Trust-hosted Talos KMS endpoints](security.md#talos-kms-adapter).
 - OpenBao recovery administration access.
 - OpenTofu state-encryption and backend credentials for scopes outside Trust.
 - UPS service/shutdown credentials (local administrator passwords are covered above).

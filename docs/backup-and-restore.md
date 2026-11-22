@@ -36,7 +36,7 @@ Use the [YubiKey or offline golden-key path](security/security.md#core-secret-fo
 | Restic repository password | Recover independently before opening an R2 or offline repository copy. |
 | Disk-unlock material | Access surviving or replacement storage without relying on that storage already being unlocked. |
 | OpenBao transit key versions and Talos sealed payloads | Restore KMS unlock for Backup, Pi, and Metal; retain every key version needed by surviving disks. |
-| KMS adapter configuration/bootstrap credentials | Re-establish its endpoint, TLS, and authorized transit access before dependent nodes unlock. |
+| Trust-hosted KMS adapter deployment configuration | Re-establish each endpoint, TLS, and authorization through its Trust service account before dependent nodes unlock. |
 | Trust coordinator KMS configuration, wrapped credentials, and sealed disk payloads | Rebuild Trust's independent unlock service without its original coordinator or OpenBao; exact recovery copies/locations and procedure TBD. |
 | Talos bootstrap/administration material | Rebuild Trust before its control plane or OpenBao is usable. |
 | Helpers, protocol metadata, compatible tools | Obtainable without the failed homelab. |

@@ -209,21 +209,23 @@ The [draft contract](trust-bootstrap-kms.md#independent-coordinator-loss-recover
 - `Unseal`: pass the stored ciphertext to transit `decrypt`; return the decoded unlock material. Preserve a versioned payload format and the necessary transit key versions.
 - Use TLS and scoped transit permissions. Node UUIDs in requests are identifiers, not proof of identity; client authorization compatible with Talos remains TBD. Fail closed on backend or decryption errors.
 
-Run one Talos KMS service per cluster. Trust's independent YubiKey-backed
-service runs on `ups-aux`. Backup runs a separate service on `ups-aux`;
-Pi and Metal run theirs on `ups-pi` and `ups-metal` respectively. Give each
-service a distinct endpoint. Backup, Pi, and Metal share OpenBao Transit in
-Trust as their key backend.
+Host the Backup, Pi, and Metal adapters in Trust Kubernetes. Use one image
+and Helm chart with a separate deployment for each cluster. Give each
+deployment its own HTTPS endpoint, Trust Kubernetes service account, and
+OpenBao Kubernetes auth role scoped to Transit operations on its cluster's
+keys. Keep OpenBao tokens in memory and Transit key material in OpenBao.
+Trust's independent [bootstrap KMS](#trust-bootstrap-kms) runs on `ups-aux`
+and starts before Trust Kubernetes.
 
-Each dependent adapter authenticates independently of its own Kubernetes
-cluster, keeps its OpenBao token in memory, and calls Transit for each Seal
-and Unseal. Scope each identity to its cluster's keys. Transit key material
-stays in OpenBao. New unlocks require OpenBao to be available and unsealed;
-startup follows **Trust → OpenBao unseal → dependent adapters → dependent
-nodes**. Endpoint addresses, TLS bootstrap and the exact OpenBao login
-mechanism remain to be designed.
+Dependent-node unlock requires the Trust-hosted adapter and an available,
+unsealed OpenBao. Startup follows **Trust → OpenBao unseal → adapter
+readiness → dependent nodes**. Endpoint addresses, TLS issuance, client
+admission rules, timeouts, key mapping and rotation, and recovery tests
+remain to be designed.
 
-For encrypted `STATE`, networking must work before the machine configuration can be read, and custom CA certificates stored in `STATE` cannot establish KMS trust. Settle early-boot addressing/DNS and a Talos-supported TLS trust path before rollout. Adapter packaging, endpoint, authentication, timeouts, key mapping/rotation, and restore tests remain TBD; do not copy the reference test server's random-data fallback behavior.
+Networking, DNS, time, and TLS trust must work before encrypted `STATE`
+loads. A custom CA stored in `STATE` is unavailable at that point. Verify
+these prerequisites during [Backup's first encrypted boot](../installation/02-trust.md#next-milestone-first-backup-kms-boot).
 
 ## YubiKey configuration runbook
 
