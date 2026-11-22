@@ -9,6 +9,8 @@ export BAO_DISABLE_REDIRECTS=1
 if ! bao secrets list -format=json | grep -q '"workload-kv/":'; then
     bao secrets enable -path=workload-kv -version=2 kv
 fi
+# Require compare-and-set (CAS) on KV writes to prevent accidental overwrites.
+# Seeding uses cas=0 to create a new entry. Updating an existing entry requires its current version.
 bao write workload-kv/config cas_required=true
 
 bao policy write trust-workload-check - <<'EOF'
