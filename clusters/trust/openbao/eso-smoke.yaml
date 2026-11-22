@@ -42,7 +42,7 @@ metadata:
   namespace: eso-smoke
 spec:
   provider:
-    openbao:
+    openBao:
       server: https://bao.k8s-aux.simlun.se
       path: workload-kv
       version: v2
