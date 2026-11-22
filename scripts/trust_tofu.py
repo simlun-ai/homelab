@@ -12,11 +12,14 @@ import subprocess
 import sys
 import tempfile
 import threading
+import tomllib
 import urllib.request
 from collections.abc import Generator
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from typing import cast
+
+import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import trust_talos_recovery as recovery  # noqa: E402
@@ -134,6 +137,9 @@ def acquire_chart(work: Path, chart: str) -> None:
     if not re.fullmatch(r"v?[0-9]+\.[0-9]+\.[0-9]+", release):
         raise ValueError(f"Invalid {chart} chart version")
     name = f"{chart}-{release}.tgz"
+    upstream = str(pin.get("archive", chart))
+    if not re.fullmatch(r"[a-z][a-z0-9-]*", upstream):
+        raise ValueError(f"Invalid {chart} archive name")
     if repository.startswith("oci://"):
         print(f"Fetching digest-pinned {chart} {release} OCI chart.", flush=True)
         archive = fetch_oci_chart(repository, str(pin.get("manifest_digest", "")))
@@ -144,7 +150,9 @@ def acquire_chart(work: Path, chart: str) -> None:
         ):
             raise ValueError(f"Invalid {chart} chart pin")
         print(f"Fetching checksum-pinned {chart} {release} chart.", flush=True)
-        with urllib.request.urlopen(f"{repository}/{name}", timeout=30) as response:
+        with urllib.request.urlopen(
+            f"{repository}/{upstream}-{release}.tgz", timeout=30
+        ) as response:
             archive = response.read(MAX_CHART_BYTES + 1)
         if hashlib.sha256(archive).hexdigest() != checksum:
             raise ValueError(f"{chart} chart SHA-256 mismatch")
@@ -331,10 +339,14 @@ def run(
         SCOPE / "helm/values" / ("infrastructure" if infrastructure else "workloads")
     )
     charts = (
-        ("zfs-localpv", "cert-manager", "metallb") if infrastructure else ("openbao",)
+        ("zfs-localpv", "cert-manager", "metallb")
+        if infrastructure
+        else ("openbao", "openbao-restore")
     )
     local_charts = (
-        ("trust-acme-issuers", "trust-metallb-config") if infrastructure else ()
+        ("trust-acme-issuers", "trust-metallb-config")
+        if infrastructure
+        else ("openbao-jobs",)
     )
 
     provider_cache = SCOPE / "bin/tofu-provider-cache"
@@ -356,6 +368,19 @@ def run(
                 acquire_chart(work, chart)
         for chart in local_charts:
             shutil.copytree(SCOPE / "helm/charts" / chart, work / chart)
+        if not infrastructure:
+            with (SCOPE / "toolchain.toml").open("rb") as source:
+                pin = tomllib.load(source)["kubectl"]
+            versions = yaml.safe_load((SCOPE / "versions.yaml").read_text())
+            version = versions["kubectl"]["version"]
+            url = pin["url"].format(version=version, arch="arm64")
+            checksum = pin["sha256"]["arm64"]
+            (work / "backup-kubectl.json").write_text(
+                json.dumps({"url": url, "sha256": checksum})
+            )
+            shutil.copyfile(
+                config / "openbao-jobs-tools.json", work / "openbao-jobs-tools.json"
+            )
         # Keep operational files off disk. Only public provider packages use the
         # executable cache because the RAM mount may be noexec.
         for name in ("tmp", "config", "cache", "data"):

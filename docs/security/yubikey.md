@@ -145,6 +145,13 @@ is `secrets/wrapped/trust-opentofu-workload-state-r1.json`. See
 
 Both use `golden-1`. See the [OpenBao operator runbook](../installation/trust-openbao-initialize.md).
 
+## OpenBao backup records
+
+The [backup and restore jobs](../installation/trust-openbao-backup-operations.md)
+use the restic password and the separate R2 writer and reader records under
+`homelab/v1/trust/openbao-backup/`, wrapped with `golden-1`. The restic
+password and read-only R2 credentials are recoverable independently of OpenBao.
+
 ## Secrets protected through OpenBao
 
 These inherit YubiKey protection through wrapped OpenBao unseal material. Their normal retrieval uses OpenBao.
@@ -167,7 +174,6 @@ Kubernetes Secrets. The independent
 
 Specify storage, delivery, and any direct lookup identifiers for:
 
-- R2 upload and OpenBao snapshot-job credentials.
 - KMS adapter authentication and TLS bootstrap material.
 - OpenBao recovery administration access.
 - OpenTofu state-encryption and backend credentials for scopes outside Trust.

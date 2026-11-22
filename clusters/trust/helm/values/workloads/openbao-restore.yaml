@@ -1,0 +1,123 @@
+global:
+  tlsDisable: false
+
+injector:
+  enabled: false
+
+server:
+  updateStrategyType: OnDelete
+  configAnnotation: true
+  authDelegator:
+    enabled: false
+  serviceAccount:
+    create: false
+    name: openbao-restore-server
+    serviceDiscovery:
+      enabled: false
+  volumes:
+    - name: api-tls
+      secret:
+        secretName: openbao-restore-tls
+        defaultMode: 0440
+    - name: restore-tmp
+      emptyDir:
+        medium: Memory
+        sizeLimit: 256Mi
+  volumeMounts:
+    - name: api-tls
+      mountPath: /openbao/tls
+      readOnly: true
+    - name: restore-tmp
+      mountPath: /tmp
+  statefulSet:
+    securityContext:
+      container:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+  # Inspection and import use kubectl exec even while the server is sealed.
+  readinessProbe:
+    enabled: false
+  extraEnvironmentVars:
+    BAO_CACERT: /openbao/tls/ca.crt
+  service:
+    active:
+      enabled: false
+    standby:
+      enabled: false
+    enabled: false
+    publishNotReadyAddresses: false
+  dataStorage:
+    size: 10Gi
+    storageClass: trust-zfs-rehearsal
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  standalone:
+    enabled: false
+  ha:
+    enabled: true
+    replicas: 1
+    apiAddr: https://127.0.0.1:8200
+    clusterAddr: https://127.0.0.1:8201
+    disruptionBudget:
+      enabled: false
+    raft:
+      enabled: true
+      setNodeId: true
+      config: |
+        listener "tcp" {
+          address         = "127.0.0.1:8200"
+          cluster_address = "127.0.0.1:8201"
+          tls_cert_file   = "/openbao/tls/tls.crt"
+          tls_key_file    = "/openbao/tls/tls.key"
+          tls_auto_reload = true
+        }
+
+        storage "raft" {
+          path = "/openbao/data"
+        }
+
+extraObjects:
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: openbao-restore-server
+    automountServiceAccountToken: false
+  - apiVersion: cert-manager.io/v1
+    kind: Issuer
+    metadata:
+      name: openbao-restore-selfsigned
+    spec:
+      selfSigned: {}
+  - apiVersion: cert-manager.io/v1
+    kind: Certificate
+    metadata:
+      name: openbao-restore-ca
+    spec:
+      isCA: true
+      commonName: Trust OpenBao Restore CA
+      secretName: openbao-restore-ca
+      duration: 87600h
+      issuerRef:
+        name: openbao-restore-selfsigned
+        kind: Issuer
+  - apiVersion: cert-manager.io/v1
+    kind: Issuer
+    metadata:
+      name: openbao-restore-ca
+    spec:
+      ca:
+        secretName: openbao-restore-ca
+  - apiVersion: cert-manager.io/v1
+    kind: Certificate
+    metadata:
+      name: openbao-restore-api
+    spec:
+      secretName: openbao-restore-tls
+      dnsNames: [localhost]
+      ipAddresses: [127.0.0.1]
+      issuerRef:
+        name: openbao-restore-ca
+        kind: Issuer

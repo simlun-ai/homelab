@@ -1,35 +1,14 @@
 # Trust OpenBao snapshot and restore milestone
 
-Status on 2026-11-21. Planning. The first implementation is a manually
-triggered Raft snapshot to Cloudflare R2, followed by a restore into a
-disposable second OpenBao instance on the Trust Kubernetes cluster. HTTPS
-and YubiKey-backed manual unseal are
-[verified on Trust](trust-openbao-network.md). The
-[backup and restore design](../backup-and-restore.md#openbao-online-backups)
-defines the recovery requirements.
+Status on 2026-11-22. The [operator runbook](trust-openbao-backup-operations.md)
+covers separate backup and restore schedules. Live verification remains pending.
 
-## First implementation
-
-1. Provision a private R2 bucket dedicated to Trust backups. Record the endpoint,
-   bucket and restic repository path in the emergency recovery guide. Create
-   separate bucket-scoped
-   credentials for the in-cluster uploader and the read-only restore operator.
-   Keep the wrapped recovery credential independently available before Trust
-   starts.
-2. Use the wrapped initial root token in a manual, memory-only workstation
-   session to configure a dedicated OpenBao backup identity. Grant it access to
-   the Raft snapshot endpoint. Verify that it can take a snapshot and that it
-   cannot restore snapshots or administer secrets. Use a short-lived job token.
-   Decide how the job obtains that token and how the R2 credential reaches the
-   pod using the existing wrapped-record workflow.
-3. Run restic directly against the private R2 bucket using its S3 backend.
-   Stage the native Raft snapshot in bounded memory-backed storage in the
-   Trust job and upload it as an encrypted restic backup. Set job deadlines,
-   cleanup, and failure reporting. Keep the restic repository password
-   independently recoverable through the wrapped-record workflow.
-4. Run a single backup job in Trust. Record the Raft snapshot identity, OpenBao
-   version, digest, and restic snapshot ID. Count the backup as successful
-   after restic publishes the snapshot and its contents can be verified.
+The backup CronJob in `openbao` takes an online native Raft snapshot and
+uploads it directly to R2 with restic. The separate restore CronJob runs at
+05:00 Europe/Stockholm. It checks the digest and original creation time,
+rejects snapshots at least 24 hours old, and imports the snapshot into the
+dedicated `openbao-restore` Helm release. The rehearsal release is separate
+from production and can also be used for upgrade testing.
 
 ## Offline copy of R2
 
@@ -42,46 +21,18 @@ offline recovery point. The copy schedule and tooling remain to be decided.
 
 ## Disaster recovery rehearsal on Trust
 
-Run a second single-replica OpenBao 2.7.3 instance on `trust-cp1` in a
-dedicated rehearsal namespace. Use separate, disposable Raft storage, a
-distinct Kubernetes identity, and explicit resource limits sized against the
-snapshot and available Pi capacity. The production OpenBao instance stays
-online on its existing claim throughout the drill.
+The automatic check verifies download, integrity, snapshot freshness, and
+successful import into the rehearsal OpenBao release. Its success receipt
+includes the restic ID, Raft digest, original snapshot timestamp, and sealed
+status. Production remains online throughout the rehearsal. The operator can
+pause the restore schedule, unseal the instance using the wrapped share, and
+inspect the restored data with the OpenBao CLI. This is the sole OpenBao
+disaster recovery rehearsal.
 
-Bind the rehearsal API to pod loopback. Use authenticated Kubernetes exec
-for operator access. Keep the rehearsal instance outside production DNS,
-MetalLB, and service discovery. Verify how to isolate restored workloads from
-production integrations before starting the rehearsal. Use a separate
-one-shot R2 downloader so the restore server needs neither the R2 credential
-nor outbound access. Restore the Raft snapshot from the encrypted restic repository into
-bounded, memory-backed storage on Trust.
-
-Recover the read-only R2 credential, restic repository password, and
-matching wrapped unseal share through the workstation's YubiKey workflow.
-Use the recovery credential and password to retrieve and verify the snapshot.
-Develop and verify the initialization, restore, reseal, and unseal sequence
-using disposable data before restoring the R2 artifact. Use the rehearsal
-namespace and loopback endpoint for every restore command.
-
-Before the backup, create a non-secret fixture in production OpenBao. After
-restore, verify administrative access to the rehearsal instance, read back
-the fixture, and confirm the production endpoint still passes its health
-check. Record the snapshot identity, elapsed time, resource usage, and
-result. Remove the rehearsal workload, temporary credentials, and its
-disposable storage. As transit is added, include a fixture that proves
-decryption of a payload sealed before the backup.
-
-This is the sole OpenBao disaster recovery rehearsal. Its scope is R2
-retrieval and application restore on the existing Trust cluster.
-
-## After the rehearsal
-
-Automate the proven job. Use restic retention for the live repository and
-choose the schedule from the acceptable recovery point and measured backup
-sizes. Daily backups with 30 days of restic retention are the starting
-proposal. Record how failures surface and
-how the operator verifies the newest successful backup. Revisit retirement of
-the initial root token once the recovery path has been rehearsed.
+The restore release uses a separate Raft claim, a loopback TLS listener,
+and a namespace-local CA. Backup and restore credentials are separate and
+the restore server receives neither. Restic retention and the offline copy
+schedule remain operator decisions.
 
 ## References
 

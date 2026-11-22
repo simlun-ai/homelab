@@ -7,6 +7,7 @@
 !clusters/trust/schematic.py
 !clusters/trust/tooling.py
 !clusters/trust/toolchain.toml
+!clusters/trust/helm/charts/openbao-jobs/scripts/*.sh
 !clusters/trust/talos/patches/**/*.yaml
 !clusters/trust/talos/rendered/*.yaml
 !scripts/**/*.py

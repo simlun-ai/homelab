@@ -32,7 +32,10 @@ help:
 	  'tofu-workload-key-enroll / tofu-workload-key-verify: enroll or verify the workload state key' \
 	  'tofu-workload-validate / tofu-workload-plan / tofu-workload-apply: operate Trust workloads' \
 	  'tofu-workload-state-recover TOFU_RECOVERY_FILE=path: recover retained workload RAM state' \
-	  'openbao-status / openbao-initialize / openbao-unseal: operate the staged Trust OpenBao server' \
+	  'openbao-status / openbao-initialize / openbao-unseal: operate Trust OpenBao' \
+	  'openbao-restore-unseal / openbao-restore-shell: inspect a restored backup' \
+	  'openbao-jobs-credentials / openbao-backup-auth / openbao-backup-init-repo: set up scheduled backups' \
+	  'trust-kubectl KUBECTL_ARGS=...: use Trust Kubernetes credentials from memory' \
 	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \
 	  'kms-window-open / kms-window-status / kms-window-lock: control the trust-cp1 KMS window'
 tools:
@@ -183,5 +186,15 @@ scheduling-preview scheduling-apply: check-tools check-rendered
 
 .PHONY: openbao-status openbao-initialize openbao-unseal
 openbao-status openbao-initialize openbao-unseal: check-tools
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" \
+	  $(patsubst openbao-%,%,$@) --ram-root "$(RAM_ROOT)"
+
+export KUBECTL_ARGS R2_REPOSITORY
+.PHONY: trust-kubectl openbao-restore-unseal openbao-restore-shell
+.PHONY: openbao-backup-auth openbao-jobs-credentials openbao-backup-init-repo
+trust-kubectl: check-tools
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" kubectl --ram-root "$(RAM_ROOT)"
+
+openbao-restore-unseal openbao-restore-shell openbao-backup-auth openbao-jobs-credentials openbao-backup-init-repo: check-tools
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" \
 	  $(patsubst openbao-%,%,$@) --ram-root "$(RAM_ROOT)"

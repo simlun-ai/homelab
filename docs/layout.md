@@ -196,7 +196,7 @@ Numbered installation procedures and their implementation progress belong in [do
 | `unseal-openbao.md` | Workstation/YubiKey unseal with memory-only secret handling. |
 | `operate-talos-kms.md` | Deploy/verify the adapter, rotate transit keys, and recover dependent-node unlock. |
 | `operate-trust-bootstrap-kms.md` | Operate/recover the coordinator KMS, touch-authorized sessions, DNS-01 renewal, time readiness, and network hardening; initial setup belongs in [01 - Main coordinator](installation/01-main-coordinator.md). |
-| `restore-openbao.md` | Implement/test [snapshot recovery into a disposable OpenBao instance on Trust](backup-and-restore.md#openbao-disaster-recovery-rehearsal). |
+| [Trust OpenBao backup operations](installation/trust-openbao-backup-operations.md) | Configure separate backup and restore schedules and inspect the rehearsal release. |
 | `ups-shutdown-and-startup.md` | Verify shutdown, stay-off behavior, manual dependency-ordered startup. |
 
 ## Open decisions
