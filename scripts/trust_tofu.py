@@ -341,7 +341,7 @@ def run(
     charts = (
         ("zfs-localpv", "cert-manager", "metallb")
         if infrastructure
-        else ("openbao", "openbao-restore")
+        else ("openbao", "openbao-restore", "zot")
     )
     local_charts = (
         ("trust-acme-issuers", "trust-metallb-config")

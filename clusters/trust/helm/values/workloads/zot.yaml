@@ -1,0 +1,112 @@
+replicaCount: 1
+persistence: true
+pvc:
+  storage: 20Gi
+  storageClassName: trust-zfs-retain
+serviceHeadless:
+  enabled: true
+service:
+  type: ClusterIP
+httpGet:
+  scheme: HTTPS
+  port: 5000
+mountConfig: true
+secretFiles:
+  htpasswd: null
+extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp
+extraVolumes:
+  - name: tmp
+    emptyDir:
+      sizeLimit: 64Mi
+externalSecrets:
+  - secretName: zot-publisher
+    mountPath: /var/run/zot-auth
+  - secretName: zot-tls
+    mountPath: /var/run/zot-tls
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+configFiles:
+  config.json: |
+    {
+      "storage": {
+        "rootDirectory": "/var/lib/registry",
+        "dedupe": true
+      },
+      "http": {
+        "address": "0.0.0.0",
+        "port": "5000",
+        "compat": ["docker2s2"],
+        "tls": {
+          "cert": "/var/run/zot-tls/tls.crt",
+          "key": "/var/run/zot-tls/tls.key"
+        },
+        "auth": {
+          "htpasswd": { "path": "/var/run/zot-auth/htpasswd" }
+        },
+        "accessControl": {
+          "repositories": {
+            "homelab/**": {
+              "anonymousPolicy": ["read"],
+              "defaultPolicy": ["read"],
+              "policies": [
+                { "users": ["publisher"], "actions": ["read", "create", "update"] }
+              ]
+            },
+            "**": {
+              "anonymousPolicy": ["read"],
+              "defaultPolicy": ["read"]
+            }
+          }
+        }
+      },
+      "log": { "level": "info" }
+    }
+extraObjects:
+  - apiVersion: cert-manager.io/v1
+    kind: Certificate
+    metadata:
+      name: zot
+    spec:
+      secretName: zot-tls
+      dnsNames:
+        - registry.k8s-aux.simlun.se
+      issuerRef:
+        name: letsencrypt-production
+        kind: ClusterIssuer
+        group: cert-manager.io
+      privateKey:
+        rotationPolicy: Always
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: zot-https
+      annotations:
+        metallb.io/loadBalancerIPs: "10.10.0.202"
+    spec:
+      type: LoadBalancer
+      allocateLoadBalancerNodePorts: false
+      selector:
+        app.kubernetes.io/name: zot
+        app.kubernetes.io/instance: zot
+      ports:
+        - name: https
+          port: 443
+          targetPort: zot
