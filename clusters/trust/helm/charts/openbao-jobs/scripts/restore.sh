@@ -11,7 +11,34 @@ AWS_SECRET_ACCESS_KEY=$(read_credential secret-access-key)
 export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
 export RESTIC_PASSWORD_FILE=/credentials/password
 repo() { restic --no-cache --no-lock -o s3.region=auto "$@"; }
-kube() { kubectl -n openbao-restore --request-timeout=30s "$@"; }
+service_account=/var/run/secrets/kubernetes.io/serviceaccount
+api_host=${KUBERNETES_SERVICE_HOST:?Missing Kubernetes API host}
+case "$api_host" in
+    *:*) api_host="[$api_host]" ;;
+esac
+cat > /work/kubeconfig <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+- name: trust
+  cluster:
+    server: https://${api_host}:${KUBERNETES_SERVICE_PORT_HTTPS:-443}
+    certificate-authority: $service_account/ca.crt
+users:
+- name: restore
+  user:
+    tokenFile: $service_account/token
+contexts:
+- name: restore
+  context:
+    cluster: trust
+    user: restore
+current-context: restore
+EOF
+kube() {
+    kubectl --kubeconfig=/work/kubeconfig --cache-dir=/work/kube-cache \
+        -n openbao-restore --request-timeout=30s "$@"
+}
 pod=pod/openbao-restore-0
 sts=statefulset/openbao-restore
 claim=pvc/data-openbao-restore-0

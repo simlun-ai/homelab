@@ -23,6 +23,9 @@ resource "helm_release" "openbao_jobs" {
   chart     = "./openbao-jobs"
   values = [yamlencode({
     restoreNamespace = kubernetes_namespace_v1.openbao_restore.metadata[0].name
+    restoreScriptSha256 = filesha256("${path.module}/openbao-jobs/scripts/restore.sh")
+    backupSuspend = false
+    restoreSuspend = false
     sourceVersion    = local.openbao.app_version
     restoreVersion   = local.restore_pin.app_version
     baoImage         = local.openbao.cli_image

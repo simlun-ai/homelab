@@ -229,7 +229,7 @@ def unseal(
 def restore_credentials(kubectl: list[str], fd: int, unwrap: str, tty: int) -> None:
     repository = os.environ.get("R2_REPOSITORY", "")
     if not re.fullmatch(
-        r"s3:https://[a-f0-9]{32}\.r2\.cloudflarestorage\.com/[a-z0-9-]+(?:/[A-Za-z0-9_-]+)+",
+        r"s3:https://[a-f0-9]{32}(?:\.eu)?\.r2\.cloudflarestorage\.com/[a-z0-9-]+(?:/[A-Za-z0-9_-]+)+",
         repository,
     ):
         raise ValueError("Specify the private R2 repository URL")
