@@ -24,34 +24,23 @@ Expect a new namespace and Helm release for Zot. Apply the plan:
 make -C clusters/trust tofu-workload-apply
 ```
 
-The Zot pod waits for its certificate and publisher Secret.
+The Zot pod waits for its certificate and the publisher verifier supplied by ESO.
 
 ## Enroll the publisher
 
-Use the workstation HSM environment and initialized private records
-checkout. Install Apache `htpasswd` on the workstation (`apache2-utils`
-on Debian). Generate the record once, or recover the existing record.
-
-```bash
-bash <<'BASH'
-set -euo pipefail
-hsm="${HSM_VENV:-$HOME/.local/share/homelab/venvs/hsm}/bin"
-record=secrets/wrapped/trust-zot-publisher-r1.json
-test ! -e "$record"
-openssl rand -base64 32 | tr -d '\n' |
-  "$hsm/homelab-wrap" --stdin --root-key golden-1 \
-    --key-id homelab/v1/trust/zot/publisher/r1 --output "$record"
-BASH
-```
-
-Commit the ciphertext in the private records repository and pin its
-revision in the homelab checkout. Install the bcrypt verifier and check
-the deployment:
+Install Apache `htpasswd` on the workstation (`apache2-utils` on Debian).
+With OpenBao unsealed, reconcile its Zot role and seed the workload
+inventory. OpenBao holds the publisher password and a separate bcrypt
+verifier entry. ESO can read only the verifier and syncs it to the
+`zot-publisher` Kubernetes Secret.
 
 ```sh
-make -C clusters/trust zot-publisher-apply
+make -C clusters/trust openbao-secrets-bootstrap &&
+make -C clusters/trust openbao-secrets-seed &&
 make -C clusters/trust trust-kubectl \
-  KUBECTL_ARGS='-n zot wait --for=condition=Ready certificate/zot --timeout=5m'
+  KUBECTL_ARGS='-n zot wait --for=condition=Ready externalsecret/zot-publisher --timeout=5m' &&
+make -C clusters/trust trust-kubectl \
+  KUBECTL_ARGS='-n zot wait --for=condition=Ready certificate/zot --timeout=5m' &&
 make -C clusters/trust trust-kubectl \
   KUBECTL_ARGS='-n zot rollout status statefulset/zot --timeout=5m'
 make -C clusters/trust trust-kubectl KUBECTL_ARGS='-n zot get pvc,pv,service'
@@ -75,15 +64,12 @@ command exits. Run from the homelab checkout root:
 bash <<'BASH'
 set -euo pipefail
 umask 077
-hsm="${HSM_VENV:-$HOME/.local/share/homelab/venvs/hsm}/bin"
 registry=registry.k8s-aux.simlun.se
 export DOCKER_CONFIG
 DOCKER_CONFIG=$(mktemp -d /dev/shm/trust-zot-docker.XXXXXXXX)
 trap 'rm -rf -- "$DOCKER_CONFIG"' EXIT
-"$hsm/homelab-unwrap" --root-key golden-1 --stdout \
-  --key-id homelab/v1/trust/zot/publisher/r1 \
-  --input secrets/wrapped/trust-zot-publisher-r1.json |
-  python3 -c 'import base64,json,sys; print(json.dumps({"auths": {sys.argv[1]: {"auth": base64.b64encode(b"publisher:" + sys.stdin.buffer.read()).decode("ascii")}}}))' \
+make -s --no-print-directory -C clusters/trust openbao-secrets-zot-publisher |
+  python3 -c 'import base64,json,sys; p=sys.stdin.buffer.read().rstrip(b"\n"); assert p, "Publisher password unavailable"; print(json.dumps({"auths": {sys.argv[1]: {"auth": base64.b64encode(b"publisher:" + p).decode("ascii")}}}))' \
     "$registry" >"$DOCKER_CONFIG/config.json"
 docker buildx build --platform linux/arm64 --push \
   --file clusters/trust/containers/talos-kms/Dockerfile \

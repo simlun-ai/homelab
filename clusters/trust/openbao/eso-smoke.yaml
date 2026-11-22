@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eso-smoke
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eso-smoke
+  namespace: eso-smoke
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: eso-smoke-token
+  namespace: eso-smoke
+rules:
+  - apiGroups: [""]
+    resources: [serviceaccounts/token]
+    resourceNames: [eso-smoke]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: eso-smoke-token
+  namespace: eso-smoke
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: eso-smoke-token
+subjects:
+  - kind: ServiceAccount
+    namespace: external-secrets
+    name: external-secrets
+---
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: openbao
+  namespace: eso-smoke
+spec:
+  provider:
+    openBao:
+      server: https://bao.k8s-aux.simlun.se
+      path: workload-kv
+      version: v2
+      auth:
+        kubernetes:
+          path: trust-eso
+          role: smoke
+          serviceAccountRef:
+            name: eso-smoke
+            audiences: [trust-eso-smoke]
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: allowed
+  namespace: eso-smoke
+spec:
+  refreshInterval: 30s
+  secretStoreRef:
+    name: openbao
+    kind: SecretStore
+  data:
+    - secretKey: value
+      remoteRef:
+        key: trust/eso-smoke/allowed
+        property: value
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: denied
+  namespace: eso-smoke
+spec:
+  refreshInterval: 30s
+  secretStoreRef:
+    name: openbao
+    kind: SecretStore
+  data:
+    - secretKey: value
+      remoteRef:
+        key: trust/eso-smoke/denied
+        property: value

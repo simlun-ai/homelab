@@ -17,6 +17,8 @@ resource "helm_release" "zot" {
     yamlencode({ image = { tag = "${local.zot.app_version}@${local.zot.image_digest}" } }),
   ]
 
-  # TLS and the independently provisioned publisher Secret may arrive later.
+  # cert-manager and ESO reconcile their Secrets after Helm creates the objects.
   wait = false
+
+  depends_on = [helm_release.external_secrets]
 }

@@ -36,7 +36,9 @@ help:
 	  'openbao-restore-unseal / openbao-restore-shell: inspect a restored backup' \
 	  'openbao-jobs-credentials / openbao-backup-auth / openbao-backup-init-repo: set up scheduled backups' \
 	  'openbao-kms-auth KMS_CLUSTER=backup: configure Transit and Kubernetes login' \
-	  'zot-publisher-apply: recover the wrapped Zot credential and install its verifier' \
+	  'openbao-secrets-bootstrap: configure workload KV and ESO access' \
+	  'openbao-secrets-check / openbao-secrets-seed: audit or populate OpenBao workload inventory' \
+	  'openbao-secrets-zot-publisher: stream the Zot publisher password to a pipe' \
 	  'trust-kubectl KUBECTL_ARGS=...: use Trust Kubernetes credentials from memory' \
 	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \
 	  'kms-window-open / kms-window-status / kms-window-lock: control the trust-cp1 KMS window'
@@ -197,10 +199,11 @@ export KUBECTL_ARGS R2_REPOSITORY KMS_CLUSTER
 trust-kubectl: check-tools
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" kubectl --ram-root "$(RAM_ROOT)"
 
-openbao-restore-unseal openbao-restore-shell openbao-backup-auth openbao-jobs-credentials openbao-backup-init-repo openbao-kms-auth: check-tools
+.PHONY: openbao-secrets-bootstrap openbao-secrets-check openbao-secrets-seed
+openbao-restore-unseal openbao-restore-shell openbao-backup-auth openbao-jobs-credentials openbao-backup-init-repo openbao-kms-auth openbao-secrets-bootstrap: check-tools
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" \
 	  $(patsubst openbao-%,%,$@) --ram-root "$(RAM_ROOT)"
 
-.PHONY: zot-publisher-apply
-zot-publisher-apply: check-tools
-	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_zot.py" --ram-root "$(RAM_ROOT)"
+.PHONY: openbao-secrets-zot-publisher
+openbao-secrets-check openbao-secrets-seed openbao-secrets-zot-publisher:
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao_inventory.py" $(patsubst openbao-secrets-%,%,$@)

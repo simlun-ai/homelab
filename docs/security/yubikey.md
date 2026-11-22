@@ -152,11 +152,6 @@ use the restic password and the separate R2 writer and reader records under
 `homelab/v1/trust/openbao-backup/`, wrapped with `golden-1`. The restic
 password and read-only R2 credentials are recoverable independently of OpenBao.
 
-The [Trust Zot publisher](../installation/trust-zot.md#enroll-the-publisher)
-uses `homelab/v1/trust/zot/publisher/r1` under `golden-1`. The manifest
-reserves `wrapped/trust-zot-publisher-r1.json`. Zot receives the bcrypt
-verifier, and image pulls require no credential.
-
 ## Secrets protected through OpenBao
 
 These inherit YubiKey protection through wrapped OpenBao unseal material. Their normal retrieval uses OpenBao.

@@ -80,6 +80,67 @@ configFiles:
       "log": { "level": "info" }
     }
 extraObjects:
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: zot-secret-reader
+    automountServiceAccountToken: false
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      name: zot-secret-reader-token
+    rules:
+      - apiGroups: [""]
+        resources: [serviceaccounts/token]
+        resourceNames: [zot-secret-reader]
+        verbs: [create]
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      name: zot-secret-reader-token
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: Role
+      name: zot-secret-reader-token
+    subjects:
+      - kind: ServiceAccount
+        namespace: external-secrets
+        name: external-secrets
+  - apiVersion: external-secrets.io/v1
+    kind: SecretStore
+    metadata:
+      name: openbao
+    spec:
+      provider:
+        openBao:
+          server: https://bao.k8s-aux.simlun.se
+          path: workload-kv
+          version: v2
+          auth:
+            kubernetes:
+              path: trust-eso
+              role: zot
+              serviceAccountRef:
+                name: zot-secret-reader
+                audiences: [trust-eso-zot]
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: zot-publisher
+    spec:
+      refreshInterval: 5m
+      secretStoreRef:
+        name: openbao
+        kind: SecretStore
+      target:
+        name: zot-publisher
+        creationPolicy: Owner
+        deletionPolicy: Retain
+      data:
+        - secretKey: htpasswd
+          remoteRef:
+            key: trust/zot/publisher-verifier
+            property: htpasswd
   - apiVersion: cert-manager.io/v1
     kind: Certificate
     metadata:
