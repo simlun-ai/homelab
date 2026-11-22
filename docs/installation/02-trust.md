@@ -31,7 +31,7 @@ mechanism separately before installation.
 
 ### Next milestone: first Backup KMS boot
 
-- [ ] Verify [Trust workload secret delivery](trust-workload-secrets.md) from OpenBao through External Secrets Operator before migrating the Zot publisher setup.
+- [x] **Verified (2026-11-22):** [Trust workload secret delivery](trust-workload-secrets.md) synced the allowed OpenBao KV entry, received HTTP 403 on the neighboring entry, and recreated the allowed Kubernetes Secret after deletion.
 
 - The adapter core passed a local TLS gRPC round trip with disposable OpenBao 2.7.3, including node binding, key rotation, and backend failure.
 - [ ] [Deploy the shared Talos KMS adapter](trust-talos-kms.md) in Trust Kubernetes for Backup.
