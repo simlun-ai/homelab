@@ -1,0 +1,5 @@
+backupSuspend: true
+restoreSuspend: true
+backupSchedule: "0 3 * * *"
+restoreSchedule: "0 5 * * *"
+timeZone: Europe/Stockholm

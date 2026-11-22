@@ -5,9 +5,12 @@ import base64
 import hmac
 import json
 import os
+import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import trust_tofu as tofu  # noqa: E402
@@ -31,7 +34,22 @@ TLS_OPTIONS = (
 )
 
 
-def status(command: list[str], fd: int) -> tuple[bool, bool]:
+RESTORE_TLS_OPTIONS = tuple(
+    "-ca-cert=/openbao/tls/ca.crt" if option.startswith("-tls-server-name=") else option
+    for option in TLS_OPTIONS
+)
+BACKUP_RECORDS = {
+    name: (
+        RECORDS / f"trust-openbao-{name}-r1.json",
+        f"homelab/v1/trust/openbao-backup/{name}/r1",
+    )
+    for name in ("restic-password", "r2-writer", "r2-reader")
+}
+
+
+def status(
+    command: list[str], fd: int, tls_options: tuple[str, ...] = TLS_OPTIONS
+) -> tuple[bool, bool]:
     result = subprocess.run(
         [
             *command,
@@ -40,7 +58,7 @@ def status(command: list[str], fd: int) -> tuple[bool, bool]:
             "status",
             "-format=json",
             "-non-interactive",
-            *TLS_OPTIONS,
+            *tls_options,
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
@@ -165,8 +183,14 @@ def initialize(command: list[str], fd: int, wrap: str, unwrap: str, tty: int) ->
     )
 
 
-def unseal(command: list[str], fd: int, unwrap: str, tty: int) -> None:
-    initialized, sealed = status(command, fd)
+def unseal(
+    command: list[str],
+    fd: int,
+    unwrap: str,
+    tty: int,
+    tls_options: tuple[str, ...] = TLS_OPTIONS,
+) -> None:
+    initialized, sealed = status(command, fd, tls_options)
     if not initialized:
         raise ValueError("OpenBao must be initialized before unsealing")
     if not sealed:
@@ -184,7 +208,7 @@ def unseal(command: list[str], fd: int, unwrap: str, tty: int) -> None:
         "bao",
         "write",
         "-format=json",
-        *TLS_OPTIONS,
+        *tls_options,
         "sys/unseal",
         "-",
     ]
@@ -197,36 +221,170 @@ def unseal(command: list[str], fd: int, unwrap: str, tty: int) -> None:
         timeout=30,
         check=True,
     )
-    if status(command, fd) != (True, False):
+    if status(command, fd, tls_options) != (True, False):
         raise ValueError("OpenBao is still sealed")
     print("PASS: OpenBao is initialized and unsealed.", flush=True)
 
 
+def restore_credentials(kubectl: list[str], fd: int, unwrap: str, tty: int) -> None:
+    repository = os.environ.get("R2_REPOSITORY", "")
+    if not re.fullmatch(
+        r"s3:https://[a-f0-9]{32}\.r2\.cloudflarestorage\.com/[a-z0-9-]+(?:/[A-Za-z0-9_-]+)+",
+        repository,
+    ):
+        raise ValueError("Specify the private R2 repository URL")
+    wrapped: dict[str, bytes] = {}
+    for name, (record, key_id) in BACKUP_RECORDS.items():
+        secrets.require_private_repository(record=record)
+        print(f"Touch the YubiKey to recover {name}.", flush=True)
+        wrapped[name] = secrets.recover_bundle(
+            unwrap, record=record, key_id=key_id, stderr=tty
+        )
+    for role, namespace, name in (
+        ("writer", "openbao", "openbao-backup-r2"),
+        ("reader", "openbao-restore", "openbao-restore-r2"),
+    ):
+        credential: object = json.loads(wrapped[f"r2-{role}"])
+        match credential:
+            case {"access-key-id": str(access), "secret-access-key": str(secret)} if (
+                access and secret
+            ):
+                values = {
+                    "access-key-id": access.encode(),
+                    "secret-access-key": secret.encode(),
+                    "password": wrapped["restic-password"],
+                    "repository": repository.encode(),
+                }
+            case _:
+                raise ValueError("Invalid wrapped R2 credentials")
+        document = {
+            "apiVersion": "v1",
+            "kind": "Secret",
+            "type": "Opaque",
+            "metadata": {"name": name, "namespace": namespace},
+            "data": {
+                key: base64.b64encode(value).decode() for key, value in values.items()
+            },
+        }
+        subprocess.run(
+            [*kubectl, "apply", "--server-side", "-f", "-"],
+            input=json.dumps(document).encode(),
+            pass_fds=(fd,),
+            check=True,
+            timeout=30,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        print(f"Configured {namespace}/{name}.", flush=True)
+
+
+def backup_auth(command: list[str], fd: int, unwrap: str, tty: int) -> None:
+    path, key_id = ROOT_TOKEN
+    secrets.require_private_repository(record=path)
+    print("Touch the YubiKey for the production OpenBao bootstrap token.", flush=True)
+    token = secrets.recover_bundle(unwrap, record=path, key_id=key_id, stderr=tty)
+    script = (
+        tofu.SCOPE / "helm/charts/openbao-jobs/scripts/bootstrap-auth.sh"
+    ).read_text()
+    subprocess.run(
+        [*command, "-i", "--", "sh", "-ec", script],
+        input=token + b"\n",
+        pass_fds=(fd,),
+        check=True,
+        timeout=45,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    print("Configured the production snapshot policy and Kubernetes login.", flush=True)
+
+
+def init_restic_repository(kube: list[str], fd: int) -> None:
+    namespace = [*kube, "-n", "openbao"]
+    name = "openbao-restic-init"
+    manifest = subprocess.check_output(
+        [
+            *namespace,
+            "create",
+            "job",
+            name,
+            "--from=cronjob/openbao-backup",
+            "--dry-run=client",
+            "-o",
+            "json",
+        ],
+        pass_fds=(fd,),
+        timeout=30,
+    )
+    job = cast(dict[str, Any], json.loads(manifest))
+    spec = job["spec"]
+    pod = spec["template"]["spec"]
+    pod["containers"][0]["args"] = ["init"]
+    pod["initContainers"] = [c for c in pod["initContainers"] if c["name"] != "bao"]
+    pod["containers"][0]["volumeMounts"] = [
+        m for m in pod["containers"][0]["volumeMounts"] if m["name"] != "identity"
+    ]
+    pod["volumes"] = [v for v in pod["volumes"] if v["name"] != "identity"]
+    spec["ttlSecondsAfterFinished"] = 86400
+    subprocess.run(
+        [*namespace, "create", "-f", "-"],
+        input=json.dumps(job).encode(),
+        pass_fds=(fd,),
+        timeout=30,
+        check=True,
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("initialize", "unseal", "status"))
+    parser.add_argument(
+        "action",
+        choices=(
+            "initialize",
+            "unseal",
+            "status",
+            "restore-unseal",
+            "restore-shell",
+            "jobs-credentials",
+            "backup-init-repo",
+            "backup-auth",
+            "kubectl",
+        ),
+    )
     parser.add_argument("--ram-root", type=Path, default=Path("/dev/shm"))
     args = parser.parse_args()
     try:
         secrets.harden()
         os.umask(0o077)
-        if args.action != "status":
+        if args.action in ("initialize", "unseal", "restore-unseal"):
             for record, _ in (UNSEAL, ROOT_TOKEN):
                 secrets.require_private_repository(record=record)
         kubectl = secrets.executable(tofu.SCOPE / "bin/kubectl", "kubectl")
         kubeconfig = tofu.get_kubeconfig(args.ram_root)
         with tofu.recovery.config.memory_file(kubeconfig) as fd:
+            kube = [kubectl, "--kubeconfig", f"/proc/self/fd/{fd}"]
+            if args.action == "kubectl":
+                argv = shlex.split(os.environ.get("KUBECTL_ARGS", ""))
+                return subprocess.run(
+                    [*kube, *argv], pass_fds=(fd,), check=False
+                ).returncode
+            if args.action == "backup-init-repo":
+                init_restic_repository(kube, fd)
+                return 0
+            restore = args.action in ("restore-unseal", "restore-shell")
+            namespace = "openbao-restore" if restore else "openbao"
             command = [
-                kubectl,
-                "--kubeconfig",
-                f"/proc/self/fd/{fd}",
+                *kube,
                 "-n",
-                "openbao",
+                namespace,
                 "exec",
-                "pod/openbao-0",
+                f"pod/{namespace}-0",
                 "-c",
                 "openbao",
             ]
+            if args.action == "restore-shell":
+                return subprocess.run(
+                    [*command, "-it", "--", "/bin/sh"], pass_fds=(fd,), check=False
+                ).returncode
             if args.action == "status":
                 initialized, sealed = status(command, fd)
                 print(f"Initialized: {initialized}. Sealed: {sealed}.", flush=True)
@@ -237,6 +395,12 @@ def main() -> int:
                 if args.action == "initialize":
                     wrap = secrets.executable(bin_dir / "homelab-wrap", "homelab-wrap")
                     initialize(command, fd, wrap, unwrap, tty.fileno())
+                elif args.action == "jobs-credentials":
+                    restore_credentials(kube, fd, unwrap, tty.fileno())
+                elif args.action == "backup-auth":
+                    backup_auth(command, fd, unwrap, tty.fileno())
+                elif restore:
+                    unseal(command, fd, unwrap, tty.fileno(), RESTORE_TLS_OPTIONS)
                 else:
                     unseal(command, fd, unwrap, tty.fileno())
     except (

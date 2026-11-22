@@ -1,0 +1,163 @@
+{{- range $restore := list false true }}
+{{- $name := ternary "openbao-restore" "openbao-backup" $restore }}
+{{- $account := ternary "openbao-restore-job" "openbao-backup" $restore }}
+{{- $namespace := ternary $.Values.restoreNamespace $.Release.Namespace $restore }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $account }}
+  namespace: {{ $namespace }}
+automountServiceAccountToken: {{ $restore }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}-scripts
+  namespace: {{ $namespace }}
+data:
+{{- if $restore }}
+  restore.sh: |-
+{{ $.Files.Get "scripts/restore.sh" | indent 4 }}
+  freshness.sh: |-
+{{ $.Files.Get "scripts/freshness.sh" | indent 4 }}
+{{- else }}
+  backup.sh: |-
+{{ $.Files.Get "scripts/backup.sh" | indent 4 }}
+{{- end }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $name }}
+  namespace: {{ $namespace }}
+spec:
+  schedule: {{ ternary $.Values.restoreSchedule $.Values.backupSchedule $restore | quote }}
+  timeZone: {{ $.Values.timeZone | quote }}
+  suspend: {{ ternary $.Values.restoreSuspend $.Values.backupSuspend $restore }}
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 1800
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 7
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 1800
+      template:
+        spec:
+          nodeSelector:
+            kubernetes.io/hostname: trust-cp1
+          restartPolicy: Never
+          serviceAccountName: {{ $account }}
+          automountServiceAccountToken: {{ $restore }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            - name: verified-tools
+              image: {{ required "resticImage is required" $.Values.resticImage | quote }}
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  wget -q -T 45 -O /tools/jq https://github.com/jqlang/jq/releases/download/jq-{{ $.Values.jq.version }}/jq-linux-arm64
+                  echo '{{ $.Values.jq.sha256 }}  /tools/jq' | sha256sum -c -
+                  chmod 0555 /tools/jq
+                  {{- if $restore }}
+                  wget -q -T 45 -O /tools/kubectl {{ $.Values.kubectl.url }}
+                  echo '{{ $.Values.kubectl.sha256 }}  /tools/kubectl' | sha256sum -c -
+                  chmod 0555 /tools/kubectl
+                  {{- end }}
+              securityContext: &containerSecurity
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - name: tools
+                  mountPath: /tools
+            {{- if not $restore }}
+            - name: bao
+              image: {{ required "baoImage is required" $.Values.baoImage | quote }}
+              command: ["/bin/sh", "-ec", "cp $(command -v bao) /tools/bao"]
+              securityContext: *containerSecurity
+              volumeMounts:
+                - name: tools
+                  mountPath: /tools
+            {{- end }}
+          containers:
+            - name: {{ $name }}
+              image: {{ $.Values.resticImage | quote }}
+              command: ["/bin/sh", "/scripts/{{ ternary "restore" "backup" $restore }}.sh"]
+              securityContext: *containerSecurity
+              resources:
+                requests:
+                  memory: 128Mi
+                  cpu: 100m
+                limits:
+                  memory: 512Mi
+              env:
+                - name: RESTIC_REPOSITORY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $name }}-r2
+                      key: repository
+                {{- if $restore }}
+                - name: RESTORE_VERSION
+                  value: {{ $.Values.restoreVersion | quote }}
+                - name: RESTORE_IMAGE
+                  value: {{ printf "quay.io/openbao/openbao:%s" $.Values.restoreVersion | quote }}
+                {{- else }}
+                - name: SOURCE_VERSION
+                  value: {{ $.Values.sourceVersion | quote }}
+                - name: POD_UID
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.uid
+                {{- end }}
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+                - name: tools
+                  mountPath: /tools
+                  readOnly: true
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: credentials
+                  mountPath: /credentials
+                  readOnly: true
+                {{- if not $restore }}
+                - name: identity
+                  mountPath: /identity
+                  readOnly: true
+                {{- end }}
+          volumes:
+            - name: work
+              emptyDir:
+                medium: Memory
+                sizeLimit: 256Mi
+            - name: tools
+              emptyDir:
+                sizeLimit: 128Mi
+            - name: scripts
+              configMap:
+                name: {{ $name }}-scripts
+            - name: credentials
+              secret:
+                secretName: {{ $name }}-r2
+                defaultMode: 0440
+            {{- if not $restore }}
+            - name: identity
+              projected:
+                sources:
+                  - serviceAccountToken:
+                      audience: trust-openbao-backup
+                      expirationSeconds: 1200
+                      path: token
+            {{- end }}
+{{- end }}

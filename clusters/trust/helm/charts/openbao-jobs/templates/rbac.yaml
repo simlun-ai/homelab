@@ -1,0 +1,62 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: trust-openbao-backup-token-review
+rules:
+  - apiGroups: [authentication.k8s.io]
+    resources: [tokenreviews]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: trust-openbao-backup-token-review
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: trust-openbao-backup-token-review
+subjects:
+  - kind: ServiceAccount
+    name: openbao
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: openbao-restore
+  namespace: {{ .Values.restoreNamespace }}
+rules:
+  - apiGroups: [apps]
+    resources: [statefulsets]
+    resourceNames: [openbao-restore]
+    verbs: [get]
+  - apiGroups: [apps]
+    resources: [statefulsets/scale]
+    resourceNames: [openbao-restore]
+    verbs: [get, patch, update]
+  - apiGroups: [""]
+    resources: [pods]
+    resourceNames: [openbao-restore-0]
+    verbs: [get]
+  - apiGroups: [""]
+    resources: [pods/exec]
+    resourceNames: [openbao-restore-0]
+    verbs: [create, get]
+  - apiGroups: [""]
+    resources: [persistentvolumeclaims]
+    resourceNames: [data-openbao-restore-0]
+    verbs: [get, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: openbao-restore
+  namespace: {{ .Values.restoreNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: openbao-restore
+subjects:
+  - kind: ServiceAccount
+    name: openbao-restore-job
+    namespace: {{ .Values.restoreNamespace }}

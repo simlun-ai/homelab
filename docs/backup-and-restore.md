@@ -10,7 +10,7 @@ Recovery follows the [secret-handling boundary](security/security.md#secret-hand
 
 ## OpenBao online backups
 
-**Decision:** Trust's OpenBao uses integrated Raft storage. A scheduled job inside Trust exports application-consistent online Raft snapshots through the snapshot API while OpenBao runs, then backs them up with restic directly to **Cloudflare R2**. The [Trust snapshot milestone](installation/trust-openbao-backups.md) covers the first upload and a restore into a disposable second OpenBao instance on the existing Trust cluster.
+**Decision:** Trust's OpenBao uses integrated Raft storage. A scheduled job inside Trust exports application-consistent online Raft snapshots through the snapshot API while OpenBao runs, then backs them up with restic directly to **Cloudflare R2**. The [Trust snapshot milestone](installation/trust-openbao-backups.md) covers scheduled backups in the production namespace and a morning restore into a separate OpenBao Helm release on Trust.
 
 | Item | Requirement / open decision |
 | --- | --- |
@@ -18,7 +18,7 @@ Recovery follows the [secret-handling boundary](security/security.md#secret-hand
 | Encryption | Restic encrypts the repository. Keep its password independently recoverable. |
 | Transfer | Stage the Raft snapshot on Trust in bounded memory-backed storage and back it up directly to R2. |
 | Authentication | Scoped snapshot access and R2 upload credentials; provisioning and lifecycle TBD. |
-| Schedule / retention | TBD. |
+| Schedule / retention | Backup at 03:00 and restore at 05:00 Europe/Stockholm. Restic retention remains operator-managed. |
 | Verification | Failed/partial exports or uploads must not count as success. Report failures and prove usability through a separate restore exercise; exact checks TBD. |
 
 Provision job credentials without circular recovery dependencies. R2 restore credentials may differ from upload credentials. Keep public destination/object metadata in the recovery guide; protect actual credentials under the [HMAC wrapping protocol](security/security.md#challenges-derivation-and-wrapped-credentials).
@@ -45,17 +45,16 @@ Wrapped credential records live in the private `homelab-secrets` submodule; coor
 
 ## OpenBao disaster recovery rehearsal
 
-The sole OpenBao restore test uses a disposable second instance on the
-existing Trust Pi Kubernetes cluster. Restore a snapshot retrieved from R2
+The sole OpenBao restore test uses a second Helm release with disposable
+Raft storage on the existing Trust Pi Kubernetes cluster. Restore a snapshot retrieved from R2
 using the matching YubiKey-wrapped unseal material. The rehearsal verifies
 OpenBao recovery from backup on a functioning cluster. It depends on Trust
 Kubernetes being available.
 
-Document the operator commands in `runbooks/restore-openbao.md`. Prove
-snapshot retrieval and integrity, the initialization and restore sequence,
-unseal, administrative access, and readback of the known fixture. Include
-transit decryption once transit is in use. Record the snapshot identity,
-OpenBao version, recovery time, resource usage, and outcome without secrets.
+The [operator runbook](installation/trust-openbao-backup-operations.md)
+covers the daily download and import, which must use a snapshot less than
+24 hours old and leave the target sealed. Occasional YubiKey unseal and
+CLI inspection verify restored contents separately.
 See the [Trust restore plan](installation/trust-openbao-backups.md#disaster-recovery-rehearsal-on-trust).
 
 ## Trust restore outline

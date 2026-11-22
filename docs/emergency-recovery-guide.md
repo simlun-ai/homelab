@@ -101,7 +101,7 @@ before applying. For the OpenBao workload root, restore
 `make -C clusters/trust tofu-workload-plan` on the designated workstation.
 Preserve the existing `trust-data` pool and its separate wrapped key.
 
-OpenBao backups are online Raft snapshots backed up with restic by a job inside Trust directly to Cloudflare R2. The sole OpenBao disaster recovery rehearsal restores one of those snapshots into a disposable second OpenBao instance on the existing Trust Pi Kubernetes cluster. Start with the OpenBao version recorded for the snapshot and independently obtainable tools. The rehearsal depends on a functioning Trust Kubernetes cluster.
+OpenBao backups are online Raft snapshots backed up with restic by a job inside Trust directly to Cloudflare R2. The sole OpenBao disaster recovery rehearsal restores one of those snapshots into a disposable second OpenBao instance on the existing Trust Pi Kubernetes cluster. Start with the OpenBao version recorded for the snapshot and independently obtainable tools. The rehearsal depends on a functioning Trust Kubernetes cluster. See the [operator runbook](installation/trust-openbao-backup-operations.md) for scheduled verification and optional manual inspection.
 
 1. Recover R2 access and any wrapped/decryption material.
 2. Select a snapshot and validate its recorded identity/integrity; do not stage it on workstation disk.

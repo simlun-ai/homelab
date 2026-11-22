@@ -1,5 +1,7 @@
 {
   "version": "0.30.8",
+  "app_version": "2.7.3",
+  "cli_image": "quay.io/openbao/openbao:2.7.3@sha256:ba4b133eb9586630024e71a617e66f37f29cc3534cdd46a6233e098ceded8dc9",
   "repository": "https://github.com/openbao/openbao-helm/releases/download/openbao-0.30.8",
   "sha256": "a1a202d6300de36b3be9d924d52ba7dd24c6a1c7cd5b660b9bbda975f725f02b"
 }
