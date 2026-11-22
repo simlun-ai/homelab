@@ -128,6 +128,11 @@ With repository maintenance deployed, the backup also logs
 failure marks the Job failed even if `BACKUP COMPLETE` was already logged.
 The published snapshot remains available to the restore Job.
 
+`R2 BUCKET SIZE` logs the total bytes of current objects in the dedicated
+R2 bucket before and after pruning, including objects outside the restic
+prefix. The listing uses the existing writer credential. If a measurement
+fails, the job logs `R2 BUCKET SIZE UNAVAILABLE` and continues maintenance.
+
 ```sh
 make -C clusters/trust trust-kubectl KUBECTL_ARGS='-n openbao logs job/BACKUP_JOB_NAME'
 make -C clusters/trust trust-kubectl KUBECTL_ARGS='-n openbao-restore logs job/RESTORE_JOB_NAME'

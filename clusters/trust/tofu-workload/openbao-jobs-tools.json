@@ -5,5 +5,9 @@
   "jq": {
     "version": "1.8.1",
     "sha256": "6bc62f25981328edd3cfcfe6fe51b073f2d7e7710d7ef7fcdac28d4e384fc3d4"
+  },
+  "s5cmd": {
+    "url": "https://github.com/peak/s5cmd/releases/download/v2.3.0/s5cmd_2.3.0_Linux-arm64.tar.gz",
+    "sha256": "1439f0d00ecedcd2a2f1f2c6749bbb0152b2257bf5086f29646ec8ae38798e24"
   }
 }
