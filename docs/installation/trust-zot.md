@@ -8,7 +8,7 @@ under `homelab/**`.
 
 ## Deploy the workload
 
-Confirm `10.10.0.202` is free, then point the UniFi internal DNS record
+Confirm `10.10.0.201` is free, then point the UniFi internal DNS record
 for `registry.k8s-aux.simlun.se` at it. Allow LAN access to TCP 443 and
 keep the endpoint off the WAN.
 
@@ -46,7 +46,7 @@ make -C clusters/trust trust-kubectl \
 make -C clusters/trust trust-kubectl KUBECTL_ARGS='-n zot get pvc,pv,service'
 ```
 
-Expect a bound `trust-zfs-retain` claim and `zot-https` at `10.10.0.202`.
+Expect a bound `trust-zfs-retain` claim and `zot-https` at `10.10.0.201`.
 An anonymous upload request should return HTTP 401 or 403:
 
 ```sh

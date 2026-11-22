@@ -160,7 +160,7 @@ extraObjects:
     metadata:
       name: zot-https
       annotations:
-        metallb.io/loadBalancerIPs: "10.10.0.202"
+        metallb.io/loadBalancerIPs: "10.10.0.201"
     spec:
       type: LoadBalancer
       allocateLoadBalancerNodePorts: false
