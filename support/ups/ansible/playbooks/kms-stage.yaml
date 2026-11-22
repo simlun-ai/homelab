@@ -101,6 +101,7 @@
         mode: "0644"
       loop:
         - __init__.py
+        - talos_kms_wire.py
         - trust_kms/__init__.py
         - trust_kms/control.py
         - trust_kms/transport.py

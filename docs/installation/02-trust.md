@@ -31,6 +31,7 @@ mechanism separately before installation.
 
 ### Next milestone: first Backup KMS boot
 
+- The adapter core passed a local TLS gRPC round trip with disposable OpenBao 2.7.3, including node binding, key rotation, and backend failure. Packaging, Kubernetes login and deployment are pending.
 - [ ] Deploy the first instance of the [shared Talos KMS adapter](../security/security.md#talos-kms-adapter) in Trust Kubernetes for Backup.
 - [ ] Boot one Backup Talos node and verify that encrypted `STATE` and `EPHEMERAL` unlock through that endpoint. Use this boot to verify early networking, DNS, time, TLS, and KMS reachability. Use the Trust rehearsal below for troubleshooting if needed.
 - [ ] Return to the remaining Trust installation work after this boot passes. Defer the rest of the Backup installation and the Pi and Metal adapter rollouts.
