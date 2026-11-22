@@ -18,7 +18,7 @@ Recovery follows the [secret-handling boundary](security/security.md#secret-hand
 | Encryption | Restic encrypts the repository. Keep its password independently recoverable. |
 | Transfer | Stage the Raft snapshot on Trust in bounded memory-backed storage and back it up directly to R2. |
 | Authentication | Scoped snapshot access and R2 upload credentials; provisioning and lifecycle TBD. |
-| Schedule / retention | Backup at 03:00 and restore at 05:00 Europe/Stockholm. Restic retention remains operator-managed. |
+| Schedule / retention | Backup at 03:00 and restore at 05:00 Europe/Stockholm. The backup Job applies the [Trust retention policy](installation/trust-openbao-backups.md#restic-repository-maintenance) after successful uploads. |
 | Verification | Mark completed snapshots after a successful upload, check restic repository structure after backup, and verify the selected snapshot by restoring it to the rehearsal release. |
 
 Provision job credentials without circular recovery dependencies. R2 restore credentials may differ from upload credentials. Keep public destination/object metadata in the recovery guide; protect actual credentials under the [HMAC wrapping protocol](security/security.md#challenges-derivation-and-wrapped-credentials).

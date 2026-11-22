@@ -13,15 +13,32 @@ from production and can also be used for upgrade testing.
 
 ## Restic repository maintenance
 
-The backup Job configuration runs `restic check` after publishing a completed snapshot.
-This verifies repository structure. The separate restore Job verifies
-the contents of the selected snapshot.
+After publishing a completed snapshot, the backup Job applies retention with
+`restic forget --prune`, then verifies repository structure with `restic check`.
+Retention applies to snapshots from host `trust-openbao` tagged
+`trust-openbao-complete`. Restic applies all four rules and keeps snapshots that
+match any rule. Each window is measured back from the latest completed snapshot.
 
-- [ ] Choose retention for completed snapshots. The starting proposal is
-  to keep 30 days with `--keep-within 30d`.
-- [ ] Run `restic forget --prune` before the repository check after a successful
-  backup. Coordinate pruning with the read-only restore Job, which
-  does not take a repository lock, and with the offline copy procedure.
+| Snapshot frequency | Retention window |
+| --- | --- |
+| Daily | 7 days |
+| Weekly | 30 days |
+| Monthly | 1 year |
+| Yearly | 5 years |
+
+The windows overlap and can span partial calendar periods. For sizing, allow
+up to 34 completed snapshots per backup set. That counts up to 8 daily,
+6 weekly, 13 monthly and 6 yearly periods plus one oldest-snapshot fallback.
+Some snapshots satisfy multiple rules, so the usual count is lower.
+
+The first rehearsal restored 27.662 KiB of snapshot and metadata. At that
+size, 34 independent copies total about 0.92 MiB before restic metadata,
+compression and deduplication. Budget **about 2 MiB of steady-state R2
+storage after five years** at the observed snapshot size, with headroom for
+repository metadata and retained pack data. This estimate excludes temporary
+prune space, incomplete snapshots, offline copies and future OpenBao data
+growth. For a larger snapshot, multiply its measured size by 34 before
+allowing for repository overhead.
 
 ## Offline copy of R2
 
@@ -44,11 +61,11 @@ disaster recovery rehearsal.
 
 The restore release uses a separate Raft claim, a loopback TLS listener,
 and a namespace-local CA. Backup and restore credentials are separate and
-the restore server receives neither. Restic retention and the offline copy
-schedule remain operator decisions.
+the restore server receives neither.
 
 ## References
 
 - [OpenBao Raft snapshot API](https://openbao.org/docs/api/system/storage/raft/)
 - [Cloudflare R2 API tokens](https://developers.cloudflare.com/r2/api/tokens/)
 - [Cloudflare R2 lifecycle rules](https://developers.cloudflare.com/r2/buckets/object-lifecycles/)
+- [Restic 0.18.1 snapshot retention and pruning](https://restic.readthedocs.io/en/v0.18.1/060_forget.html)
