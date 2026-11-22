@@ -1,5 +1,5 @@
 {
-  "image": "",
+  "image": "registry.k8s-aux.simlun.se/homelab/talos-kms@sha256:7c4f746c06b1674ccedde14ea3ed7fcba58e75b85b7f6a1af320bc8789574a88",
   "clusters": {
     "backup": {
       "hostname": "kms-backup.k8s-aux.simlun.se",

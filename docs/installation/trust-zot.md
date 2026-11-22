@@ -81,9 +81,14 @@ jq -er '."containerimage.digest"' "$DOCKER_CONFIG/image.json"
 BASH
 ```
 
-Use a credential-free OCI client to pull
+Use a credential-free OCI client, such as Talos containerd or Podman, to pull
 `registry.k8s-aux.simlun.se/homelab/talos-kms@sha256:...` with the
 reported digest. Recreate the Zot pod with a StatefulSet rollout restart
 and repeat the pull by digest once it is ready to verify persistence.
+On 2026-11-22, Zot bound its retained ZFS claim, served HTTPS at
+`10.10.0.201`, and rejected an anonymous upload with HTTP 401. Trust pulled
+the ARM64 KMS adapter by digest with no pull credentials and imported it
+successfully before and after a Zot pod replacement.
+
 After a clean workload plan, follow the [encrypted workload state
 publication procedure](trust-openbao.md#publish-encrypted-workload-state).

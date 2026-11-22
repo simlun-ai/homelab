@@ -20,7 +20,7 @@ Trust ran ZFS extension `2.4.4-v1.14.5` and loaded the kernel module on
 | Loki | v3.7.8 |  |  |  |  |
 | ZFS LocalPV | v2.11.2 | v2.11.2 |  |  |  |
 | [OpenBao](installation/trust-openbao.md) | v2.7.3 | v2.7.3 (Helm chart 0.30.8) |  |  |  |
-| [Zot](installation/trust-zot.md) | v2.1.23 | Configured (Helm chart 0.1.134) |  |  |  |
+| [Zot](installation/trust-zot.md) | v2.1.23 | Verified (Helm chart 0.1.134) |  |  |  |
 | [Talos KMS adapter](security/security.md#talos-kms-adapter) (repository-owned Python service) | TBD | Planned deployments for Backup, Pi, and Metal |  |  |  |
 | OpenTofu | v1.13.9 | v1.13.9 (infrastructure and workload roots) |  |  |  |
 | External Secrets Operator | v2.11.0 | [v2.11.0, OpenBao sync verified](installation/trust-workload-secrets.md) | v2.11.0 | v2.11.0 | v2.11.0 |
