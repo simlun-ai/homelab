@@ -35,6 +35,7 @@ help:
 	  'openbao-status / openbao-initialize / openbao-unseal: operate Trust OpenBao' \
 	  'openbao-restore-unseal / openbao-restore-shell: inspect a restored backup' \
 	  'openbao-jobs-credentials / openbao-backup-auth / openbao-backup-init-repo: set up scheduled backups' \
+	  'openbao-kms-auth KMS_CLUSTER=backup: configure Transit and Kubernetes login' \
 	  'trust-kubectl KUBECTL_ARGS=...: use Trust Kubernetes credentials from memory' \
 	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \
 	  'kms-window-open / kms-window-status / kms-window-lock: control the trust-cp1 KMS window'
@@ -189,12 +190,12 @@ openbao-status openbao-initialize openbao-unseal: check-tools
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" \
 	  $(patsubst openbao-%,%,$@) --ram-root "$(RAM_ROOT)"
 
-export KUBECTL_ARGS R2_REPOSITORY
+export KUBECTL_ARGS R2_REPOSITORY KMS_CLUSTER
 .PHONY: trust-kubectl openbao-restore-unseal openbao-restore-shell
-.PHONY: openbao-backup-auth openbao-jobs-credentials openbao-backup-init-repo
+.PHONY: openbao-backup-auth openbao-jobs-credentials openbao-backup-init-repo openbao-kms-auth
 trust-kubectl: check-tools
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" kubectl --ram-root "$(RAM_ROOT)"
 
-openbao-restore-unseal openbao-restore-shell openbao-backup-auth openbao-jobs-credentials openbao-backup-init-repo: check-tools
+openbao-restore-unseal openbao-restore-shell openbao-backup-auth openbao-jobs-credentials openbao-backup-init-repo openbao-kms-auth: check-tools
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" \
 	  $(patsubst openbao-%,%,$@) --ram-root "$(RAM_ROOT)"

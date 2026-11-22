@@ -134,7 +134,10 @@ Same-VLAN Trust/coordinator traffic requires host/switch admission consideration
 inter-VLAN gateway rules alone do not isolate VLAN 10 peers.
 
 Backup, Pi, and Metal will each use a separate HTTPS KMS endpoint hosted in
-Trust Kubernetes. Their names, addresses, and admission rules are pending. See the
+Trust Kubernetes. Backup's planned name is `kms-backup.k8s-aux.simlun.se`,
+resolving internally to `10.10.0.201`. The adapter admits configured pairs
+of Talos node UUIDs and boot source IPs. Pi and Metal endpoint names and
+addresses remain pending. See the
 [adapter design](security/security.md#talos-kms-adapter).
 
 ### Trust KMS listener admission

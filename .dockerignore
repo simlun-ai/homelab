@@ -8,6 +8,9 @@
 !clusters/trust/tooling.py
 !clusters/trust/toolchain.toml
 !clusters/trust/helm/charts/openbao-jobs/scripts/*.sh
+!clusters/trust/containers/talos-kms/Dockerfile
+!clusters/trust/containers/talos-kms/requirements.txt
+!clusters/trust/openbao-kms-bootstrap.sh
 !clusters/trust/talos/patches/**/*.yaml
 !clusters/trust/talos/rendered/*.yaml
 !scripts/**/*.py

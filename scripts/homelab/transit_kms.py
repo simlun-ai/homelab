@@ -8,6 +8,7 @@ from collections.abc import Callable, Generator, Iterable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing, contextmanager
 from http.client import HTTPException, HTTPSConnection
+from threading import Lock
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -126,13 +127,18 @@ class TransitKMS:
 
 def _rpc(
     operation: Callable[[str, bytes], bytes],
+    allows_peer: Callable[[str, str], bool] | None = None,
 ) -> Callable[[bytes, grpc.ServicerContext], bytes]:
     def handle(raw: bytes, context: grpc.ServicerContext) -> bytes:
         try:
             request = REQUEST.FromString(raw)
+            if allows_peer is not None and not allows_peer(
+                context.peer(), request.node_uuid
+            ):
+                raise PermissionError("Talos KMS client denied")
             result = operation(request.node_uuid, request.data)
         except PermissionError:
-            context.abort(grpc.StatusCode.PERMISSION_DENIED, "Unknown Talos node")
+            context.abort(grpc.StatusCode.PERMISSION_DENIED, "Talos KMS client denied")
         except (DecodeError, ValueError):
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Invalid Talos KMS request")
         except TransitUnavailable:
@@ -150,7 +156,13 @@ def _rpc(
 
 @contextmanager
 def listen_tls(
-    adapter: TransitKMS, *, address: str, private_key: bytes, certificate: bytes
+    adapter: TransitKMS,
+    *,
+    address: str,
+    private_key: bytes,
+    certificate: bytes,
+    allows_peer: Callable[[str, str], bool] | None = None,
+    reload_certificate: Callable[[], tuple[bytes, bytes]] | None = None,
 ) -> Generator[str]:
     """Serve the Talos protocol on an endpoint with external client admission."""
     with ThreadPoolExecutor(max_workers=_MAX_INFLIGHT) as executor:
@@ -168,15 +180,41 @@ def listen_tls(
                 grpc.method_handlers_generic_handler(
                     SERVICE,
                     {
-                        "Seal": grpc.unary_unary_rpc_method_handler(_rpc(adapter.seal)),
+                        "Seal": grpc.unary_unary_rpc_method_handler(
+                            _rpc(adapter.seal, allows_peer)
+                        ),
                         "Unseal": grpc.unary_unary_rpc_method_handler(
-                            _rpc(adapter.unseal)
+                            _rpc(adapter.unseal, allows_peer)
                         ),
                     },
                 ),
             )
         )
-        credentials = grpc.ssl_server_credentials([(private_key, certificate)])
+
+        pair = (private_key, certificate)
+        configuration = grpc.ssl_server_certificate_configuration([pair])
+        certificate_lock = Lock()
+
+        def refresh() -> grpc.ServerCertificateConfiguration:
+            nonlocal pair, configuration
+            assert reload_certificate is not None
+            with certificate_lock:
+                try:
+                    current = reload_certificate()
+                    if current != pair:
+                        configuration = grpc.ssl_server_certificate_configuration(
+                            [current]
+                        )
+                        pair = current
+                except (OSError, ValueError):
+                    pass
+                return configuration
+
+        credentials = (
+            grpc.ssl_server_credentials([(private_key, certificate)])
+            if reload_certificate is None
+            else grpc.dynamic_ssl_server_credentials(configuration, refresh)
+        )
         port = server.add_secure_port(address, credentials)
         if port == 0:
             raise ValueError("Talos KMS TLS bind failed")

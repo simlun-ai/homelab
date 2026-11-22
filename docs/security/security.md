@@ -219,9 +219,9 @@ and starts before Trust Kubernetes.
 
 Dependent-node unlock requires the Trust-hosted adapter and an available,
 unsealed OpenBao. Startup follows **Trust → OpenBao unseal → adapter
-readiness → dependent nodes**. Endpoint addresses, TLS issuance, client
-admission rules, timeouts, key mapping and rotation, and recovery tests
-remain to be designed.
+readiness → dependent nodes**. The [deployment runbook](../installation/trust-talos-kms.md)
+covers Backup's endpoint, TLS issuance, node admission, and Transit setup.
+Key rotation and recovery procedures still need live verification.
 
 Networking, DNS, time, and TLS trust must work before encrypted `STATE`
 loads. A custom CA stored in `STATE` is unavailable at that point. Verify

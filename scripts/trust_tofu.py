@@ -346,7 +346,7 @@ def run(
     local_charts = (
         ("trust-acme-issuers", "trust-metallb-config")
         if infrastructure
-        else ("openbao-jobs",)
+        else ("openbao-jobs", "talos-kms")
     )
 
     provider_cache = SCOPE / "bin/tofu-provider-cache"
@@ -381,6 +381,7 @@ def run(
             shutil.copyfile(
                 config / "openbao-jobs-tools.json", work / "openbao-jobs-tools.json"
             )
+            shutil.copyfile(config / "talos-kms.json", work / "talos-kms.json")
         # Keep operational files off disk. Only public provider packages use the
         # executable cache because the RAM mount may be noexec.
         for name in ("tmp", "config", "cache", "data"):

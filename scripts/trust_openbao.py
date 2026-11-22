@@ -278,16 +278,15 @@ def restore_credentials(kubectl: list[str], fd: int, unwrap: str, tty: int) -> N
         print(f"Configured {namespace}/{name}.", flush=True)
 
 
-def backup_auth(command: list[str], fd: int, unwrap: str, tty: int) -> None:
+def configure_auth(
+    command: list[str], fd: int, unwrap: str, tty: int, script: Path, *args: str
+) -> None:
     path, key_id = ROOT_TOKEN
     secrets.require_private_repository(record=path)
     print("Touch the YubiKey for the production OpenBao bootstrap token.", flush=True)
     token = secrets.recover_bundle(unwrap, record=path, key_id=key_id, stderr=tty)
-    script = (
-        tofu.SCOPE / "helm/charts/openbao-jobs/scripts/bootstrap-auth.sh"
-    ).read_text()
     subprocess.run(
-        [*command, "-i", "--", "sh", "-ec", script],
+        [*command, "-i", "--", "sh", "-ec", script.read_text(), "bootstrap", *args],
         input=token + b"\n",
         pass_fds=(fd,),
         check=True,
@@ -295,7 +294,6 @@ def backup_auth(command: list[str], fd: int, unwrap: str, tty: int) -> None:
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    print("Configured the production snapshot policy and Kubernetes login.", flush=True)
 
 
 def init_restic_repository(kube: list[str], fd: int) -> None:
@@ -347,6 +345,7 @@ def main() -> int:
             "jobs-credentials",
             "backup-init-repo",
             "backup-auth",
+            "kms-auth",
             "kubectl",
         ),
     )
@@ -398,7 +397,36 @@ def main() -> int:
                 elif args.action == "jobs-credentials":
                     restore_credentials(kube, fd, unwrap, tty.fileno())
                 elif args.action == "backup-auth":
-                    backup_auth(command, fd, unwrap, tty.fileno())
+                    configure_auth(
+                        command,
+                        fd,
+                        unwrap,
+                        tty.fileno(),
+                        tofu.SCOPE
+                        / "helm/charts/openbao-jobs/scripts/bootstrap-auth.sh",
+                    )
+                    print(
+                        "Configured the production snapshot policy and Kubernetes login.",
+                        flush=True,
+                    )
+                elif args.action == "kms-auth":
+                    cluster = os.environ.get("KMS_CLUSTER", "")
+                    if not re.fullmatch(r"[a-z][a-z0-9-]{0,30}", cluster):
+                        raise ValueError(
+                            "Set KMS_CLUSTER to the registered cluster name"
+                        )
+                    configure_auth(
+                        command,
+                        fd,
+                        unwrap,
+                        tty.fileno(),
+                        tofu.SCOPE / "openbao-kms-bootstrap.sh",
+                        cluster,
+                    )
+                    print(
+                        f"Configured OpenBao Transit and Kubernetes login for {cluster}.",
+                        flush=True,
+                    )
                 elif restore:
                     unseal(command, fd, unwrap, tty.fileno(), RESTORE_TLS_OPTIONS)
                 else:
