@@ -22,7 +22,7 @@ Trust ran ZFS extension `2.4.4-v1.14.5` and loaded the kernel module on
 | [OpenBao](installation/trust-openbao.md) | v2.7.3 | v2.7.3 (Helm chart 0.30.8) |  |  |  |
 | [Talos KMS adapter](security/security.md#talos-kms-adapter) (repository-owned Python service) | TBD | Planned deployments for Backup, Pi, and Metal |  |  |  |
 | OpenTofu | v1.13.9 | v1.13.9 (infrastructure and workload roots) |  |  |  |
-| External Secrets Operator | v2.11.0 | v2.11.0 | v2.11.0 | v2.11.0 | v2.11.0 |
+| External Secrets Operator | v2.11.0 | [Configured, verification pending](installation/trust-workload-secrets.md) | v2.11.0 | v2.11.0 | v2.11.0 |
 | [cert-manager](installation/trust-cert-manager.md) | v1.21.2 | v1.21.2 |  |  |  |
 | Garage | v2.4.1 |  | v2.4.1 |  |  |
 | PostgreSQL | v18.6 |  |  |  |  |
