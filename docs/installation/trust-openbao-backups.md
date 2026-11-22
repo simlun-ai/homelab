@@ -31,14 +31,19 @@ up to 34 completed snapshots per backup set. That counts up to 8 daily,
 6 weekly, 13 monthly and 6 yearly periods plus one oldest-snapshot fallback.
 Some snapshots satisfy multiple rules, so the usual count is lower.
 
-The first rehearsal restored 27.662 KiB of snapshot and metadata. At that
-size, 34 independent copies total about 0.92 MiB before restic metadata,
-compression and deduplication. Budget **about 2 MiB of steady-state R2
-storage after five years** at the observed snapshot size, with headroom for
-repository metadata and retained pack data. This estimate excludes temporary
-prune space, incomplete snapshots, offline copies and future OpenBao data
-growth. For a larger snapshot, multiply its measured size by 34 before
-allowing for repository overhead.
+The first rehearsal restored 27.662 KiB of snapshot and metadata from an
+empty OpenBao instance. For a populated example, assume that 1 MiB of added
+OpenBao data adds about 1 MiB to each Raft snapshot and that snapshot sizes
+stay near that level for five years. At up to 34 retained snapshots, the
+payload estimate is `34 × (1 MiB + 27.662 KiB) ≈ 35 MiB` before restic
+compression and deduplication. Budget **about 40 MiB of steady-state R2
+storage after five years** to allow for repository metadata and retained
+pack data.
+
+Actual usage depends on the measured Raft snapshot size and how much its
+contents change between backups. Restic reuses identical chunks across
+snapshots. The estimate excludes temporary prune space, incomplete snapshots,
+offline copies and further OpenBao data growth.
 
 ## Offline copy of R2
 
