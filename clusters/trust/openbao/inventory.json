@@ -1,0 +1,18 @@
+{
+  "secrets": [
+    {
+      "path": "trust/eso-smoke/allowed",
+      "owner": "Trust operator",
+      "consumers": ["ESO smoke test"],
+      "strategy": "generate",
+      "recovery": "Regenerate if missing"
+    },
+    {
+      "path": "trust/eso-smoke/denied",
+      "owner": "Trust operator",
+      "consumers": ["ESO negative access test"],
+      "strategy": "generate",
+      "recovery": "Regenerate if missing"
+    }
+  ]
+}

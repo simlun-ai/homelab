@@ -47,7 +47,7 @@ Use a consistent vocabulary and capitalization for cluster names and components.
 
 ## Architecture invariants to preserve
 
-- **Trust** is the independent foundational cluster; other clusters depend on services it supplies. Avoid circular dependencies: its own secrets are entered manually rather than fetched from its OpenBao instance.
+- **Trust** is the independent foundational cluster; other clusters depend on services it supplies. Keep bootstrap, OpenBao unseal, and OpenBao recovery credentials independent of OpenBao. Workloads that start after OpenBao may consume their credentials from it.
 - Keep intended configuration details (for example Flannel versus Cilium, storage technology, and certificate distribution) aligned between cluster architecture and component documentation.
 - Describe backups, security-sensitive configuration, and external dependencies accurately without committing actual credentials or secrets.
 - Trust's OpenBao backup plan uses integrated Raft storage and scheduled online Raft snapshots uploaded to Cloudflare R2 by a job inside Trust. Preserve independently accessible unseal/recovery material and keep decrypted secrets and snapshots off workstation disk.

@@ -122,6 +122,11 @@ Challenge-response needs helper logic; it is not native ZFS unlock integration o
 
 [Trust's independent bootstrap](../clusters.md#trust) requires manual secret supply. Manual disk unlock and OpenBao unseal are acceptable during operator-controlled startup.
 
+Trust workloads that start after unseal can receive [OpenBao-managed
+credentials](../installation/trust-workload-secrets.md) from External
+Secrets Operator. Keep the bootstrap and recovery inputs for OpenBao and
+its supporting services independently available.
+
 Application/service secrets are fetched from OpenBao; dependent clusters use External Secrets Operator where applicable. A helper on the workstation queries a YubiKey with touch, derives the wrapping key, unwraps the required unseal material, and unseals OpenBao entirely in memory. This is operator-driven unseal, not native YubiKey auto-unseal. The wrapping format is defined above; see the active installation runbooks for application-specific integrations. Wrapped credential records are stored under the [encrypted-record storage policy](encrypted-record-storage.md).
 
 Touch is required when querying a token, not for each scheduled backup. Runtime credentials may be provisioned at setup and held securely server-side; backup-job authentication and lifecycle belong in [backup-and-restore.md](../backup-and-restore.md#openbao-online-backups).

@@ -346,6 +346,7 @@ def main() -> int:
             "backup-init-repo",
             "backup-auth",
             "kms-auth",
+            "secrets-bootstrap",
             "kubectl",
         ),
     )
@@ -425,6 +426,18 @@ def main() -> int:
                     )
                     print(
                         f"Configured OpenBao Transit and Kubernetes login for {cluster}.",
+                        flush=True,
+                    )
+                elif args.action == "secrets-bootstrap":
+                    configure_auth(
+                        command,
+                        fd,
+                        unwrap,
+                        tty.fileno(),
+                        tofu.SCOPE / "openbao/bootstrap.sh",
+                    )
+                    print(
+                        "Configured OpenBao workload KV and ESO smoke-test access.",
                         flush=True,
                     )
                 elif restore:
