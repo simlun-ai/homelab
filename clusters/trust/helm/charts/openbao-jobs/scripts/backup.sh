@@ -43,6 +43,36 @@ complete=$(restic --no-cache -o s3.region=auto snapshots --json \
 id=$(printf '%s' "$complete" | /tools/jq -er 'select(length == 1) | .[0].id')
 printf 'BACKUP COMPLETE id=%s created_at=%s sha256=%s\n' "$id" "$created_at" "$digest"
 
+log_bucket_size() {
+    phase=$1
+    address=${RESTIC_REPOSITORY#s3:https://}
+    endpoint=${address%%/*}
+    path=${address#*/}
+    bucket=${path%%/*}
+    if [ -x /tools/s5cmd ] &&
+       usage=$(AWS_REGION=auto timeout 15 /tools/s5cmd --json --retry-count 1 \
+           --endpoint-url "https://$endpoint" du "s3://$bucket/*" 2>/work/bucket-size.stderr) &&
+       [ ! -s /work/bucket-size.stderr ] &&
+       bytes=$(printf '%s\n' "$usage" | /tools/jq -es '
+           select(length == 1) | .[0].size | numbers | select(. >= 0 and . == floor)'); then
+        printf 'R2 BUCKET SIZE phase=%s bytes=%s id=%s\n' "$phase" "$bytes" "$id"
+    else
+        printf 'R2 BUCKET SIZE UNAVAILABLE phase=%s id=%s\n' "$phase" "$id" >&2
+    fi
+}
+
+log_bucket_size before_prune
+printf 'RESTIC RETENTION STARTED id=%s\n' "$id"
+if ! restic --no-cache -o s3.region=auto forget --prune \
+    --host trust-openbao --tag trust-openbao-complete \
+    --keep-within-daily 7d --keep-within-weekly 30d \
+    --keep-within-monthly 1y --keep-within-yearly 5y; then
+    printf 'RESTIC RETENTION FAILED id=%s\n' "$id" >&2
+    exit 1
+fi
+printf 'RESTIC RETENTION PASSED id=%s\n' "$id"
+log_bucket_size after_prune
+
 printf 'RESTIC CHECK STARTED id=%s\n' "$id"
 if ! restic --no-cache -o s3.region=auto check; then
     printf 'RESTIC CHECK FAILED id=%s\n' "$id" >&2

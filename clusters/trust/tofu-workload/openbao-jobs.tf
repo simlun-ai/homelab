@@ -32,6 +32,7 @@ resource "helm_release" "openbao_jobs" {
     baoImage            = local.openbao.cli_image
     resticImage         = local.job_tools.restic.image
     jq                  = local.job_tools.jq
+    s5cmd               = local.job_tools.s5cmd
     kubectl             = jsondecode(file("${path.module}/backup-kubectl.json"))
   })]
 

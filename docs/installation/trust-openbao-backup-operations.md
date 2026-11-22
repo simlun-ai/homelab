@@ -124,9 +124,14 @@ restic ID and Raft digest. Check that the restore reports `sealed=true`.
 Setup or image-download failures can be inspected in the Job's pod events.
 
 With repository maintenance deployed, the backup also logs
-`RESTIC CHECK PASSED`. A check failure marks the Job failed even if
-`BACKUP COMPLETE` was already logged. The published snapshot remains
-available to the restore Job.
+`RESTIC RETENTION PASSED` and `RESTIC CHECK PASSED`. A maintenance
+failure marks the Job failed even if `BACKUP COMPLETE` was already logged.
+The published snapshot remains available to the restore Job.
+
+`R2 BUCKET SIZE` logs the total bytes of current objects in the dedicated
+R2 bucket before and after pruning, including objects outside the restic
+prefix. The listing uses the existing writer credential. If a measurement
+fails, the job logs `R2 BUCKET SIZE UNAVAILABLE` and continues maintenance.
 
 ```sh
 make -C clusters/trust trust-kubectl KUBECTL_ARGS='-n openbao logs job/BACKUP_JOB_NAME'
@@ -166,6 +171,8 @@ running target specification and backup source version match its expected
 restore version before deleting the claim. Return to the source version
 and re-enable the restore schedule when upgrade testing is finished.
 
-The R2 repository is copied separately to the offline drive for deletion
-protection. Coordinate pruning with restore readback, which uses read-only
-R2 access and does not take a restic repository lock.
+The 03:00 backup has a 30-minute start deadline and a 30-minute Job
+deadline, leaving time before the 05:00 restore. The restore uses read-only
+R2 access without a restic repository lock. Run manual backup and restore
+Jobs sequentially, and avoid an active backup when copying the repository
+to the offline drive.
