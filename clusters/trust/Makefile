@@ -6,8 +6,8 @@ HSM_VENV ?= $(HOME)/.local/share/homelab/venvs/hsm
 .PHONY: help tools check-tools render check-rendered validate secrets-rehearse config-rehearse credentials-rehearse recovery-rehearse admin-inspect admin-rehearse
 help:
 	@printf '%s\n' \
-	  'tools: download and verify pinned talosctl and kubectl (Linux amd64/arm64)' \
-	  'check-tools: verify installed binaries offline' \
+	  'tools: install pinned talosctl and kubectl plus the distro htpasswd utility' \
+	  'check-tools: verify pinned binaries and htpasswd offline' \
 	  'schematic-id SCHEMATIC=path.yaml: write the Image Factory ID to a sibling .id file' \
 	  'installer-image SCHEMATIC=path.yaml: resolve and verify the pinned ARM64 installer' \
 	  'render: regenerate committed public Talos YAML' \
@@ -36,8 +36,9 @@ help:
 	  'openbao-restore-unseal / openbao-restore-shell: inspect a restored backup' \
 	  'openbao-jobs-credentials / openbao-backup-auth / openbao-backup-init-repo: set up scheduled backups' \
 	  'openbao-kms-auth KMS_CLUSTER=backup: configure Transit and Kubernetes login' \
-	  'openbao-secrets-bootstrap: configure workload KV and smoke-test access' \
+	  'openbao-secrets-bootstrap: configure workload KV and ESO access' \
 	  'openbao-secrets-check / openbao-secrets-seed: audit or populate OpenBao workload inventory' \
+	  'openbao-secrets-zot-publisher: stream the Zot publisher password to a pipe' \
 	  'trust-kubectl KUBECTL_ARGS=...: use Trust Kubernetes credentials from memory' \
 	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \
 	  'kms-window-open / kms-window-status / kms-window-lock: control the trust-cp1 KMS window'
@@ -203,5 +204,10 @@ openbao-restore-unseal openbao-restore-shell openbao-backup-auth openbao-jobs-cr
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" \
 	  $(patsubst openbao-%,%,$@) --ram-root "$(RAM_ROOT)"
 
-openbao-secrets-check openbao-secrets-seed:
+.PHONY: openbao-secrets-zot-publisher check-htpasswd
+check-htpasswd:
+	@$(PYTHON) -I -B "$(SCOPE)/tooling.py" check --tool htpasswd
+
+openbao-secrets-seed: check-htpasswd
+openbao-secrets-check openbao-secrets-seed openbao-secrets-zot-publisher:
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao_inventory.py" $(patsubst openbao-secrets-%,%,$@)

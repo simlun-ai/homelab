@@ -19,6 +19,14 @@ EOF
 bao policy write trust-workload-seed - <<'EOF'
 path "workload-kv/metadata/trust/*" { capabilities = ["read"] }
 path "workload-kv/data/trust/*" { capabilities = ["create"] }
+path "workload-kv/data/trust/zot/publisher-password" { capabilities = ["create", "read"] }
+EOF
+bao policy write trust-zot-publisher - <<'EOF'
+path "workload-kv/data/trust/zot/publisher-password" { capabilities = ["read"] }
+EOF
+bao policy write trust-eso-zot - <<'EOF'
+path "sys/mounts/workload-kv" { capabilities = ["read"] }
+path "workload-kv/data/trust/zot/publisher-verifier" { capabilities = ["read"] }
 EOF
 bao policy write trust-eso-smoke - <<'EOF'
 path "sys/mounts/workload-kv" { capabilities = ["read"] }
@@ -31,4 +39,8 @@ bao write auth/trust-eso/config kubernetes_host=https://kubernetes.default.svc:4
 bao write auth/trust-eso/role/smoke \
     bound_service_account_names=eso-smoke bound_service_account_namespaces=eso-smoke \
     audience=trust-eso-smoke token_policies=trust-eso-smoke \
+    token_type=batch token_no_default_policy=true token_ttl=5m token_max_ttl=5m
+bao write auth/trust-eso/role/zot \
+    bound_service_account_names=zot-secret-reader bound_service_account_namespaces=zot \
+    audience=trust-eso-zot token_policies=trust-eso-zot \
     token_type=batch token_no_default_policy=true token_ttl=5m token_max_ttl=5m

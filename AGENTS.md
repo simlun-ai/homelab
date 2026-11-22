@@ -6,6 +6,8 @@ These instructions apply to the entire homelab repository.
 
 - Treat the current GitHub repository as the source of truth for the homelab. Read the relevant files before editing; do not rely solely on prior conversation or assumptions about the current state.
 - Make focused, minimal changes that preserve existing content and conventions unless the user requests a broader reorganization.
+- When a workflow needs a new local executable, add it to that scope's Make tooling installation and offline checks. Wire the check into the target that uses it and document the Make setup command in the runbook.
+- Omit CPU requests and limits from Kubernetes workloads by default. Add them only for a concrete workload requirement and document the reason.
 - Implement requested repository changes directly when authorized, and report which files changed and the resulting commit or pull request.
 - Distinguish **planned**, **configured**, and **deployed** infrastructure. Do not present a proposed configuration as already running.
 - Do not invent hardware details, network settings, installed versions, capacities, or deployment status. Use `TBD` or explicitly note unknowns when appropriate.

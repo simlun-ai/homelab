@@ -14,6 +14,7 @@ Independent, single-node foundation. All other clusters depend on its services. 
 | Storage | Local persistent volumes via ZFS LocalPV on the [Trust data mirror](inventory.md#trust), separate from the OS mirror. |
 | Observability | kube-prometheus-stack (Prometheus, Grafana, Alertmanager), with Telegram notifications; Headlamp for cluster visibility. |
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
+| Image registry | [Zot](installation/trust-zot.md) is configured as a Trust workload on its encrypted ZFS data mirror. Deployment is pending. |
 | Certificates | [cert-manager with Let's Encrypt and Cloudflare DNS-01](installation/trust-cert-manager.md) is installed in Trust infrastructure, with both issuers ready and staging DNS-01 issuance verified. Cross-cluster delivery is planned through the [certificate factory](#certificate-factory). |
 
 Trust Kubernetes will host separate [Talos KMS adapter deployments](security/security.md#talos-kms-adapter)

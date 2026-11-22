@@ -6,27 +6,19 @@ Trust's own bootstrap KMS continues to run on `ups-aux`.
 
 ## Prepare the image and Backup registration
 
-From the homelab checkout root on the operator workstation, publish the
-image to a registry that the Trust node can pull from. Use the trusted
-registry and repository you choose in place of `REGISTRY/REPOSITORY`.
-
-```sh
-docker buildx build --platform linux/arm64 --push \
-  --file clusters/trust/containers/talos-kms/Dockerfile \
-  --tag REGISTRY/REPOSITORY:$(git rev-parse --short HEAD) \
-  --metadata-file /tmp/talos-kms-image.json .
-jq -r '."containerimage.digest"' /tmp/talos-kms-image.json
-```
+From the homelab checkout root on the operator workstation, follow
+[Publish the first image](trust-zot.md#publish-the-first-image) to build
+and push the ARM64 adapter to Trust's Zot registry and record its digest.
 
 In `clusters/trust/tofu-workload/talos-kms.json`, set `image` to
-`REGISTRY/REPOSITORY@sha256:...` using the reported digest. In
+`registry.k8s-aux.simlun.se/homelab/talos-kms@sha256:...` using that digest. In
 `clusters.backup.nodes`, add the first Backup node's actual Talos hardware
 UUID as the key and its static early-boot IP as the value. Commit those
 non-secret settings as part of the deployment. An empty node map leaves
 that cluster undeployed.
 
 Create a UniFi internal DNS record for `kms-backup.k8s-aux.simlun.se`
-pointing to `10.10.0.201`. The chart requests that IP from Trust MetalLB
+pointing to `10.10.0.202`. The chart requests that IP from Trust MetalLB
 and issues a public TLS certificate with the existing production
 cert-manager issuer. The Service preserves the client IP. The adapter
 checks the configured source-IP and UUID pair before each RPC. The
@@ -59,7 +51,7 @@ make -C clusters/trust trust-kubectl \
   KUBECTL_ARGS='-n talos-kms get service/talos-backup'
 ```
 
-Expect the Service at `10.10.0.201`. The rollout confirms the TLS listener
+Expect the Service at `10.10.0.202`. The rollout confirms the TLS listener
 is ready. The first Backup boot verifies OpenBao login and actual unlock.
 Each RPC exchanges the current projected pod identity for a short-lived
 OpenBao batch token, then calls the cluster's scoped Transit endpoint.

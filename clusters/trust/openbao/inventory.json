@@ -13,6 +13,20 @@
       "consumers": ["ESO negative access test"],
       "strategy": "generate",
       "recovery": "Regenerate if missing"
+    },
+    {
+      "path": "trust/zot/publisher-password",
+      "owner": "Trust operator",
+      "consumers": ["Zot image publishers"],
+      "strategy": "zot-password",
+      "recovery": "Restore from OpenBao backup. If both Zot entries are absent, seed a new pair."
+    },
+    {
+      "path": "trust/zot/publisher-verifier",
+      "owner": "Trust operator",
+      "consumers": ["Zot via External Secrets Operator"],
+      "strategy": "zot-htpasswd",
+      "recovery": "Derive again from the publisher password if the verifier has never been created."
     }
   ]
 }

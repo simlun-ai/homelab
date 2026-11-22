@@ -18,7 +18,7 @@ make -C clusters/trust openbao-secrets-bootstrap
 
 Expect the `external-secrets` namespace and Helm release in the plan.
 Bootstrap uses the existing wrapped OpenBao root credential to create or
-reconcile the mount, policies, and smoke-test role. It leaves existing KV
+reconcile the mount, policies, and ESO roles. It leaves existing KV
 entries intact. The inventory commands use that credential to mint a
 five-minute token scoped to metadata reads and, for seeding, creation.
 

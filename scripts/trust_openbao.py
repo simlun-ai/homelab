@@ -437,7 +437,7 @@ def main() -> int:
                         tofu.SCOPE / "openbao/bootstrap.sh",
                     )
                     print(
-                        "Configured OpenBao workload KV and ESO smoke-test access.",
+                        "Configured OpenBao workload KV and ESO access.",
                         flush=True,
                     )
                 elif restore:

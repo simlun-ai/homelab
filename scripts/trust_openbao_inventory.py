@@ -4,6 +4,8 @@ import argparse
 import json
 import re
 import secrets as random
+import shutil
+import subprocess
 import sys
 from collections.abc import Callable
 from contextlib import closing
@@ -17,6 +19,8 @@ import trust_openbao  # noqa: E402
 HOST = "bao.k8s-aux.simlun.se"
 MOUNT = "workload-kv"
 INVENTORY = trust_openbao.tofu.SCOPE / "openbao/inventory.json"
+ZOT_PASSWORD = "trust/zot/publisher-password"
+ZOT_VERIFIER = "trust/zot/publisher-verifier"
 Api = Callable[[str, str, dict[str, object] | None], object]
 
 
@@ -60,7 +64,16 @@ def inventory(path: Path) -> dict[str, str]:
                 if (
                     not re.fullmatch(r"trust/(?:[a-z0-9-]+/)*[a-z0-9-]+", key)
                     or key in result
-                    or strategy not in ("generate", "operator-input", "restore")
+                    or strategy
+                    not in (
+                        "generate",
+                        "operator-input",
+                        "restore",
+                        "zot-password",
+                        "zot-htpasswd",
+                    )
+                    or (strategy == "zot-password" and key != ZOT_PASSWORD)
+                    or (strategy == "zot-htpasswd" and key != ZOT_VERIFIER)
                 ):
                     raise ValueError("Invalid or duplicate OpenBao inventory entry")
                 result[key] = strategy
@@ -99,18 +112,66 @@ def state(request: Api, key: str) -> str:
     raise ValueError("Invalid OpenBao KV metadata")
 
 
+def zot_password(request: Api) -> str:
+    result = request("GET", f"{MOUNT}/data/{ZOT_PASSWORD}", None)
+    match result:
+        case {"data": {"data": {"value": str() as password}}} if re.fullmatch(
+            r"[A-Za-z0-9_-]{43}", password
+        ):
+            return password
+        case _:
+            raise ValueError("Invalid Zot publisher password entry")
+
+
+def zot_verifier(request: Api) -> str:
+    htpasswd = shutil.which("htpasswd")
+    if htpasswd is None:
+        raise ValueError("Missing htpasswd; run make -C clusters/trust tools")
+    verifier = subprocess.run(
+        [htpasswd, "-niB", "-C", "12", "publisher"],
+        input=zot_password(request).encode("ascii") + b"\n",
+        capture_output=True,
+        check=True,
+        timeout=15,
+    ).stdout.rstrip(b"\n")
+    if not re.fullmatch(rb"publisher:\$2[aby]\$12\$[./A-Za-z0-9]{53}", verifier):
+        raise ValueError("htpasswd returned an invalid Zot verifier")
+    return verifier.decode("ascii") + "\n"
+
+
 def populate(request: Api, entries: dict[str, str], *, seed: bool) -> bool:
     ready = True
     for key, strategy in entries.items():
         status = state(request, key)
-        if status == "missing" and strategy == "generate" and seed:
+        if (
+            status == "missing"
+            and strategy == "zot-password"
+            and state(request, ZOT_VERIFIER) != "missing"
+        ):
+            status = "recover"
+        if (
+            status == "missing"
+            and strategy == "zot-htpasswd"
+            and state(request, ZOT_PASSWORD) != "present"
+        ):
+            status = "waiting-for-password"
+        if (
+            status == "missing"
+            and strategy in ("generate", "zot-password", "zot-htpasswd")
+            and seed
+        ):
+            field, value = (
+                ("htpasswd", zot_verifier(request))
+                if strategy == "zot-htpasswd"
+                else ("value", random.token_urlsafe(32))
+            )
             try:
                 request(
                     "POST",
                     f"{MOUNT}/data/{key}",
                     {
                         "options": {"cas": 0},
-                        "data": {"value": random.token_urlsafe(32)},
+                        "data": {field: value},
                     },
                 )
                 status = "created"
@@ -119,7 +180,7 @@ def populate(request: Api, entries: dict[str, str], *, seed: bool) -> bool:
                 if error.status not in (400, 403) or state(request, key) != "present":
                     raise
                 status = "present"
-        if status == "missing" and strategy != "generate":
+        if status == "missing" and strategy in ("operator-input", "restore"):
             status = strategy
         print(f"{key}: {status}")
         ready = status in ("present", "created") and ready
@@ -133,7 +194,9 @@ def operator_token(policy: str) -> str:
     unwrap = helpers.executable(
         Path(sys.executable).with_name("homelab-unwrap"), "homelab-unwrap"
     )
-    print("Touch the YubiKey to authorize a short-lived OpenBao inventory token.")
+    print(
+        "Touch the YubiKey to authorize a short-lived OpenBao token.", file=sys.stderr
+    )
     with helpers.hsm_progress_terminal() as terminal:
         root = helpers.recover_bundle(
             unwrap, record=record, key_id=key_id, stderr=terminal
@@ -153,10 +216,21 @@ def operator_token(policy: str) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("check", "seed"))
+    parser.add_argument("action", choices=("check", "seed", "zot-publisher"))
     args = parser.parse_args()
     try:
         trust_openbao.secrets.harden()
+        if args.action == "zot-publisher":
+            trust_openbao.secrets.require_pipe()
+            token = operator_token("trust-zot-publisher")
+
+            def read_publisher(
+                method: str, path: str, payload: dict[str, object] | None
+            ) -> object:
+                return api(token, method, path, payload)
+
+            print(zot_password(read_publisher))
+            return 0
         entries = inventory(INVENTORY)
         token = operator_token(f"trust-workload-{args.action}")
 
@@ -168,7 +242,12 @@ def main() -> int:
         return 0 if populate(request, entries, seed=args.action == "seed") else 1
     except APIError as error:
         print(str(error), file=sys.stderr)
-    except (HTTPException, OSError, RuntimeError, ValueError, KeyboardInterrupt):
+    except (ValueError, subprocess.SubprocessError):
+        print(
+            "OpenBao inventory operation stopped. Check the credential, htpasswd, and the runbook.",
+            file=sys.stderr,
+        )
+    except (HTTPException, OSError, RuntimeError, KeyboardInterrupt):
         print(
             "OpenBao inventory operation stopped. Check setup and the runbook.",
             file=sys.stderr,

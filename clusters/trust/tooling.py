@@ -5,6 +5,8 @@ import hashlib
 import os
 import platform
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 import tomllib
@@ -160,13 +162,50 @@ def install(tool: str, url: str, checksum: str) -> None:
             extracted.unlink(missing_ok=True)
 
 
+def htpasswd(action: str) -> None:
+    """Provision the distro utility used to generate Zot's bcrypt verifier."""
+    if shutil.which("htpasswd") is None:
+        if action == "check":
+            raise ValueError("Missing htpasswd; run make -C clusters/trust tools")
+        apt = shutil.which("apt-get")
+        pacman = shutil.which("pacman")
+        if apt:
+            commands = (
+                [apt, "update"],
+                [apt, "install", "-y", "--no-install-recommends", "apache2-utils"],
+            )
+        elif pacman:
+            commands = ([pacman, "-S", "--needed", "apache"],)
+        else:
+            raise ValueError(
+                "Install the Linux distribution package that provides htpasswd, then rerun make tools"
+            )
+        prefix: list[str] = []
+        if os.geteuid() != 0:
+            sudo = shutil.which("sudo")
+            if sudo is None:
+                raise ValueError(
+                    "Installing the htpasswd system package requires root or sudo"
+                )
+            prefix = [sudo, "--"]
+        progress("Installing htpasswd from the workstation package manager")
+        for command in commands:
+            subprocess.run([*prefix, *command], check=True)
+        if shutil.which("htpasswd") is None:
+            raise ValueError("htpasswd is unavailable after installation")
+    progress("Verified htpasswd is available")
+
+
 def tools(action: str, selected: tuple[str, ...] | None = None) -> None:
     progress("Detecting operator platform and architecture")
     arch = architecture()
     progress(f"Selected linux/{arch}; action={action}")
     if (SCOPE / "bin").is_symlink():
         raise ValueError("Tool directory must not be a symlink")
-    for tool in selected or tuple(tool for tool in PINS if tool != "tofu"):
+    for tool in selected or ("talosctl", "kubectl", "htpasswd"):
+        if tool == "htpasswd":
+            htpasswd(action)
+            continue
         url, checksum = specification(tool, arch)
         if not verified(SCOPE / "bin" / tool, checksum, url):
             if action == "check":
@@ -181,11 +220,17 @@ def tools(action: str, selected: tuple[str, ...] | None = None) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("install", "check"))
-    parser.add_argument("--tool", choices=tuple(PINS))
+    parser.add_argument("--tool", choices=(*PINS, "htpasswd"))
     args = parser.parse_args()
     try:
         tools(args.action, (args.tool,) if args.tool else None)
-    except (OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
+    except (
+        OSError,
+        ValueError,
+        KeyError,
+        subprocess.CalledProcessError,
+        zipfile.BadZipFile,
+    ) as exc:
         print(f"Trust tooling failed: {exc}", file=sys.stderr)
         return 1
     return 0

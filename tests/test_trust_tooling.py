@@ -113,14 +113,13 @@ class TrustToolingTests(unittest.TestCase):
             binary.with_suffix(".source").write_text(url + "\n")
             with (
                 patch.object(module, "SCOPE", scope),
-                patch.object(module, "PINS", {"talosctl": "talos"}),
                 patch.object(module, "architecture", return_value="amd64"),
                 patch.object(module, "specification", return_value=(url, checksum)),
                 patch.object(module, "version", return_value="v2.3.4"),
                 patch.object(module.urllib.request, "urlopen") as download,
             ):
-                module.tools("install")
-                module.tools("check")
+                module.tools("install", ("talosctl",))
+                module.tools("check", ("talosctl",))
                 download.assert_not_called()
 
     def test_symlinked_tool_directory_is_rejected(self) -> None:

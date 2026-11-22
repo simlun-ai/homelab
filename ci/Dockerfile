@@ -114,6 +114,7 @@ COPY --link scripts/trust_talos_secrets.py scripts/trust_talos_config.py scripts
 COPY --link scripts/homelab/trust_kms/registration.py ./scripts/homelab/trust_kms/
 COPY --link clusters/trust/ ./clusters/trust/
 COPY --from=trust-tools /project/clusters/trust/bin/ ./clusters/trust/bin/
+RUN python3 -I -B clusters/trust/tooling.py install --tool htpasswd
 RUN --network=none make -C clusters/trust config-rehearse
 
 FROM trust-config-rehearsal AS trust-credentials-rehearsal
