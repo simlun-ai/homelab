@@ -17,7 +17,8 @@
 - **Verified (2026-11-21):** The staged [OpenBao workload](trust-openbao.md) is installed. Its Raft claim is bound, the production-issuer Certificate is ready, and MetalLB assigned `10.10.0.200:443`. The follow-up plan reported no changes and the encrypted workload state was published.
 - **Verified (2026-11-21):** [OpenBao initialization and YubiKey-backed unseal](trust-openbao-initialize.md) passed on the staged server. Both wrapped bootstrap records were verified, published, and pinned.
 - **Verified (2026-11-21):** The [OpenBao network listener](trust-openbao-network.md) is active through MetalLB. Local DNS and production TLS returned HTTP 200 from the operator workstation. The follow-up plan was clean and encrypted workload state serial 2 was published. Pi and Metal client checks are deferred until their VLANs are set up.
-- **Current next milestone:** Enable [scheduled Trust OpenBao backups and the daily restore check](trust-openbao-backup-operations.md) on the separate rehearsal Helm release. The [wrapped initial root token](../security/openbao-unseal.md#manual-root-token-use) is retained for occasional manual bootstrap.
+- **Verified (2026-11-22):** A manually triggered OpenBao backup to R2 and restore into the separate rehearsal Helm release passed with matching restic snapshot IDs and Raft digests. The restored instance was sealed. Both CronJobs were enabled and the follow-up OpenTofu plan showed no changes. The [wrapped initial root token](../security/openbao-unseal.md#manual-root-token-use) is retained for occasional manual bootstrap.
+- [ ] Verify a [scheduled OpenBao backup and restore pair](trust-openbao-backup-operations.md#verify-a-scheduled-backup-and-restore). Record the run date, matching snapshot ID and digest, and sealed status.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the

@@ -42,3 +42,10 @@ complete=$(restic --no-cache -o s3.region=auto snapshots --json \
     --tag "trust-openbao-complete,$run_tag")
 id=$(printf '%s' "$complete" | /tools/jq -er 'select(length == 1) | .[0].id')
 printf 'BACKUP COMPLETE id=%s created_at=%s sha256=%s\n' "$id" "$created_at" "$digest"
+
+printf 'RESTIC CHECK STARTED id=%s\n' "$id"
+if ! restic --no-cache -o s3.region=auto check; then
+    printf 'RESTIC CHECK FAILED id=%s\n' "$id" >&2
+    exit 1
+fi
+printf 'RESTIC CHECK PASSED id=%s\n' "$id"

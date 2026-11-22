@@ -1,7 +1,8 @@
 # Trust OpenBao snapshot and restore milestone
 
 Status on 2026-11-22. The [operator runbook](trust-openbao-backup-operations.md)
-covers separate backup and restore schedules. Live verification remains pending.
+covers separate backup and restore schedules. A manual backup and restore
+passed. Scheduled verification is tracked in the [Trust installation roadmap](02-trust.md#current-position).
 
 The backup CronJob in `openbao` takes an online native Raft snapshot and
 uploads it directly to R2 with restic. The separate restore CronJob runs at
@@ -9,6 +10,18 @@ uploads it directly to R2 with restic. The separate restore CronJob runs at
 rejects snapshots at least 24 hours old, and imports the snapshot into the
 dedicated `openbao-restore` Helm release. The rehearsal release is separate
 from production and can also be used for upgrade testing.
+
+## Restic repository maintenance
+
+The backup Job configuration runs `restic check` after publishing a completed snapshot.
+This verifies repository structure. The separate restore Job verifies
+the contents of the selected snapshot.
+
+- [ ] Choose retention for completed snapshots. The starting proposal is
+  to keep 30 days with `--keep-within 30d`.
+- [ ] Run `restic forget --prune` before the repository check after a successful
+  backup. Coordinate pruning with the read-only restore Job, which
+  does not take a repository lock, and with the offline copy procedure.
 
 ## Offline copy of R2
 

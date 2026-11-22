@@ -5,7 +5,8 @@ The Trust workload root deploys a backup CronJob in `openbao` and a separate
 The production OpenBao release keeps its existing values, Service, and Raft
 claim. The new release uses the same chart and single-node Raft configuration
 with a separate disposable `trust-zfs-rehearsal` claim, a loopback-only API,
-and a namespace-local cert-manager CA. Both schedules start suspended.
+and a namespace-local cert-manager CA. The Trust workload configuration
+enables both schedules.
 
 The backup runs at 03:00 and the restore at 05:00 Europe/Stockholm. The backup
 takes a native Raft snapshot and writes it to a private R2 repository with
@@ -107,23 +108,25 @@ make -C clusters/trust trust-kubectl \
   KUBECTL_ARGS='-n openbao wait --for=condition=complete job/openbao-restic-init --timeout=180s'
 ```
 
-## Enable and review the schedules
+## Verify a scheduled backup and restore
 
-```sh
-make -C clusters/trust trust-kubectl \
-  KUBECTL_ARGS="-n openbao patch cronjob openbao-backup --type=merge -p '{\"spec\":{\"suspend\":false}}'"
-make -C clusters/trust trust-kubectl \
-  KUBECTL_ARGS="-n openbao-restore patch cronjob openbao-restore --type=merge -p '{\"spec\":{\"suspend\":false}}'"
-```
+After 05:00 Europe/Stockholm, find the Jobs created by the 03:00 backup
+and 05:00 restore schedules.
 
 ```sh
 make -C clusters/trust trust-kubectl KUBECTL_ARGS='-n openbao get cronjob,jobs'
 make -C clusters/trust trust-kubectl KUBECTL_ARGS='-n openbao-restore get cronjob,jobs'
 ```
 
-Use the actual Job name from the output. Inspect `BACKUP COMPLETE` and
-`RESTORE PASSED` for the restic ID. Setup or image-download failures can be
-inspected in the Job's pod events.
+Use the actual scheduled Job names from the output. Check that both Jobs
+completed and that `BACKUP COMPLETE` and `RESTORE PASSED` report the same
+restic ID and Raft digest. Check that the restore reports `sealed=true`.
+Setup or image-download failures can be inspected in the Job's pod events.
+
+With repository maintenance deployed, the backup also logs
+`RESTIC CHECK PASSED`. A check failure marks the Job failed even if
+`BACKUP COMPLETE` was already logged. The published snapshot remains
+available to the restore Job.
 
 ```sh
 make -C clusters/trust trust-kubectl KUBECTL_ARGS='-n openbao logs job/BACKUP_JOB_NAME'
