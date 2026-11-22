@@ -133,8 +133,8 @@ configuration also remain pending. See the [draft KMS contract](security/trust-b
 Same-VLAN Trust/coordinator traffic requires host/switch admission consideration;
 inter-VLAN gateway rules alone do not isolate VLAN 10 peers.
 
-Backup, Pi, and Metal will each use a separate KMS endpoint on their UPS
-coordinator. Their names, addresses, and firewall rules are pending. See the
+Backup, Pi, and Metal will each use a separate HTTPS KMS endpoint hosted in
+Trust Kubernetes. Their names, addresses, and admission rules are pending. See the
 [adapter design](security/security.md#talos-kms-adapter).
 
 ### Trust KMS listener admission

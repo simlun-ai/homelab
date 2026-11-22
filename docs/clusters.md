@@ -16,11 +16,10 @@ Independent, single-node foundation. All other clusters depend on its services. 
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
 | Certificates | [cert-manager with Let's Encrypt and Cloudflare DNS-01](installation/trust-cert-manager.md) is installed in Trust infrastructure, with both issuers ready and staging DNS-01 issuance verified. Cross-cluster delivery is planned through the [certificate factory](#certificate-factory). |
 
-Backup, Pi, and Metal use separate [Talos KMS adapters](security/security.md#talos-kms-adapter)
-on `ups-aux`, `ups-pi`, and `ups-metal` respectively. All three call the shared
-OpenBao Transit backend in Trust for system-volume unlock. Trust uses its
-independent [YubiKey-backed KMS](security/security.md#trust-bootstrap-kms)
-on `ups-aux`.
+Trust Kubernetes will host separate [Talos KMS adapter deployments](security/security.md#talos-kms-adapter)
+for Backup, Pi, and Metal. All three use the shared OpenBao Transit backend
+for system-volume unlock. Trust uses its independent
+[YubiKey-backed KMS](security/security.md#trust-bootstrap-kms) on `ups-aux`.
 
 Trust's OS and data mirrors are planned. The [inventory](inventory.md#mirror-assignments)
 records the selected SSDs and their ATA device links.

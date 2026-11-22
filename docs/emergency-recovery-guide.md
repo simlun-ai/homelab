@@ -23,7 +23,7 @@ All entries must be non-secret.
 | Golden-key retrieval procedure reference | Level 1 Password Management system; exact retrieval steps outside this repository. Never record the key here. |
 | Auxiliary network and static hosts | `k8s-aux` (VLAN 10), `10.10.0.0/24`, gateway `10.10.0.1`. `ups-aux` is `10.10.0.5`, the Trust Talos node is `10.10.0.10`, and the Backup Talos node is `10.10.0.15`. |
 | Trust coordinator KMS endpoint, public TLS/DNS-01, preboot DNS/NTP, session controls | TBD; include service acquisition, independent wrapped-payload references, and coordinator rebuild instructions. |
-| KMS adapter endpoint, TLS trust, early-boot networking, transit key mapping/versions | TBD; include adapter acquisition and independent bootstrap-payload references. |
+| KMS adapter endpoint, TLS trust, early-boot networking, transit key mapping/versions | TBD. Include the Trust workload image and chart references and each deployment's Trust service account and OpenBao role. |
 | Per-device power-return limitations and manual startup procedure | TBD. |
 
 ## Required access and operating rules
@@ -108,7 +108,7 @@ OpenBao backups are online Raft snapshots backed up with restic by a job inside 
 3. For the rehearsal, start a single-replica OpenBao instance in a dedicated Trust namespace with separate disposable Raft storage and a loopback-only API. Keep production OpenBao on its existing claim. Use authenticated Kubernetes exec and keep the rehearsal isolated from production integrations. Exact launch commands and resource sizing remain TBD.
 4. Restore the snapshot with its corresponding seal/unseal material. Use the workstation helper and a touched YubiKey (or the software fallback) to unwrap and submit the required unseal material in memory. **Exact initialization, restore, and unseal ordering is TBD and must be validated; new-instance material may not unlock an older snapshot.**
 5. Verify recovery administration and read the known fixture from the restored instance. When transit is in use, verify decryption of previously sealed test material. Check production OpenBao health and remove the rehearsal resources and disposable storage.
-6. For full recovery, restore and unseal OpenBao in Trust and verify the required Transit key versions. Restore each dependent cluster's KMS adapter on its coordinator and verify its independent OpenBao login, early-boot network access, and TLS trust before starting nodes. An older OpenBao snapshot may lack Transit keys required by newer disks. Trust unlocks using its independent coordinator KMS.
+6. For full recovery, restore and unseal OpenBao in Trust and verify the required Transit key versions. An older OpenBao snapshot may lack keys required by newer disks. Restore the KMS adapter deployments in Trust Kubernetes and verify each deployment's OpenBao login, endpoint, early-boot network access, and TLS trust before starting dependent nodes. Trust unlocks using its independent coordinator KMS.
 7. After foundation services are restored and verified, start dependent clusters manually, one machine at a time, checking KMS unlock, dependencies, and storage.
 
 ## Complete before relying on this guide
