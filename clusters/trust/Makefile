@@ -6,8 +6,8 @@ HSM_VENV ?= $(HOME)/.local/share/homelab/venvs/hsm
 .PHONY: help tools check-tools render check-rendered validate secrets-rehearse config-rehearse credentials-rehearse recovery-rehearse admin-inspect admin-rehearse
 help:
 	@printf '%s\n' \
-	  'tools: download and verify pinned talosctl and kubectl (Linux amd64/arm64)' \
-	  'check-tools: verify installed binaries offline' \
+	  'tools: install pinned talosctl and kubectl plus the distro htpasswd utility' \
+	  'check-tools: verify pinned binaries and htpasswd offline' \
 	  'schematic-id SCHEMATIC=path.yaml: write the Image Factory ID to a sibling .id file' \
 	  'installer-image SCHEMATIC=path.yaml: resolve and verify the pinned ARM64 installer' \
 	  'render: regenerate committed public Talos YAML' \
@@ -204,6 +204,10 @@ openbao-restore-unseal openbao-restore-shell openbao-backup-auth openbao-jobs-cr
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" \
 	  $(patsubst openbao-%,%,$@) --ram-root "$(RAM_ROOT)"
 
-.PHONY: openbao-secrets-zot-publisher
+.PHONY: openbao-secrets-zot-publisher check-htpasswd
+check-htpasswd:
+	@$(PYTHON) -I -B "$(SCOPE)/tooling.py" check --tool htpasswd
+
+openbao-secrets-seed: check-htpasswd
 openbao-secrets-check openbao-secrets-seed openbao-secrets-zot-publisher:
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao_inventory.py" $(patsubst openbao-secrets-%,%,$@)

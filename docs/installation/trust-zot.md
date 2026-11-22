@@ -28,7 +28,9 @@ The Zot pod waits for its certificate and the publisher verifier supplied by ESO
 
 ## Enroll the publisher
 
-Install Apache `htpasswd` on the workstation (`apache2-utils` on Debian).
+Run `make -C clusters/trust tools` on the workstation to provision
+`htpasswd`. On Debian and Ubuntu it comes from `apache2-utils`, and on
+Arch it comes from `apache`. A missing package may prompt for sudo.
 With OpenBao unsealed, reconcile its Zot role and seed the workload
 inventory. OpenBao holds the publisher password and a separate bcrypt
 verifier entry. ESO can read only the verifier and syncs it to the

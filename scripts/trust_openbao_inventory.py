@@ -126,7 +126,7 @@ def zot_password(request: Api) -> str:
 def zot_verifier(request: Api) -> str:
     htpasswd = shutil.which("htpasswd")
     if htpasswd is None:
-        raise ValueError("Install htpasswd to seed the Zot publisher verifier")
+        raise ValueError("Missing htpasswd; run make -C clusters/trust tools")
     verifier = subprocess.run(
         [htpasswd, "-niB", "-C", "12", "publisher"],
         input=zot_password(request).encode("ascii") + b"\n",
