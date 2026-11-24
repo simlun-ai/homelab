@@ -3,13 +3,13 @@
 ## Summary
 
 - **Total disk capacity before mirroring:** 115,244 GB.
-- **Total nominal usable capacity after mirroring:** 62,264 GB, excluding spare drives and cold-spare disks.
-- **Total spare disk capacity:** 15,768 GB across 8 spare disks.
+- **Total nominal usable capacity after mirroring:** 62,212 GB, excluding spare drives and cold-spare disks.
+- **Total spare disk capacity:** 15,640 GB across 7 spare disks.
 - **Total RAM:** 251 GB documented, including the three 1 GB shutdown coordinators, plus unspecified RAM in the old NAS computer.
 - **Total computers:** 20, including two cold spares, three shutdown coordinators and the old NAS computer.
-- **Total disks:** 77, including eight spare drives.
+- **Total disks:** 77, including seven spare drives.
 
-Raw disk capacity, RAM and equipment counts include cold spares and all drives listed under Spare Drives and Other disks. Usable capacity excludes the eight spare drives (15,768 GB) and the M920x cold spare's disks (512 GB after its OS mirror).
+Raw disk capacity, RAM and equipment counts include cold spares and all drives listed under Spare Drives and Other disks. Usable capacity excludes the seven spare drives (15,640 GB) and the M920x cold spare's disks (512 GB after its OS mirror).
 
 Capacity uses decimal units (1 TB = 1,000 GB). Each mirror contributes the capacity of its smallest member. Figures include OS disks and exclude filesystem overhead and any additional Piraeus replication. Unlisted boot media are not counted.
 
@@ -111,7 +111,7 @@ record the original hardware.
 
 - **Compute:** Lenovo ThinkCentre M93p Tiny.
 - **RAM:** 8 GB.
-- **OS drive:** Intel 180 GB SSD.
+- **OS drives (planned):** RAID1 using the 180 GB Intel SSD and the 128 GB Intenso Premium Portable USB SSD (128 GB nominal usable).
 - **Storage:** ZFS mirror (RAID 1), consisting of two 8 TB Samsung USB HDDs, each with a 3.5-inch form factor.
 - **Network:** `k8s-aux` (VLAN 10), static `10.10.0.15`.
 
@@ -284,7 +284,6 @@ on 2026-11-04. Slot 1 was preserved. Detailed acceptance results belong in
 - Patriot P220 128 GB SATA SSD.
 - Silicon Power A5X 256 GB SATA SSD.
 - Fanxiang 256 GB NVMe SSD.
-- Intenso 128 GB Portable SSD Premium USB.
 - Seagate Expansion 3.5-inch 8 TB USB HDD.
 - Seagate Portable Drive 2.5-inch 4 TB USB HDD.
 

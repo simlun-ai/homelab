@@ -56,7 +56,7 @@ and service reload behavior are later work.
 
 ## Backup
 
-Single-node cluster on the [Lenovo ThinkCentre M93p Tiny](inventory.md#backup), using its manually prepared ZFS mirror. Depends on Trust. Garage is planned for backup storage and will receive its TLS certificate from Trust's [certificate factory](#certificate-factory). Backup clients, retention, and storage integration remain TBD in the [backup design](backup-and-restore.md#other-backup-coverage).
+Single-node cluster on the [Lenovo ThinkCentre M93p Tiny](inventory.md#backup), with a planned RAID1 OS mirror and a manually prepared ZFS data mirror. Depends on Trust. Garage is planned for backup storage and will receive its TLS certificate from Trust's [certificate factory](#certificate-factory). Backup clients, retention, and storage integration remain TBD in the [backup design](backup-and-restore.md#other-backup-coverage).
 
 ## Shared infrastructure
 
