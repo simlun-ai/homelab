@@ -115,9 +115,23 @@ record the original hardware.
 - **CPU (BIOS):** Intel Core i5-4570T @ 2.90 GHz.
 - **RAM:** 8 GB.
 - **OS drives (planned):** RAID1 using the 180 GB Intel SSD and the 128 GB Intenso Premium Portable USB SSD (128 GB nominal usable).
-- **Storage:** ZFS mirror (RAID 1), consisting of two 8 TB Samsung USB HDDs, each with a 3.5-inch form factor.
+- **Data drives (planned):** ZFS mirror using the two 8 TB Seagate Expansion USB HDDs identified below.
 - **Network:** `k8s-aux` (VLAN 10), planned static `10.10.0.15`.
-- **Talos ISO console observation (2026-11-24, v1.14.5):** Hardware UUID `038e1b94-a0f6-11e4-9c0a-9d5496c01100`. DHCP address `10.10.0.242/24`, gateway and DNS `10.10.0.1`, and time synchronization via `time.cloudflare.com`. Talos halted during boot after detecting an existing installation. NIC and disk identifiers remain to be collected.
+- **Talos maintenance discovery (2026-11-24, v1.14.5 amd64):** Hardware UUID `038e1b94-a0f6-11e4-9c0a-9d5496c01100`, BIOS `FBKTA5AUS`. Wired Intel I217-LM (`e1000e`) on `eno1` (alternate name `enp0s25`), permanent MAC `44:8a:5b:e7:d7:04`, link up at 1 Gbit/s full duplex. Observed DHCP address `10.10.0.242/24` and default gateway `10.10.0.1`. The ISO console also reported DNS `10.10.0.1` and time synchronization via `time.cloudflare.com`.
+
+### Disk identities
+
+| Planned role | Model reported by Talos | Observed device | Bytes | Observed `/dev/disk/by-id/` link |
+| --- | --- | --- | ---: | --- |
+| Talos OS (RAID1) | Intel SSDSC2BF180A4L (SATA) | `/dev/sda` | 180,045,766,656 | `ata-INTEL_SSDSC2BF180A4L_CVDA431008U01802GN` |
+| Talos OS (RAID1) | Intenso Portable SSD (USB) | `/dev/sde` | 128,035,676,160 | `usb-Intenso_Portable_SSD_20230210306DC-0:0` |
+| ZFS data mirror | Seagate Expansion HDD (USB) | `/dev/sdb` | 8,001,563,221,504 | `usb-Seagate_Expansion_HDD_00000000NAC6HP6W-0:0` |
+| ZFS data mirror | Seagate Expansion SW (USB) | `/dev/sdc` | 8,001,563,221,504 | `usb-Seagate_Expansion_SW_00000000NAC85XEH-0:0` |
+
+Talos also reported `wwn-0x55cd2e404bd49897` for the Intel SSD and
+`ata-INTENSO_SSD_AA000000000000004056` for the Intenso SSD. The Seagate USB
+links identify the attached enclosures. The SanDisk installer was
+`/dev/sdd` during this boot. The `/dev/sd*` names can change between boots.
 
 ## Shared infrastructure
 
