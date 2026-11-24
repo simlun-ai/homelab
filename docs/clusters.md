@@ -70,6 +70,8 @@ Three control-plane nodes and two workers, with a separate cold spare. Each acti
 
 Pi will host the shared `kube-prometheus-stack` (Prometheus, Grafana, and Alertmanager) across its three control-plane nodes, with Telegram notifications. Persistent monitoring data will use Piraeus volumes replicated across control-plane nodes. Pi is intended to stay on, so monitoring can remain available while Backup is offline.
 
+Loki deployment is TBD. If added, it will run on Pi as part of the central monitoring stack.
+
 Trust and Backup will scrape metrics locally with lightweight collectors and send them to Pi using Prometheus remote write once the stack is running. Track the rollout in the [installation TODO list](installation/README.md#main-todo-list).
 
 ## Metal

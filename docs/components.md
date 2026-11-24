@@ -17,7 +17,7 @@ Trust ran ZFS extension `2.4.4-v1.14.5` and loaded the kernel module on
 | [MetalLB](installation/trust-metallb.md) | v0.16.2 | v0.16.2 | v0.16.0 |  |  |
 | Traefik | v3.7.14 | v3.7.14 |  |  |  |
 | kube-prometheus-stack (Helm chart) | v92.3.0 |  |  | v92.3.0 |  |
-| Loki | v3.7.8 |  |  |  |  |
+| Loki | v3.7.8 |  |  | TBD (if deployed) |  |
 | ZFS LocalPV | v2.11.2 | v2.11.2 |  |  |  |
 | [OpenBao](installation/trust-openbao.md) | v2.7.3 | v2.7.3 (Helm chart 0.30.8) |  |  |  |
 | [Zot](installation/trust-zot.md) | v2.1.23 | Verified (Helm chart 0.1.134) |  |  |  |
