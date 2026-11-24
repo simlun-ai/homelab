@@ -34,7 +34,7 @@ mechanism separately before installation.
 - [x] **Verified (2026-11-22):** [Trust workload secret delivery](trust-workload-secrets.md) synced the allowed OpenBao KV entry, received HTTP 403 on the neighboring entry, and recreated the allowed Kubernetes Secret after deletion.
 - [x] **Verified (2026-11-22):** [Zot on Trust](trust-zot.md) serves the published ARM64 KMS adapter. Trust pulled the image anonymously by digest and imported the adapter before and after a Zot pod replacement.
 - The adapter core passed a local TLS gRPC round trip with disposable OpenBao 2.7.3, including node binding, key rotation, and backend failure.
-- [ ] [Deploy the shared Talos KMS adapter](trust-talos-kms.md) in Trust Kubernetes for Backup.
+- [x] **Deployed:** The [Trust-hosted Talos KMS adapter for Backup](trust-talos-kms.md) applied as one new Helm release. The `talos-backup` Deployment rolled out and MetalLB assigned `10.10.0.202:443`. The first encrypted Backup boot will verify actual unlock.
 - [ ] Boot one Backup Talos node and verify that encrypted `STATE` and `EPHEMERAL` unlock through that endpoint. Use this boot to verify early networking, DNS, time, TLS, and KMS reachability. Use the Trust rehearsal below for troubleshooting if needed.
 - [ ] Return to the remaining Trust installation work after this boot passes. Defer the rest of the Backup installation and the Pi and Metal adapter rollouts.
 
