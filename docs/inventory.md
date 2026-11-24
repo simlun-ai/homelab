@@ -116,7 +116,8 @@ record the original hardware.
 - **RAM:** 8 GB.
 - **OS drives (planned):** RAID1 using the 180 GB Intel SSD and the 128 GB Intenso Premium Portable USB SSD (128 GB nominal usable).
 - **Storage:** ZFS mirror (RAID 1), consisting of two 8 TB Samsung USB HDDs, each with a 3.5-inch form factor.
-- **Network:** `k8s-aux` (VLAN 10), static `10.10.0.15`.
+- **Network:** `k8s-aux` (VLAN 10), planned static `10.10.0.15`.
+- **Talos ISO console observation (2026-11-24, v1.14.5):** Hardware UUID `038e1b94-a0f6-11e4-9c0a-9d5496c01100`. DHCP address `10.10.0.242/24`, gateway and DNS `10.10.0.1`, and time synchronization via `time.cloudflare.com`. Talos halted during boot after detecting an existing installation. NIC and disk identifiers remain to be collected.
 
 ## Shared infrastructure
 
