@@ -133,6 +133,10 @@ Talos also reported `wwn-0x55cd2e404bd49897` for the Intel SSD and
 links identify the attached enclosures. The SanDisk installer was
 `/dev/sdd` during this boot. The `/dev/sd*` names can change between boots.
 
+The operator cleared the Intenso's GPT and protective MBR signatures on the
+workstation, then confirmed that Backup reached Talos maintenance mode from
+the installer USB with the Intenso reconnected.
+
 ## Shared infrastructure
 
 Shared exclusively by the **Trust and Backup clusters**:
