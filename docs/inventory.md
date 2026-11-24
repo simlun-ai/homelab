@@ -115,13 +115,13 @@ record the original hardware.
 - **CPU (BIOS):** Intel Core i5-4570T @ 2.90 GHz.
 - **RAM:** 8 GB.
 - **OS drives (planned):** RAID1 using the 180 GB Intel SSD and the 128 GB Intenso Premium Portable USB SSD (128 GB nominal usable).
-- **Data drives (planned):** ZFS mirror using the two 8 TB Seagate Expansion USB HDDs identified below.
+- **Data drives (planned):** ZFS mirror using the two 8 TB 3.5-inch Seagate Expansion USB HDDs identified below.
 - **Network:** `k8s-aux` (VLAN 10), planned static `10.10.0.15`.
 - **Talos maintenance discovery (2026-11-24, v1.14.5 amd64):** Hardware UUID `038e1b94-a0f6-11e4-9c0a-9d5496c01100`, BIOS `FBKTA5AUS`. Wired Intel I217-LM (`e1000e`) on `eno1` (alternate name `enp0s25`), permanent MAC `44:8a:5b:e7:d7:04`, link up at 1 Gbit/s full duplex. Observed DHCP address `10.10.0.242/24` and default gateway `10.10.0.1`. The ISO console also reported DNS `10.10.0.1` and time synchronization via `time.cloudflare.com`.
 
 ### Disk identities
 
-| Planned role | Model reported by Talos | Observed device | Bytes | Observed `/dev/disk/by-id/` link |
+| Planned role | Model and transport | Observed device | Bytes | Observed `/dev/disk/by-id/` link |
 | --- | --- | --- | ---: | --- |
 | Talos OS (RAID1) | Intel SSDSC2BF180A4L (SATA) | `/dev/sda` | 180,045,766,656 | `ata-INTEL_SSDSC2BF180A4L_CVDA431008U01802GN` |
 | Talos OS (RAID1) | Intenso Portable SSD (USB) | `/dev/sde` | 128,035,676,160 | `usb-Intenso_Portable_SSD_20230210306DC-0:0` |
