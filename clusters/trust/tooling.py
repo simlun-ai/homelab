@@ -220,7 +220,9 @@ def tools(
                     + ("tofu-tools" if tool == "tofu" else "tools")
                 )
             install(tool, url, checksum, scope)
-        print(f"Verified {tool} {version(PINS[tool], scope)} for linux/{arch}", flush=True)
+        print(
+            f"Verified {tool} {version(PINS[tool], scope)} for linux/{arch}", flush=True
+        )
 
 
 def main() -> int:
