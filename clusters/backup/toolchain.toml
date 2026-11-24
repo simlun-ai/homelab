@@ -1,0 +1,6 @@
+# SHA-256 digests are from the pinned Talos release's GitHub assets.
+[talosctl]
+url = "https://github.com/siderolabs/talos/releases/download/{version}/talosctl-linux-{arch}"
+[talosctl.sha256]
+amd64 = "ff432b68986709e6b69c563a08a2ced4232d5196b0dccd6d2e783e9d714d7d7d"
+arm64 = "dfd3aa33c3159810e216fc39afb685d4d120c8f2728e017d8c7f7635d3139382"

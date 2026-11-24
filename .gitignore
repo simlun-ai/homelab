@@ -12,6 +12,9 @@ dist/
 
 /clusters/trust/boot/
 
+/clusters/backup/bin/
+/clusters/backup/boot/
+
 /clusters/trust/tofu/.terraform/
 /clusters/trust/tofu/*.tfstate*
 

@@ -34,10 +34,11 @@ def architecture() -> str:
     return aliases[machine]
 
 
-def version(component: str) -> str:
+def version(component: str, scope: Path | None = None) -> str:
     """Read an unquoted release pin from the scope's small versions file."""
-    progress(f"Reading {component} release pin from {SCOPE / 'versions.yaml'}")
-    source = (SCOPE / "versions.yaml").read_text(encoding="utf-8")
+    pins = (scope or SCOPE) / "versions.yaml"
+    progress(f"Reading {component} release pin from {pins}")
+    source = pins.read_text(encoding="utf-8")
     matches = re.findall(
         rf"(?m)^{re.escape(component)}:[ \t]*\n"
         r"[ \t]+version:[ \t]*(v[0-9]+\.[0-9]+\.[0-9]+)[ \t]*$",
@@ -48,11 +49,12 @@ def version(component: str) -> str:
     return matches[0]
 
 
-def specification(tool: str, arch: str) -> tuple[str, str]:
+def specification(tool: str, arch: str, scope: Path | None = None) -> tuple[str, str]:
+    scope = scope or SCOPE
     progress(f"Reading download URL and SHA-256 for {tool}/{arch}")
-    with (SCOPE / "toolchain.toml").open("rb") as source:
+    with (scope / "toolchain.toml").open("rb") as source:
         entry = tomllib.load(source)[tool]
-    release = version(PINS[tool])
+    release = version(PINS[tool], scope)
     url = entry["url"].format(version=release, release=release[1:], arch=arch)
     checksum = entry["sha256"][arch]
     if not isinstance(url, str) or not url.startswith("https://"):
@@ -82,14 +84,15 @@ def verified(path: Path, checksum: str, url: str) -> bool:
     return matches
 
 
-def install(tool: str, url: str, checksum: str) -> None:
+def install(tool: str, url: str, checksum: str, scope: Path | None = None) -> None:
+    scope = scope or SCOPE
     archive = None
     if tool == "tofu":
-        with (SCOPE / "toolchain.toml").open("rb") as source:
+        with (scope / "toolchain.toml").open("rb") as source:
             archive = tomllib.load(source)["tofu"]["archive_sha256"][architecture()]
         if not isinstance(archive, str) or not re.fullmatch(r"[0-9a-f]{64}", archive):
             raise ValueError("Invalid OpenTofu ZIP SHA-256")
-    directory = SCOPE / "bin"
+    directory = scope / "bin"
     if directory.is_symlink():
         raise ValueError("Tool directory must not be a symlink")
     progress(f"Preparing download directory {directory}")
@@ -196,34 +199,40 @@ def htpasswd(action: str) -> None:
     progress("Verified htpasswd is available")
 
 
-def tools(action: str, selected: tuple[str, ...] | None = None) -> None:
+def tools(
+    action: str, selected: tuple[str, ...] | None = None, scope: Path | None = None
+) -> None:
+    scope = scope or SCOPE
     progress("Detecting operator platform and architecture")
     arch = architecture()
     progress(f"Selected linux/{arch}; action={action}")
-    if (SCOPE / "bin").is_symlink():
+    if (scope / "bin").is_symlink():
         raise ValueError("Tool directory must not be a symlink")
     for tool in selected or ("talosctl", "kubectl", "htpasswd"):
         if tool == "htpasswd":
             htpasswd(action)
             continue
-        url, checksum = specification(tool, arch)
-        if not verified(SCOPE / "bin" / tool, checksum, url):
+        url, checksum = specification(tool, arch, scope)
+        if not verified(scope / "bin" / tool, checksum, url):
             if action == "check":
                 raise ValueError(
-                    f"Missing or changed {tool}; run make -C clusters/trust "
+                    f"Missing or changed {tool}; run make -C clusters/{scope.name} "
                     + ("tofu-tools" if tool == "tofu" else "tools")
                 )
-            install(tool, url, checksum)
-        print(f"Verified {tool} {version(PINS[tool])} for linux/{arch}", flush=True)
+            install(tool, url, checksum, scope)
+        print(f"Verified {tool} {version(PINS[tool], scope)} for linux/{arch}", flush=True)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("install", "check"))
     parser.add_argument("--tool", choices=(*PINS, "htpasswd"))
+    parser.add_argument("--scope", type=Path, default=SCOPE)
     args = parser.parse_args()
+    if args.scope != SCOPE and args.tool not in PINS:
+        parser.error("--scope requires one pinned binary selected with --tool")
     try:
-        tools(args.action, (args.tool,) if args.tool else None)
+        tools(args.action, (args.tool,) if args.tool else None, args.scope)
     except (
         OSError,
         ValueError,
