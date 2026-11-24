@@ -110,6 +110,9 @@ record the original hardware.
 ## Backup
 
 - **Compute:** Lenovo ThinkCentre M93p Tiny.
+- **Machine type and model (BIOS):** `10AAS25M00`.
+- **System serial number (BIOS):** `S4K20298`.
+- **CPU (BIOS):** Intel Core i5-4570T @ 2.90 GHz.
 - **RAM:** 8 GB.
 - **OS drives (planned):** RAID1 using the 180 GB Intel SSD and the 128 GB Intenso Premium Portable USB SSD (128 GB nominal usable).
 - **Storage:** ZFS mirror (RAID 1), consisting of two 8 TB Samsung USB HDDs, each with a 3.5-inch form factor.
