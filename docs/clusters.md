@@ -4,6 +4,8 @@
 
 See the [network overview](network.md) for VLANs, IP allocations, and the CNI and load balancer plan. See [inventory.md](inventory.md) for hardware and disk assignments, [layout.md](layout.md) for tool scopes and provisioning, and [security.md](security/security.md) for secret handling and encryption.
 
+Each cluster will run its own Headlamp instance for Kubernetes visibility and management.
+
 ## Trust
 
 Independent, single-node foundation. All other clusters depend on its services. The intended Talos node policy allows workloads on the control-plane node, `trust-cp1`. Bootstrap, disk unlock, and OpenBao recovery use independently available credentials. Workloads that start after OpenBao can use its [workload secret delivery](installation/trust-workload-secrets.md).
@@ -12,7 +14,7 @@ Independent, single-node foundation. All other clusters depend on its services. 
 | --- | --- |
 | Ingress | Traefik. Trust's [MetalLB Layer 2 configuration](installation/trust-metallb.md) covers `10.10.0.200`–`10.10.0.209`. The [OpenBao workload](installation/trust-openbao.md) requests `10.10.0.200` for its HTTPS Service. The [HTTPS listener](installation/trust-openbao-network.md) passed the client test from the operator workstation. Pi and Metal client checks are deferred until their VLANs are set up. |
 | Storage | Local persistent volumes via ZFS LocalPV on the [Trust data mirror](inventory.md#trust), separate from the OS mirror. |
-| Observability | Headlamp for cluster visibility. Metrics will go to [Pi's monitoring stack](#central-monitoring). |
+| Observability | Metrics will go to [Pi's monitoring stack](#central-monitoring). |
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
 | Image registry | [Zot](installation/trust-zot.md) is deployed on Trust's encrypted ZFS data mirror and serves the ARM64 KMS adapter. |
 | Certificates | [cert-manager with Let's Encrypt and Cloudflare DNS-01](installation/trust-cert-manager.md) is installed in Trust infrastructure, with both issuers ready and staging DNS-01 issuance verified. Cross-cluster delivery is planned through the [certificate factory](#certificate-factory). |

@@ -1562,6 +1562,7 @@ namespace was deleted.
 
 ## Later platform and service milestones
 
+- [ ] Deploy Headlamp on Trust and verify it can display the Trust cluster's resources.
 - [ ] Validate Talos installation, boot, MD RAID1, and KMS encryption on the assigned OS disks; implement the pinned tooling and Trust bootstrap configuration.
 - [ ] Document manual encrypted ZFS mirror preparation and deploy the planned platform services and OpenBao, including workstation/YubiKey unseal support. During ZFS setup, configure normal unlock from a local key file on an encrypted Talos system volume and rehearse recovery from the YubiKey-wrapped copy before relying on it. Preserve the ZFS data disks when rebuilding the OS.
 - [ ] Verify cold startup, scheduled Raft snapshot backups, and the required restore paths; record results and update the recovery guide.

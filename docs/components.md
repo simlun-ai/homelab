@@ -27,7 +27,7 @@ Trust ran ZFS extension `2.4.4-v1.14.5` and loaded the kernel module on
 | [cert-manager](installation/trust-cert-manager.md) | v1.21.2 | v1.21.2 |  |  |  |
 | Garage | v2.4.1 |  | v2.4.1 |  |  |
 | PostgreSQL | v18.6 |  |  |  |  |
-| Headlamp | v0.45.0 | v0.45.0 |  |  |  |
+| Headlamp | v0.45.0 | v0.45.0 | v0.45.0 | v0.45.0 | v0.45.0 |
 
 ## Workloads
 

@@ -20,6 +20,7 @@ Later milestones; split and number their runbooks when the next step is concrete
 - [ ] Install Pi, its coordinator, and home automation workloads.
 - [ ] Deploy [central monitoring on Pi](../clusters.md#central-monitoring), then install lightweight collectors on Trust and Backup and verify that Pi receives metrics from both.
 - [ ] Install Metal, its coordinator, and heavier workloads.
+- [ ] Deploy Headlamp on Backup, Pi, and Metal as each cluster comes online.
 
 ## Working method
 
