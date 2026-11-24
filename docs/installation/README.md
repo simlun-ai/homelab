@@ -18,7 +18,9 @@ Later milestones; split and number their runbooks when the next step is concrete
 - [ ] Set up Trust's [certificate factory](../clusters.md#certificate-factory) with External Secrets Operator and OpenBao after OpenBao is deployed.
 - [ ] Install Backup and its services. Verify Garage serves the certificate delivered by the factory and picks up a renewal.
 - [ ] Install Pi, its coordinator, and home automation workloads.
+- [ ] Deploy [central monitoring on Pi](../clusters.md#central-monitoring), then install lightweight collectors on Trust and Backup and verify that Pi receives metrics from both.
 - [ ] Install Metal, its coordinator, and heavier workloads.
+- [ ] Deploy Headlamp on Backup, Pi, and Metal as each cluster comes online.
 
 ## Working method
 
