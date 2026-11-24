@@ -4,7 +4,9 @@
     "backup": {
       "hostname": "kms-backup.k8s-aux.simlun.se",
       "serviceIP": "10.10.0.202",
-      "nodes": {}
+      "nodes": {
+        "038e1b94-a0f6-11e4-9c0a-9d5496c01100": "10.10.0.15"
+      }
     }
   }
 }
