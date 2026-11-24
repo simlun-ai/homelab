@@ -12,7 +12,7 @@ Independent, single-node foundation. All other clusters depend on its services. 
 | --- | --- |
 | Ingress | Traefik. Trust's [MetalLB Layer 2 configuration](installation/trust-metallb.md) covers `10.10.0.200`–`10.10.0.209`. The [OpenBao workload](installation/trust-openbao.md) requests `10.10.0.200` for its HTTPS Service. The [HTTPS listener](installation/trust-openbao-network.md) passed the client test from the operator workstation. Pi and Metal client checks are deferred until their VLANs are set up. |
 | Storage | Local persistent volumes via ZFS LocalPV on the [Trust data mirror](inventory.md#trust), separate from the OS mirror. |
-| Observability | kube-prometheus-stack (Prometheus, Grafana, Alertmanager), with Telegram notifications; Headlamp for cluster visibility. |
+| Observability | Headlamp for cluster visibility. Metrics will go to [Pi's monitoring stack](#central-monitoring). |
 | Secrets | OpenBao for application/service secrets and transit-backed disk-key wrapping; planned Python Talos KMS adapter. |
 | Image registry | [Zot](installation/trust-zot.md) is deployed on Trust's encrypted ZFS data mirror and serves the ARM64 KMS adapter. |
 | Certificates | [cert-manager with Let's Encrypt and Cloudflare DNS-01](installation/trust-cert-manager.md) is installed in Trust infrastructure, with both issuers ready and staging DNS-01 issuance verified. Cross-cluster delivery is planned through the [certificate factory](#certificate-factory). |
@@ -63,6 +63,12 @@ Trust and Backup share the [UPS and shutdown coordinator](inventory.md#shared-in
 ## Pi
 
 Three control-plane nodes and two workers, with a separate cold spare. Each active node has an OS mirror and a Piraeus data SSD; see [disk allocation](inventory.md#ssd-allocation).
+
+### Central monitoring
+
+Pi will host the shared `kube-prometheus-stack` (Prometheus, Grafana, and Alertmanager) across its three control-plane nodes, with Telegram notifications. Persistent monitoring data will use Piraeus volumes replicated across control-plane nodes. Pi is intended to stay on, so monitoring can remain available while Backup is offline.
+
+Trust and Backup will scrape metrics locally with lightweight collectors and send them to Pi using Prometheus remote write once the stack is running. Track the rollout in the [installation TODO list](installation/README.md#main-todo-list).
 
 ## Metal
 
