@@ -39,7 +39,7 @@ provisioning:
 apiVersion: v1alpha1
 kind: UnattendedInstallConfig
 installer:
-  image: factory.talos.dev/metal-installer/aed72eee46eed97094bebf2520c17f7eed8d743346ba494d5b4ac297f8c8658f:v1.14.5@sha256:7b8e09538fd4b8bfe6c762e3cbe14830af49517b1638defcf37aca99b5151564
+  image: factory.talos.dev/metal-installer/aed72eee46eed97094bebf2520c17f7eed8d743346ba494d5b4ac297f8c8658f@sha256:7b8e09538fd4b8bfe6c762e3cbe14830af49517b1638defcf37aca99b5151564
 provisioning:
   diskSelector:
     match: '"/dev/disk/by-id/md-name-talos:boot" in disk.symlinks'
