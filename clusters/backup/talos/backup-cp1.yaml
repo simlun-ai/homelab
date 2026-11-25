@@ -1,0 +1,65 @@
+# Applying the complete machine config can write to the two selected OS disks.
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: off
+hostname: backup-cp1
+---
+apiVersion: v1alpha1
+kind: LinkConfig
+name: eno1
+up: true
+addresses:
+  - address: 10.10.0.15/24
+routes:
+  - gateway: 10.10.0.1
+---
+apiVersion: v1alpha1
+kind: ResolverConfig
+nameservers:
+  - address: 10.10.0.1
+---
+apiVersion: v1alpha1
+kind: KubeNetworkConfig
+podSubnets:
+  - 10.129.0.0/16
+serviceSubnets:
+  - 10.241.0.0/16
+---
+apiVersion: v1alpha1
+kind: RAIDArrayConfig
+name: boot
+level: raid1
+metadata: "1.0"
+provisioning:
+  volumeSelector:
+    match: >-
+      "/dev/disk/by-id/ata-INTEL_SSDSC2BF180A4L_CVDA431008U01802GN" in disk.symlinks ||
+      "/dev/disk/by-id/usb-Intenso_Portable_SSD_20230210306DC-0:0" in disk.symlinks
+---
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+# Supply the locally built amd64 installer image with talosctl gen config --install-image.
+installer: {}
+provisioning:
+  diskSelector:
+    match: '"/dev/disk/by-id/md-name-talos:boot" in disk.symlinks'
+---
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: STATE
+encryption:
+  provider: luks2
+  keys:
+    - slot: 0
+      kms:
+        endpoint: https://kms-backup.k8s-aux.simlun.se:443
+---
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+encryption:
+  provider: luks2
+  keys:
+    - slot: 0
+      kms:
+        endpoint: https://kms-backup.k8s-aux.simlun.se:443

@@ -14,7 +14,7 @@ Keep detailed TODOs and verification results in the owning runbook. Update this 
 
 Later milestones; split and number their runbooks when the next step is concrete:
 
-- [ ] Boot the first Backup Talos node through the [Trust-hosted KMS adapter](02-trust.md#next-milestone-first-backup-kms-boot), then return to finishing Trust.
+- [ ] [Boot the first Backup Talos node](03-backup.md) through the Trust-hosted KMS adapter, then return to finishing Trust.
 - [ ] Set up Trust's [certificate factory](../clusters.md#certificate-factory) with External Secrets Operator and OpenBao after OpenBao is deployed.
 - [ ] Install Backup and its services. Verify Garage serves the certificate delivered by the factory and picks up a renewal.
 - [ ] Install Pi, its coordinator, and home automation workloads.
