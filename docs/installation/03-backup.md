@@ -32,6 +32,14 @@ for both the amd64 ISO and the installer. It configures static networking
 before Talos opens `STATE`. Early DNS uses the gateway, and Talos defaults to
 `time.cloudflare.com` for time synchronization.
 
+When the schematic changes, regenerate its ID using the same Make workflow as
+Trust. This submits the public YAML to Image Factory and updates the adjacent
+`.id` file. Refresh the installer manifest pin and ISO checksum for the new ID.
+
+```sh
+make -C clusters/backup schematic-id SCHEMATIC=talos/backup-cp1.schematic.yaml
+```
+
 On the Linux workstation, from the repository root, download and verify the
 ISO before writing it to the installer USB:
 
@@ -39,10 +47,11 @@ ISO before writing it to the installer USB:
 (
   set -eu
   out=clusters/backup/boot
+  schematic=$(cat clusters/backup/talos/backup-cp1.schematic.id)
   mkdir -p "$out"
   curl --fail --location --show-error \
     --output "$out/metal-amd64.iso" \
-    'https://factory.talos.dev/image/aed72eee46eed97094bebf2520c17f7eed8d743346ba494d5b4ac297f8c8658f/v1.14.5/metal-amd64.iso'
+    "https://factory.talos.dev/image/$schematic/v1.14.5/metal-amd64.iso"
   printf '%s  %s\n' 'd49b3e952cc5c5fa204b3acfe7f40afcaa75529ecb3081255c2eb9bf5cf2196b' "$out/metal-amd64.iso" |
     sha256sum --check -
 )
