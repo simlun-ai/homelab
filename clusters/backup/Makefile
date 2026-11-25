@@ -18,7 +18,6 @@ validate: check-tools
 	@bash -o pipefail -c '"$$1" gen config backup https://10.10.0.15:6443 \
 	  --talos-version "$$2" --kubernetes-version "$$3" \
 	  --install-disk /dev/REHEARSAL-DO-NOT-INSTALL \
-	  --install-image "backup-install.invalid/installer:$$2" \
 	  --config-patch-control-plane "@$$4" \
 	  --with-docs=false --with-examples=false --output-types controlplane --output - | \
 	  "$$1" validate --mode metal --strict --config /dev/stdin' \
