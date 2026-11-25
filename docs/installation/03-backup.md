@@ -29,8 +29,9 @@ installer reference. The planned single-node Kubernetes API endpoint is
 
 The installed kernel needs the [early network argument](../../clusters/backup/talos/early-network.args)
 before it can unlock `STATE`. Build both the amd64 ISO and installer locally
-with the same argument. The early NTP address matches the Cloudflare address
-used in the Trust rehearsal. Confirm operation during the first Backup boot.
+with the same argument. Early DNS uses the gateway, and Talos defaults to
+`time.cloudflare.com` for time synchronization. Verify DNS and time during the
+first Backup boot.
 
 On the Linux Docker workstation, from the repository root:
 
