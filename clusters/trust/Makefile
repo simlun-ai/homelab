@@ -123,11 +123,11 @@ export SCHEMATIC
 .PHONY: schematic-id
 schematic-id:
 	@test -n "$$SCHEMATIC" || { echo 'Set SCHEMATIC to a public YAML file (relative to clusters/trust or absolute).' >&2; exit 2; }
-	@$(PYTHON) -I -B "$(SCOPE)/schematic.py" -- "$$SCHEMATIC"
+	@$(PYTHON) -I -B "$(SCOPE)/../common/schematic.py" -- "$$SCHEMATIC"
 
 .PHONY: installer-image
 installer-image: schematic-id
-	@$(PYTHON) -I -B "$(SCOPE)/schematic.py" --installer-image -- "$$SCHEMATIC"
+	@$(PYTHON) -I -B "$(SCOPE)/../common/schematic.py" --installer-image --arch arm64 --scope "$(SCOPE)" -- "$$SCHEMATIC"
 
 .PHONY: zfs-key-enroll zfs-key-verify
 zfs-key-enroll:

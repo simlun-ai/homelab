@@ -94,7 +94,7 @@ config in memory. Expect native strict metal validation to pass.
 2. From the workstation, run `make -C clusters/backup install-config-apply`
    only when ready to write the two assigned OS disks. The helper recovers
    and validates the same in-memory config, checks the maintenance UUID
-   against the KMS registration, and verifies both RAID members by their
+   against the verified value from hardware discovery, and verifies both RAID members by their
    exact disk links before sending the config.
 3. Watch the console for installation completion. If the apply is interrupted,
    check the console before retrying. Remove the USB stick and cold-boot from

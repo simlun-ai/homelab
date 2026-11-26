@@ -24,7 +24,7 @@ FROM kms-rehearsal-tools AS helpers
 COPY --link support/hsm/kms_tls_rehearsal.py support/hsm/kms_tls_listener_rehearsal.py ./support/hsm/
 COPY --link scripts/ ./scripts/
 COPY --link tests/ ./tests/
-COPY --link clusters/trust/ ./clusters/trust/
+COPY --link clusters/ ./clusters/
 COPY --link secrets/manifest.json ./secrets/manifest.json
 COPY --link tools/homelab-hsm/homelab_secrets/scripts/ ./tools/homelab-hsm/homelab_secrets/scripts/
 COPY --link tools/homelab-hsm/homelab_secrets/tests/ ./tools/homelab-hsm/homelab_secrets/tests/
@@ -48,7 +48,7 @@ COPY --link scripts/ ./scripts/
 COPY --link tests/ ./tests/
 COPY --link support/ ./support/
 COPY --link ci/check-syntax.py ./ci/check-syntax.py
-COPY --link clusters/trust/ ./clusters/trust/
+COPY --link clusters/ ./clusters/
 RUN --network=none python3 -I -B ci/check-syntax.py
 
 FROM base AS lint-tools
@@ -62,7 +62,7 @@ COPY --link scripts/ ./scripts/
 COPY --link tests/ ./tests/
 COPY --link support/ ./support/
 COPY --link ci/check-syntax.py ./ci/check-syntax.py
-COPY --link clusters/trust/ ./clusters/trust/
+COPY --link clusters/ ./clusters/
 RUN --network=none ruff check --no-cache scripts tests support ci clusters && \
     ruff format --check --no-cache scripts tests support ci clusters
 
@@ -78,7 +78,7 @@ COPY --link scripts/ ./scripts/
 COPY --link tests/ ./tests/
 COPY --link support/ ./support/
 COPY --link ci/check-syntax.py ./ci/check-syntax.py
-COPY --link clusters/trust/ ./clusters/trust/
+COPY --link clusters/ ./clusters/
 RUN --network=none node /opt/pyright/index.js --pythonpath /opt/homelab-hsm/bin/python
 
 FROM base AS ansible-lint-tools
@@ -99,11 +99,11 @@ ENV ANSIBLE_CONFIG="/project/support/ups/ansible.cfg" \
 RUN --network=none cd support/ups && ansible-lint --offline ansible inventory.yaml
 
 FROM base AS trust-render
-COPY --link clusters/trust/ ./clusters/trust/
+COPY --link clusters/ ./clusters/
 RUN --network=none make -C clusters/trust check-rendered
 
 FROM base AS trust-tools
-COPY --link clusters/trust/ ./clusters/trust/
+COPY --link clusters/ ./clusters/
 RUN make -C clusters/trust tools
 
 FROM trust-tools AS trust-validate
@@ -111,8 +111,9 @@ RUN --network=none make -C clusters/trust validate
 
 FROM helper-tools AS trust-config-rehearsal
 COPY --link scripts/trust_talos_secrets.py scripts/trust_talos_config.py scripts/trust_talos_credentials.py scripts/trust_talos_recovery.py scripts/trust_talos_admin.py ./scripts/
+COPY --link scripts/homelab/talos/ ./scripts/homelab/talos/
 COPY --link scripts/homelab/trust_kms/registration.py ./scripts/homelab/trust_kms/
-COPY --link clusters/trust/ ./clusters/trust/
+COPY --link clusters/ ./clusters/
 COPY --from=trust-tools /project/clusters/trust/bin/ ./clusters/trust/bin/
 RUN python3 -I -B clusters/trust/tooling.py install --tool htpasswd
 RUN --network=none make -C clusters/trust config-rehearse

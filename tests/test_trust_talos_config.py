@@ -54,7 +54,7 @@ class TalosConfigTests(unittest.TestCase):
 
     def test_generation_passes_only_descriptor_and_public_arguments(self) -> None:
         with patch.object(
-            module.secrets, "capture_bundle", return_value=b"output"
+            module.common_config.bootstrap, "capture_bundle", return_value=b"output"
         ) as capture:
             self.assertEqual(
                 module.generate("/abs/talosctl", b"disposable", "controlplane"),
@@ -130,7 +130,7 @@ class TalosConfigTests(unittest.TestCase):
             with (
                 self.subTest(info=info),
                 patch.object(
-                    module.secrets,
+                    module.common_config.bootstrap,
                     "capture_bundle",
                     return_value=json.dumps(info).encode(),
                 ),

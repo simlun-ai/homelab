@@ -59,9 +59,7 @@ def registry_manifest(repository: str, selector: str, accept: str) -> bytes:
         return response.read()
 
 
-def write_installer_image(
-    source: Path, *, arch: str = "arm64", scope: Path | None = None
-) -> Path:
+def write_installer_image(source: Path, *, arch: str, scope: Path) -> Path:
     identifier = source.with_suffix(".id").read_text(encoding="ascii").strip()
     if not re.fullmatch(r"[0-9a-f]{64}", identifier):
         raise ValueError("Invalid schematic ID")
@@ -99,10 +97,12 @@ def write_installer_image(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--installer-image", action="store_true")
-    parser.add_argument("--arch", choices=("amd64", "arm64"), default="arm64")
+    parser.add_argument("--arch", choices=("amd64", "arm64"))
     parser.add_argument("--scope", type=Path)
     parser.add_argument("schematic", type=Path)
     args = parser.parse_args()
+    if args.installer_image and (args.arch is None or args.scope is None):
+        parser.error("--installer-image requires --arch and --scope")
     try:
         if args.installer_image:
             output = write_installer_image(

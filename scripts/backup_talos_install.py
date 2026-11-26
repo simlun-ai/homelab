@@ -1,7 +1,6 @@
 """Enroll the Backup Talos identity and install or check the encrypted OS."""
 
 import argparse
-import json
 import os
 import re
 import sys
@@ -11,16 +10,17 @@ from typing import cast
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import trust_talos_config as config
-import trust_talos_recovery as recovery
-import trust_talos_secrets as secrets
+from homelab.talos import authority, bootstrap, config, credentials
 
-SCOPE = secrets.ROOT / "clusters/backup"
+ROOT = Path(__file__).resolve().parents[1]
+SCOPE = ROOT / "clusters/backup"
 PATCH = SCOPE / "talos/backup-cp1.yaml"
 SCHEMATIC = SCOPE / "talos/backup-cp1.schematic.yaml"
-RECORD = secrets.ROOT / "secrets/wrapped/backup-talos-bootstrap.json"
+RECORD = ROOT / "secrets/wrapped/backup-talos-bootstrap.json"
 KEY_ID = "homelab/v1/backup/talos/bootstrap/r1"
 NODE = "10.10.0.15"
+# Verified in Talos maintenance mode and used for the KMS registration.
+NODE_UUID = "038e1b94-a0f6-11e4-9c0a-9d5496c01100"
 ENDPOINT = f"https://{NODE}:6443"
 
 
@@ -31,7 +31,7 @@ def installer_image() -> str:
         rf"factory\.talos\.dev/metal-installer/{identifier}@sha256:[a-f0-9]{{64}}",
         image,
     ):
-        raise secrets.PreflightError(
+        raise bootstrap.PreflightError(
             "Backup installer pin does not match the schematic"
         )
     return image
@@ -44,8 +44,8 @@ def generate(talosctl: str, bundle: bytes) -> bytes:
         "controlplane",
         cluster="backup",
         endpoint=ENDPOINT,
-        talos_version=secrets.cluster_version("talos", cluster="backup"),
-        kubernetes_version=secrets.cluster_version("kubernetes", cluster="backup"),
+        talos_version=bootstrap.cluster_version("talos", SCOPE),
+        kubernetes_version=bootstrap.cluster_version("kubernetes", SCOPE),
         public_args=[
             "--install-image",
             installer_image(),
@@ -56,32 +56,28 @@ def generate(talosctl: str, bundle: bytes) -> bytes:
 
 
 def maintenance_query(talosctl: str, resource: str) -> bytes:
-    return secrets.capture_bundle(
+    return bootstrap.capture_bundle(
         [talosctl, "get", resource, "--insecure", "--nodes", NODE, "-o", "yaml"],
         timeout=20,
     )
 
 
 def check_install_target(talosctl: str, machine: bytes) -> None:
-    registration = (
-        secrets.ROOT / "clusters/trust/tofu-workload/talos-kms.json"
-    ).read_bytes()
-    nodes: dict[str, str] = json.loads(registration)["clusters"]["backup"]["nodes"]
-    observed = recovery.field(
-        recovery.field(
+    observed = authority.field(
+        authority.field(
             yaml.safe_load(maintenance_query(talosctl, "systeminformation")), "spec"
         ),
         "uuid",
     )
-    if not isinstance(observed, str) or nodes.get(observed.lower()) != NODE:
-        raise secrets.PreflightError(
-            "Maintenance node does not match the Backup KMS registration"
+    if not isinstance(observed, str) or observed.lower() != NODE_UUID:
+        raise bootstrap.PreflightError(
+            "Maintenance node does not match the verified Backup UUID"
         )
 
     documents: list[object] = list(yaml.safe_load_all(machine))
-    selector = recovery.field(
-        recovery.field(
-            recovery.field(
+    selector = authority.field(
+        authority.field(
+            authority.field(
                 next(
                     cast(dict[str, object], doc)
                     for doc in documents
@@ -101,7 +97,7 @@ def check_install_target(talosctl: str, machine: bytes) -> None:
         else None
     )
     if match is None or match[1] == match[2]:
-        raise secrets.PreflightError(
+        raise bootstrap.PreflightError(
             "Backup RAID selector must name two exact disk links"
         )
     first, second = match.groups()
@@ -109,9 +105,9 @@ def check_install_target(talosctl: str, machine: bytes) -> None:
     second_disks: list[str] = []
     disks: list[object] = list(yaml.safe_load_all(maintenance_query(talosctl, "disks")))
     for disk in disks:
-        spec = recovery.field(disk, "spec")
-        links = recovery.field(spec, "symlinks")
-        device = recovery.field(spec, "dev_path")
+        spec = authority.field(disk, "spec")
+        links = authority.field(spec, "symlinks")
+        device = authority.field(spec, "dev_path")
         if not isinstance(links, list) or not isinstance(device, str):
             continue
         if first in links:
@@ -119,21 +115,19 @@ def check_install_target(talosctl: str, machine: bytes) -> None:
         if second in links:
             second_disks.append(device)
     if len(first_disks) != 1 or len(second_disks) != 1 or first_disks == second_disks:
-        raise secrets.PreflightError(
+        raise bootstrap.PreflightError(
             "Backup's two selected OS disks were not found uniquely"
         )
     print(f"Verified Backup UUID and both OS disks at {NODE}.", flush=True)
 
 
 def check_volumes(talosctl: str, bundle: bytes, ram_root: Path) -> bool:
-    ca, key = recovery.talos_ca(bundle)
-    client = recovery.credentials.issue(
-        talosctl, ca, key, ram_root, context="backup", node=NODE
-    )
+    ca, key = authority.talos_ca(bundle)
+    client = credentials.issue(talosctl, ca, key, ram_root, context="backup", node=NODE)
     ready = True
     with config.memory_file(client) as fd:
         for name in ("STATE", "EPHEMERAL"):
-            report = secrets.capture_bundle(
+            report = bootstrap.capture_bundle(
                 [
                     talosctl,
                     "get",
@@ -151,8 +145,8 @@ def check_volumes(talosctl: str, bundle: bytes, ram_root: Path) -> bool:
                 timeout=20,
                 pass_fds=(fd,),
             )
-            spec = recovery.field(yaml.safe_load(report), "spec")
-            phase = recovery.field(spec, "phase")
+            spec = authority.field(yaml.safe_load(report), "spec")
+            phase = authority.field(spec, "phase")
             provider = (
                 cast(dict[str, object], spec).get("encryptionProvider")
                 if isinstance(spec, dict)
@@ -175,14 +169,14 @@ def main() -> int:
     args = parser.parse_args()
     stage = "workstation and wrapped-record preflight"
     try:
-        secrets.harden()
-        secrets.require_private_repository(record=RECORD)
-        talosctl = secrets.executable(args.talosctl, "talosctl")
-        hsm_tool = secrets.executable(args.hsm_tool, "homelab-wrap/unwrap")
-        with secrets.hsm_progress_terminal() as terminal:
+        bootstrap.harden()
+        bootstrap.require_private_repository(root=ROOT, record=RECORD)
+        talosctl = bootstrap.executable(args.talosctl, "talosctl")
+        hsm_tool = bootstrap.executable(args.hsm_tool, "homelab-wrap/unwrap")
+        with bootstrap.hsm_progress_terminal() as terminal:
             if args.action == "enroll":
                 if os.path.lexists(RECORD):
-                    raise secrets.PreflightError(
+                    raise bootstrap.PreflightError(
                         "Backup bootstrap record already exists"
                     )
                 stage = "Backup identity generation and wrapping"
@@ -190,8 +184,10 @@ def main() -> int:
                     "Touch the YubiKey when prompted to enroll the Backup identity.",
                     flush=True,
                 )
-                secrets.wrap_bundle(
-                    secrets.generate(talosctl, cluster="backup"),
+                bootstrap.wrap_bundle(
+                    bootstrap.generate_secrets(
+                        talosctl, bootstrap.cluster_version("talos", SCOPE)
+                    ),
                     hsm_tool,
                     record=RECORD,
                     key_id=KEY_ID,
@@ -201,13 +197,13 @@ def main() -> int:
                 return 0
             stage = "Backup identity recovery"
             if args.action == "status":
-                with recovery.credentials.ram_directory(args.ram_root):
+                with credentials.ram_directory(args.ram_root):
                     pass
             print(
                 "Touch the YubiKey when prompted to recover the Backup identity.",
                 flush=True,
             )
-            bundle = secrets.recover_bundle(
+            bundle = bootstrap.recover_bundle(
                 hsm_tool, record=RECORD, key_id=KEY_ID, stderr=terminal
             )
         if args.action == "status":
@@ -225,7 +221,7 @@ def main() -> int:
             print(
                 "PASS: Talos accepted the configuration. Watch the console for installation."
             )
-    except secrets.PreflightError as exc:
+    except bootstrap.PreflightError as exc:
         print(f"Backup preflight failed: {exc}", file=sys.stderr)
         return 1
     except (Exception, KeyboardInterrupt):

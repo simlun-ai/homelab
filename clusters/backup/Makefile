@@ -3,7 +3,7 @@ SCOPE := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 PYTHON ?= python3
 HSM_VENV ?= $(HOME)/.local/share/homelab/venvs/hsm
 RAM_ROOT ?= /dev/shm
-TOOLING := "$(SCOPE)/../trust/tooling.py"
+TOOLING := "$(SCOPE)/../common/tooling.py"
 TALOSCTL := "$(SCOPE)/bin/talosctl"
 INSTALLER_PIN := "$(SCOPE)/talos/backup-cp1.schematic.amd64.image"
 TALOS_VERSION := $(shell awk '/^talos:$$/ {getline; print $$2}' "$(SCOPE)/versions.yaml")
@@ -36,10 +36,10 @@ validate: check-tools
 export SCHEMATIC
 schematic-id:
 	@test -n "$$SCHEMATIC" || { echo 'Set SCHEMATIC to a public YAML file (relative to clusters/backup or absolute).' >&2; exit 2; }
-	@$(PYTHON) -I -B "$(SCOPE)/../trust/schematic.py" -- "$$SCHEMATIC"
+	@$(PYTHON) -I -B "$(SCOPE)/../common/schematic.py" -- "$$SCHEMATIC"
 
 installer-image: schematic-id
-	@$(PYTHON) -I -B "$(SCOPE)/../trust/schematic.py" --installer-image \
+	@$(PYTHON) -I -B "$(SCOPE)/../common/schematic.py" --installer-image \
 	  --arch amd64 --scope "$(SCOPE)" -- "$$SCHEMATIC"
 
 secrets-init: INSTALL_ACTION := enroll
