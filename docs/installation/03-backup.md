@@ -32,12 +32,13 @@ for both the amd64 ISO and the installer. It configures static networking
 before Talos opens `STATE`. Early DNS uses the gateway, and Talos defaults to
 `time.cloudflare.com` for time synchronization.
 
-When the schematic changes, regenerate its ID using the same Make workflow as
-Trust. This submits the public YAML to Image Factory and updates the adjacent
-`.id` file. Refresh the installer manifest pin and ISO checksum for the new ID.
+When the schematic or pinned Talos release changes, use the same Make workflow
+as Trust. This submits the public YAML to Image Factory, selects the amd64
+manifest, and verifies it by SHA-256. Commit the regenerated `.id` and
+`.amd64.image` files and refresh the ISO URL version and checksum below.
 
 ```sh
-make -C clusters/backup schematic-id SCHEMATIC=talos/backup-cp1.schematic.yaml
+make -C clusters/backup installer-image SCHEMATIC=talos/backup-cp1.schematic.yaml
 ```
 
 On the Linux workstation, from the repository root, download and verify the
@@ -62,16 +63,47 @@ from the Factory and the embedded `ip=` argument in the pinned amd64 installer
 both matched the schematic. Talos pulls that installer during installation.
 On subsequent boots, Talos loads the installed boot image from disk.
 
+## Enroll and validate the Backup identity
+
+On the workstation, initialize and update the private `secrets/wrapped`
+submodule, then prepare the pinned HSM environment:
+
+```sh
+make -C support/hsm tools
+make -C clusters/backup secrets-init
+```
+
+Touch the YubiKey when prompted. The target generates the Backup Talos
+authority once and wraps it as `secrets/wrapped/backup-talos-bootstrap.json`
+under `homelab/v1/backup/talos/bootstrap/r1`. If the record already exists,
+continue with validation using that record. Publish the ciphertext in the
+private submodule and commit its updated pointer before installing.
+
+```sh
+make -C clusters/backup install-config-validate
+```
+
+This recovers the same identity with the YubiKey and validates the complete
+machine config offline. It keeps the recovered identity and the assembled
+config in memory. Expect native strict metal validation to pass.
+
 ## First encrypted boot
 
-Before applying a configuration, create and back up a separate wrapped Backup
-Talos identity and assemble and validate the real configuration in memory.
-Use the custom ISO to start in maintenance mode, and confirm the target UUID
-and both OS disk identities. Installation writes to the selected OS disks.
-
-After installation, remove the USB stick and cold-boot from the mirror.
-Verify static addressing, DNS and time, then verify that `STATE` and
-`EPHEMERAL` unlock through the Trust KMS endpoint. Record the outcome here.
+1. Boot the verified Factory ISO from USB. Wait for maintenance mode at
+   `10.10.0.15` and keep the console visible.
+2. From the workstation, run `make -C clusters/backup install-config-apply`
+   only when ready to write the two assigned OS disks. The helper recovers
+   and validates the same in-memory config, checks the maintenance UUID
+   against the KMS registration, and verifies both RAID members by their
+   exact disk links before sending the config.
+3. Watch the console for installation completion. If the apply is interrupted,
+   check the console before retrying. Remove the USB stick and cold-boot from
+   the installed mirror once installation completes.
+4. Check the console for static addressing, DNS, time sync, and KMS unlock.
+   From the workstation, run `make -C clusters/backup install-status` with the
+   YubiKey. It issues a fresh in-memory Talos client and verifies that
+   `STATE` and `EPHEMERAL` are both `ready` with LUKS2 reported.
+   Record the outcome here and in the Trust roadmap.
 
 | Check | Status |
 | --- | --- |

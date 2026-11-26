@@ -30,16 +30,18 @@ REHEARSAL_KEY_ID = "homelab/v1/trust/talos/rehearsal/r1"
 MAX_SECRETS = 1024 * 1024
 
 
-def cluster_version(component: str) -> str:
+def cluster_version(component: str, *, cluster: str = "trust") -> str:
     """Read an authoritative cluster release pin without another version constant."""
-    content = (ROOT / "clusters/trust/versions.yaml").read_text(encoding="utf-8")
+    content = (ROOT / "clusters" / cluster / "versions.yaml").read_text(
+        encoding="utf-8"
+    )
     match = re.search(
         rf"(?m)^{re.escape(component)}:[ \t]*\n"
         r"[ \t]+version:[ \t]*(v[0-9]+\.[0-9]+\.[0-9]+)[ \t]*$",
         content,
     )
     if match is None:
-        raise ValueError("Missing or invalid Trust release pin")
+        raise ValueError(f"Missing or invalid {cluster} release pin")
     return match.group(1)
 
 
@@ -163,14 +165,14 @@ def capture_bundle(
         process.wait()
 
 
-def generate(talosctl: str) -> bytes:
+def generate(talosctl: str, *, cluster: str = "trust") -> bytes:
     return capture_bundle(
         [
             talosctl,
             "gen",
             "secrets",
             "--talos-version",
-            talos_version(),
+            cluster_version("talos", cluster=cluster),
             "--output-file",
             "-",
         ],

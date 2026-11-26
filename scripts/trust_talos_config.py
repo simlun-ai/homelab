@@ -61,21 +61,44 @@ def generate(
     ]
     if install:
         patches.extend(["--config-patch-control-plane", "@" + str(RAID_PATCH)])
+    return generate_machine_config(
+        talosctl,
+        bundle,
+        output_type,
+        cluster="trust" if install else CLUSTER,
+        endpoint=INSTALL_ENDPOINT if install else ENDPOINT,
+        talos_version=secrets.cluster_version("talos"),
+        kubernetes_version=secrets.cluster_version("kubernetes"),
+        public_args=patches,
+    )
+
+
+def generate_machine_config(
+    talosctl: str,
+    bundle: bytes,
+    output_type: str,
+    *,
+    cluster: str,
+    endpoint: str,
+    talos_version: str,
+    kubernetes_version: str,
+    public_args: list[str],
+) -> bytes:
     with memory_file(bundle) as fd:
         return secrets.capture_bundle(
             [
                 talosctl,
                 "gen",
                 "config",
-                "trust" if install else CLUSTER,
-                INSTALL_ENDPOINT if install else ENDPOINT,
+                cluster,
+                endpoint,
                 "--talos-version",
-                secrets.cluster_version("talos"),
+                talos_version,
                 "--kubernetes-version",
-                secrets.cluster_version("kubernetes"),
+                kubernetes_version,
                 "--with-secrets",
                 f"/proc/self/fd/{fd}",
-                *patches,
+                *public_args,
                 "--install-disk",
                 INSTALL_DISK,
                 "--with-docs=false",
@@ -130,7 +153,7 @@ def check_install_node(talosctl: str) -> None:
         )
 
 
-def apply_install(talosctl: str, config: bytes) -> None:
+def apply_install(talosctl: str, config: bytes, *, node: str = INSTALL_NODE) -> None:
     with memory_file(config) as fd:
         subprocess.run(
             [
@@ -138,7 +161,7 @@ def apply_install(talosctl: str, config: bytes) -> None:
                 "apply-config",
                 "--insecure",
                 "--nodes",
-                INSTALL_NODE,
+                node,
                 "--file",
                 f"/proc/self/fd/{fd}",
             ],
