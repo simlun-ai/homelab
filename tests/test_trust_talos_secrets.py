@@ -30,7 +30,7 @@ class TrustSecretsTests(unittest.TestCase):
                 self.assertEqual(module.talos_version(), "v2.3.4")
 
     def test_generation_uses_stdout_not_file(self) -> None:
-        with patch.object(module, "capture_bundle") as run:
+        with patch.object(module.bootstrap, "capture_bundle") as run:
             run.return_value = b"fake disposable bundle"
             self.assertEqual(
                 module.generate("/abs/talosctl"), b"fake disposable bundle"
@@ -52,7 +52,7 @@ class TrustSecretsTests(unittest.TestCase):
         with (
             patch.object(module.os.path, "lexists", return_value=False),
             patch.object(module, "generate", return_value=b"disposable"),
-            patch.object(module.subprocess, "run") as run,
+            patch.object(module.bootstrap.subprocess, "run") as run,
         ):
             module.initialize("/abs/talosctl", "/abs/homelab-wrap")
             self.assertEqual(run.call_args.kwargs["input"], b"disposable")
@@ -61,7 +61,7 @@ class TrustSecretsTests(unittest.TestCase):
 
     def test_recover_refuses_non_pipe(self) -> None:
         with patch.object(module, "require_pipe", side_effect=ValueError):
-            with patch.object(module.subprocess, "Popen") as popen:
+            with patch.object(module.bootstrap.subprocess, "Popen") as popen:
                 with self.assertRaises(ValueError):
                     module.recover("/abs/homelab-unwrap")
                 popen.assert_not_called()
@@ -73,7 +73,10 @@ class TrustSecretsTests(unittest.TestCase):
             ("print('x' * 4096)", ValueError),
         ]
         for code, error in cases:
-            with self.subTest(code=code), patch.object(module, "MAX_SECRETS", 1024):
+            with (
+                self.subTest(code=code),
+                patch.object(module.bootstrap, "MAX_SECRETS", 1024),
+            ):
                 with self.assertRaises(error):
                     module.capture_bundle([sys.executable, "-c", code], timeout=5)
 
@@ -122,7 +125,9 @@ class TrustSecretsTests(unittest.TestCase):
                 patch.object(module, "RECORD", record),
                 patch.object(module, "require_pipe"),
                 patch.object(module.sys, "stdout", output),
-                patch.object(module, "capture_bundle", side_effect=RuntimeError),
+                patch.object(
+                    module.bootstrap, "capture_bundle", side_effect=RuntimeError
+                ),
             ):
                 with self.assertRaises(RuntimeError):
                     module.recover("/abs/homelab-unwrap")
@@ -170,9 +175,9 @@ class TrustSecretsTests(unittest.TestCase):
 
     def test_swap_check_reports_a_public_preflight_error(self) -> None:
         with (
-            patch.object(module.resource, "setrlimit"),
-            patch.object(module.logging, "disable"),
-            patch.object(module.ctypes, "CDLL") as libc,
+            patch.object(module.bootstrap.resource, "setrlimit"),
+            patch.object(module.bootstrap.logging, "disable"),
+            patch.object(module.bootstrap.ctypes, "CDLL") as libc,
             patch(
                 "homelab_secrets.swap.require_safe_swap",
                 side_effect=UnsafeSwapError("Unverified swap"),

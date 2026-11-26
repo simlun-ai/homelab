@@ -1,6 +1,5 @@
 """RAM workspace checks and certificate policy using public dummy fixtures."""
 
-import importlib.util
 import os
 import resource
 import subprocess
@@ -15,11 +14,8 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts/trust_talos_credentials.py"
-spec = importlib.util.spec_from_file_location("trust_talos_credentials", SCRIPT)
-assert spec is not None and spec.loader is not None
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
+from homelab.talos import bootstrap
+from homelab.talos import credentials as module
 
 
 def fixtures(
@@ -76,7 +72,7 @@ class CredentialTests(unittest.TestCase):
         with patch.object(Path, "read_text", contents):
             module.require_tmpfs(42)
         with patch.object(Path, "read_text", return_value="mnt_id:\t123\n"):
-            with self.assertRaises(module.config.secrets.PreflightError):
+            with self.assertRaises(bootstrap.PreflightError):
                 module.require_tmpfs(42)
 
     def test_unverified_directory_is_rejected_before_creating_workspace(self) -> None:
@@ -85,9 +81,9 @@ class CredentialTests(unittest.TestCase):
             with patch.object(
                 module,
                 "require_tmpfs",
-                side_effect=module.config.secrets.PreflightError("Not RAM"),
+                side_effect=bootstrap.PreflightError("Not RAM"),
             ):
-                with self.assertRaises(module.config.secrets.PreflightError):
+                with self.assertRaises(bootstrap.PreflightError):
                     with module.ram_directory(root):
                         self.fail("Unexpected admission")
             self.assertEqual(list(root.iterdir()), [])
@@ -113,7 +109,7 @@ class CredentialTests(unittest.TestCase):
             root.chmod(0o777)
             with (
                 patch.object(module, "require_tmpfs"),
-                self.assertRaises(module.config.secrets.PreflightError),
+                self.assertRaises(bootstrap.PreflightError),
             ):
                 with module.ram_directory(root):
                     self.fail("Unexpected admission")

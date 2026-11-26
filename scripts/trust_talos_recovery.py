@@ -1,7 +1,6 @@
 """Rehearse wrapped Trust recovery without production identities or node operations."""
 
 import argparse
-import base64
 import hashlib
 import hmac
 import signal
@@ -14,36 +13,12 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import trust_talos_credentials as credentials
+from homelab.talos.authority import decode, load
+from homelab.talos.authority import field as field
+from homelab.talos.authority import talos_ca as talos_ca
 
 config = credentials.config
 secrets = config.secrets
-
-
-def field(value: object, name: str) -> object:
-    if not isinstance(value, dict):
-        raise ValueError("Expected YAML mapping")
-    return cast(dict[str, object], value)[name]
-
-
-def decode(value: object) -> bytes:
-    if not isinstance(value, str):
-        raise ValueError("Expected encoded credential field")
-    decoded = base64.b64decode(value, validate=True)
-    if not 0 < len(decoded) <= secrets.MAX_SECRETS:
-        raise ValueError("Invalid credential field size")
-    return decoded
-
-
-def load(content: bytes) -> object:
-    if not 0 < len(content) <= secrets.MAX_SECRETS:
-        raise ValueError("Invalid YAML input size")
-    return yaml.safe_load(content)
-
-
-def talos_ca(bundle: bytes) -> tuple[bytes, bytes]:
-    """Read the existing OS authority; missing fields must never regenerate it."""
-    authority = field(field(load(bundle), "certs"), "os")
-    return decode(field(authority, "crt")), decode(field(authority, "key"))
 
 
 def client_material(client: bytes) -> tuple[bytes, bytes, bytes]:

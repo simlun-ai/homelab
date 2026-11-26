@@ -110,6 +110,12 @@ Reference upstream charts by version rather than copying them. Package repositor
 
 Each cluster scope owns `toolchain.toml`, `versions.yaml`, and `bin/`. Cluster pins cover `kubectl`, `talosctl`, `helm`, `tofu`, and required clients/runtimes such as `bao` or Python. Select tools for the operator's OS/architecture, independently of node architecture.
 
+Trust and Backup use [shared cluster tooling](../clusters/common/) for CLI
+acquisition and Image Factory schematics. Their Makefiles select the scope and
+installer architecture. Shared [Talos helpers](../scripts/homelab/talos/)
+handle wrapping, in-memory configuration, and credential issuance. Each
+cluster owns its identity, node configuration, and install commands.
+
 Make verifies pins, uses absolute executable paths, and prepends the scope's `bin/` to subprocess `PATH`. Missing/mismatched tools fail or trigger pinned installation; never fall back to global tools. Document/check bootstrap Make and helper-runtime prerequisites.
 
 `support/hsm/` prepares the offline wheel bundle from the pinned code submodule for parent application helpers. Its environment defaults to `~/.local/share/homelab/venvs/hsm`, outside the checkout; override `HSM_VENV` consistently for installation and consumers. The code project owns dependency pins and all HSM CLIs. [Step 00](installation/00-yubikey-setup.md) instead uses the standalone imported HSM checkout directly, without parent Make entry points.

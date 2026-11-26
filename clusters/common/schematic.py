@@ -1,4 +1,4 @@
-"""Generate Image Factory IDs and digest-pinned Trust installer references."""
+"""Generate Image Factory IDs and digest-pinned installer references."""
 
 import argparse
 import hashlib
@@ -59,13 +59,13 @@ def registry_manifest(repository: str, selector: str, accept: str) -> bytes:
         return response.read()
 
 
-def write_installer_image(source: Path) -> Path:
+def write_installer_image(source: Path, *, arch: str, scope: Path) -> Path:
     identifier = source.with_suffix(".id").read_text(encoding="ascii").strip()
     if not re.fullmatch(r"[0-9a-f]{64}", identifier):
         raise ValueError("Invalid schematic ID")
-    release = version("talos")
+    release = version("talos", scope)
     repository = f"metal-installer/{identifier}"
-    print(f"Resolving linux/arm64 installer for {release} ({identifier})", flush=True)
+    print(f"Resolving linux/{arch} installer for {release} ({identifier})", flush=True)
     data: object = json.loads(registry_manifest(repository, release, INDEX_TYPES))
     if not isinstance(data, dict):
         raise ValueError("Image Factory did not return an installer index")
@@ -76,32 +76,40 @@ def write_installer_image(source: Path) -> Path:
     for manifest in cast(list[object], entries):
         match manifest:
             case {
-                "platform": {"os": "linux", "architecture": "arm64"},
+                "platform": {"os": "linux", "architecture": str(architecture)},
                 "digest": str(digest),
-            }:
+            } if architecture == arch:
                 digests.append(digest)
             case _:
                 continue
 
     if len(digests) != 1 or not re.fullmatch(r"sha256:[0-9a-f]{64}", digests[0]):
-        raise ValueError("Expected one valid linux/arm64 manifest digest")
+        raise ValueError(f"Expected one valid linux/{arch} manifest digest")
     digest = digests[0]
     manifest = registry_manifest(repository, digest, MANIFEST_TYPES)
     if f"sha256:{hashlib.sha256(manifest).hexdigest()}" != digest:
-        raise ValueError("ARM64 manifest does not match the index digest")
+        raise ValueError(f"linux/{arch} manifest does not match the index digest")
     return write_output(
-        source.with_suffix(".arm64.image"), f"{FACTORY}/{repository}@{digest}"
+        source.with_suffix(f".{arch}.image"), f"{FACTORY}/{repository}@{digest}"
     )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--installer-image", action="store_true")
+    parser.add_argument("--arch", choices=("amd64", "arm64"))
+    parser.add_argument("--scope", type=Path)
     parser.add_argument("schematic", type=Path)
     args = parser.parse_args()
+    if args.installer_image and (args.arch is None or args.scope is None):
+        parser.error("--installer-image requires --arch and --scope")
     try:
-        generate = write_installer_image if args.installer_image else write_id
-        output = generate(args.schematic)
+        if args.installer_image:
+            output = write_installer_image(
+                args.schematic, arch=args.arch, scope=args.scope
+            )
+        else:
+            output = write_id(args.schematic)
     except (OSError, ValueError) as exc:
         print(f"Image Factory generation failed: {exc}", file=sys.stderr)
         return 1
