@@ -35,28 +35,22 @@ before Talos opens `STATE`. Early DNS uses the gateway, and Talos defaults to
 When the schematic or pinned Talos release changes, use the same Make workflow
 as Trust. This submits the public YAML to Image Factory, selects the amd64
 manifest, and verifies it by SHA-256. Commit the regenerated `.id` and
-`.amd64.image` files and refresh the ISO URL version and checksum below.
+`.amd64.image` files and refresh the [ISO checksum](../../clusters/backup/talos/backup-cp1.schematic.amd64.iso.sha256).
 
 ```sh
 make -C clusters/backup installer-image SCHEMATIC=talos/backup-cp1.schematic.yaml
 ```
 
-On the Linux workstation, from the repository root, download and verify the
-ISO before writing it to the installer USB:
+From the repository root, download or verify the pinned ISO. The download
+uses the workstation's `curl`:
 
 ```sh
-(
-  set -eu
-  out=clusters/backup/boot
-  schematic=$(cat clusters/backup/talos/backup-cp1.schematic.id)
-  mkdir -p "$out"
-  curl --fail --location --show-error \
-    --output "$out/metal-amd64.iso" \
-    "https://factory.talos.dev/image/$schematic/v1.14.5/metal-amd64.iso"
-  printf '%s  %s\n' 'd49b3e952cc5c5fa204b3acfe7f40afcaa75529ecb3081255c2eb9bf5cf2196b' "$out/metal-amd64.iso" |
-    sha256sum --check -
-)
+make -C clusters/backup iso
 ```
+
+The target uses Backup's schematic ID and Talos version pin. It writes
+`clusters/backup/boot/metal-amd64.iso` after verifying its SHA-256, or
+reuses the local ISO if it already matches.
 
 The checksum was computed from the downloaded Factory ISO. The boot arguments
 from the Factory and the embedded `ip=` argument in the pinned amd64 installer
