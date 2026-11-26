@@ -21,45 +21,46 @@ make -C clusters/backup tools
 make -C clusters/backup validate
 ```
 
-Validation uses disposable credentials in a pipe and a reserved `.invalid`
-installer reference. The planned single-node Kubernetes API endpoint is
-`https://10.10.0.15:6443`.
+Validation uses disposable credentials in a pipe and checks the public patch
+with its pinned installer reference. The planned single-node Kubernetes API
+endpoint is `https://10.10.0.15:6443`.
 
 ## Prepare the boot assets
 
-The installed kernel needs the [early network argument](../../clusters/backup/talos/early-network.args)
-before it can unlock `STATE`. Build both the amd64 ISO and installer locally
-with the same argument. Early DNS uses the gateway, and Talos defaults to
-`time.cloudflare.com` for time synchronization. Verify DNS and time during the
-first Backup boot.
+Use the public [Image Factory schematic](../../clusters/backup/talos/backup-cp1.schematic.yaml)
+for both the amd64 ISO and the installer. It configures static networking
+before Talos opens `STATE`. Early DNS uses the gateway, and Talos defaults to
+`time.cloudflare.com` for time synchronization.
 
-On the Linux Docker workstation, from the repository root:
+When the schematic changes, regenerate its ID using the same Make workflow as
+Trust. This submits the public YAML to Image Factory and updates the adjacent
+`.id` file. Refresh the installer manifest pin and ISO checksum for the new ID.
+
+```sh
+make -C clusters/backup schematic-id SCHEMATIC=talos/backup-cp1.schematic.yaml
+```
+
+On the Linux workstation, from the repository root, download and verify the
+ISO before writing it to the installer USB:
 
 ```sh
 (
   set -eu
-  release=$(awk '/^talos:$/ {getline; print $2}' clusters/backup/versions.yaml)
-  kernel_arg=$(cat clusters/backup/talos/early-network.args)
-  out="$PWD/clusters/backup/boot"
+  out=clusters/backup/boot
+  schematic=$(cat clusters/backup/talos/backup-cp1.schematic.id)
   mkdir -p "$out"
-
-  for asset in iso installer; do
-    docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" \
-      --volume "$out:/out" "ghcr.io/siderolabs/imager:$release" "$asset" \
-      --arch amd64 --base-installer-image "ghcr.io/siderolabs/installer-base:$release" \
-      --extra-kernel-arg "$kernel_arg"
-  done
+  curl --fail --location --show-error \
+    --output "$out/metal-amd64.iso" \
+    "https://factory.talos.dev/image/$schematic/v1.14.5/metal-amd64.iso"
+  printf '%s  %s\n' 'd49b3e952cc5c5fa204b3acfe7f40afcaa75529ecb3081255c2eb9bf5cf2196b' "$out/metal-amd64.iso" |
+    sha256sum --check -
 )
 ```
 
-Expect `metal-amd64.iso` and `installer-amd64.tar` in the boot directory.
-Publish the installer to Trust's Zot using the
-[publisher credentials workflow](trust-zot.md#publish-the-first-image).
-Record the amd64 manifest digest. Use the digest-pinned reference with
-`talosctl gen config --install-image` when assembling the real configuration.
-Check the exact `ip=` argument in the installer's amd64 UKI using the
-[Trust verification procedure](02-trust.md#verify-the-installer-boot-arguments).
-Keep that verification offline.
+The checksum was computed from the downloaded Factory ISO. The boot arguments
+from the Factory and the embedded `ip=` argument in the pinned amd64 installer
+both matched the schematic. Talos pulls that installer during installation.
+On subsequent boots, Talos loads the installed boot image from disk.
 
 ## First encrypted boot
 
@@ -77,4 +78,5 @@ Verify static addressing, DNS and time, then verify that `STATE` and
 | Hardware discovery | [Verified in maintenance mode](../inventory.md#backup). |
 | Trust KMS deployment | [Rolled out with workload state published](02-trust.md#next-milestone-first-backup-kms-boot). |
 | Public Talos config | Offline rehearsal only. |
-| Custom image, production config and first cold boot | Pending. |
+| Factory ISO and installer | ISO downloaded and checksum recorded. Installer pinned by amd64 manifest digest. |
+| Production config and first cold boot | Pending. |

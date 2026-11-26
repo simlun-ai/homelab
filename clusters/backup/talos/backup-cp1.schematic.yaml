@@ -1,0 +1,3 @@
+customization:
+  extraKernelArgs:
+    - ip=10.10.0.15::10.10.0.1:255.255.255.0::eno1:off:10.10.0.1
