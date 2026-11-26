@@ -1,6 +1,9 @@
 """Check that maintenance discovery protects Backup's install targets."""
 
+import json
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import backup_talos_install as install
@@ -16,17 +19,30 @@ provisioning:
 """
 DISK_FIRST = b"spec: {dev_path: /dev/sda, symlinks: [/dev/disk/by-id/first]}"
 DISK_SECOND = b"spec: {dev_path: /dev/sdb, symlinks: [/dev/disk/by-id/second]}"
-UUID = b"spec: {uuid: 038e1b94-a0f6-11e4-9c0a-9d5496c01100}"
+UUID = "11111111-1111-4111-8111-111111111111"
+SYSTEM_INFO = f"spec: {{uuid: {UUID}}}".encode()
 
 
 class BackupInstallTargetTests(unittest.TestCase):
+    def setUp(self) -> None:
+        root = Path(self.enterContext(TemporaryDirectory()))
+        registration = root / "clusters/trust/tofu-workload/talos-kms.json"
+        registration.parent.mkdir(parents=True)
+        registration.write_text(
+            json.dumps({"clusters": {"backup": {"nodes": {UUID: install.NODE}}}}),
+            encoding="utf-8",
+        )
+        self.enterContext(patch.object(install.secrets, "ROOT", root))
+
     def test_requires_two_separately_discovered_members(self) -> None:
         both = DISK_FIRST + b"\n---\n" + DISK_SECOND
         same = both.replace(b"/dev/sdb", b"/dev/sda")
         for disks, valid in ((both, True), (DISK_FIRST, False), (same, False)):
             with (
                 self.subTest(valid=valid, disks=disks),
-                patch.object(install, "maintenance_query", side_effect=[UUID, disks]),
+                patch.object(
+                    install, "maintenance_query", side_effect=[SYSTEM_INFO, disks]
+                ),
             ):
                 if valid:
                     install.check_install_target("/talosctl", MACHINE)
