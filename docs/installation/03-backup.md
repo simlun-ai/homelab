@@ -111,4 +111,5 @@ config in memory. Expect native strict metal validation to pass.
 | Trust KMS deployment | [Rolled out with workload state published](02-trust.md#next-milestone-first-backup-kms-boot). |
 | Public Talos config | Offline rehearsal only. |
 | Factory ISO and installer | ISO downloaded and checksum recorded. Installer pinned by amd64 manifest digest. |
-| Production config and first cold boot | Pending. |
+| Wrapped Talos identity and production config | Identity wrapped and recovered with the YubiKey. Strict validation passed. Ciphertext published at private commit `ccaa18e` and [pinned in homelab](https://github.com/simlun-ai/homelab/commit/4a52fe8). |
+| Installation and first encrypted cold boot | Pending. |
