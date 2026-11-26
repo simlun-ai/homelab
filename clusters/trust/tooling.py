@@ -13,4 +13,4 @@ def version(component: str) -> str:
 
 
 if __name__ == "__main__":
-    raise SystemExit(tooling.main(SCOPE))
+    raise SystemExit(tooling.main(SCOPE, ("talosctl", "kubectl", "htpasswd")))

@@ -86,7 +86,7 @@ class TrustToolingTests(unittest.TestCase):
                 patch.object(module.urllib.request, "urlopen") as download,
             ):
                 with self.assertRaisesRegex(ValueError, "run make"):
-                    module.tools("check", scope=Path(directory))
+                    module.tools("check", ("talosctl",), scope=Path(directory))
                 download.assert_not_called()
 
     def test_url_uses_scope_version_pin(self) -> None:

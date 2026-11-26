@@ -196,13 +196,13 @@ def htpasswd(action: str) -> None:
     progress("Verified htpasswd is available")
 
 
-def tools(action: str, selected: tuple[str, ...] | None = None, *, scope: Path) -> None:
+def tools(action: str, selected: tuple[str, ...], *, scope: Path) -> None:
     progress("Detecting operator platform and architecture")
     arch = architecture()
     progress(f"Selected linux/{arch}; action={action}")
     if (scope / "bin").is_symlink():
         raise ValueError("Tool directory must not be a symlink")
-    for tool in selected or ("talosctl", "kubectl", "htpasswd"):
+    for tool in selected:
         if tool == "htpasswd":
             htpasswd(action)
             continue
@@ -219,7 +219,7 @@ def tools(action: str, selected: tuple[str, ...] | None = None, *, scope: Path) 
         )
 
 
-def main(default_scope: Path | None = None) -> int:
+def main(default_scope: Path | None = None, default_tools: tuple[str, ...] = ()) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("install", "check"))
     parser.add_argument("--tool", choices=(*PINS, "htpasswd"))
@@ -227,10 +227,11 @@ def main(default_scope: Path | None = None) -> int:
     args = parser.parse_args()
     if args.scope is None:
         parser.error("--scope is required")
-    if default_scope is None and args.tool not in PINS:
-        parser.error("select a pinned binary with --tool")
+    selected = (args.tool,) if args.tool else default_tools
+    if not selected:
+        parser.error("select a tool with --tool")
     try:
-        tools(args.action, (args.tool,) if args.tool else None, scope=args.scope)
+        tools(args.action, selected, scope=args.scope)
     except (
         OSError,
         ValueError,
