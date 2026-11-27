@@ -9,13 +9,14 @@ INSTALLER_PIN := "$(SCOPE)/talos/backup-cp1.schematic.amd64.image"
 TALOS_VERSION := $(shell awk '/^talos:$$/ {getline; print $$2}' "$(SCOPE)/versions.yaml")
 KUBERNETES_VERSION := $(shell awk '/^kubernetes:$$/ {getline; print $$2}' "$(SCOPE)/versions.yaml")
 
-.PHONY: help tools check-tools validate schematic-id installer-image
+.PHONY: help tools check-tools validate schematic-id installer-image iso
 .PHONY: secrets-init install-config-validate install-config-apply install-status
 help:
 	@printf '%s\n' 'tools / check-tools: install or verify the pinned Backup talosctl' \
 	  'validate: validate the public Backup install patch offline with disposable credentials' \
 	  'schematic-id SCHEMATIC=path: submit a public schematic and write its ID' \
 	  'installer-image SCHEMATIC=path: regenerate the ID and digest-only amd64 installer pin' \
+	  'iso: download or verify the pinned amd64 Factory ISO in boot/' \
 	  'secrets-init: generate and wrap the Backup Talos identity once' \
 	  'install-config-validate / install-config-apply: validate or install using the wrapped identity' \
 	  'install-status: verify the encrypted system volumes with an in-memory Talos client'
@@ -41,6 +42,10 @@ schematic-id:
 installer-image: schematic-id
 	@$(PYTHON) -I -B "$(SCOPE)/../common/schematic.py" --installer-image \
 	  --arch amd64 --scope "$(SCOPE)" -- "$$SCHEMATIC"
+
+iso:
+	@$(PYTHON) -I -B "$(SCOPE)/../common/schematic.py" --iso \
+	  --arch amd64 --scope "$(SCOPE)" -- "$(SCOPE)/talos/backup-cp1.schematic.yaml"
 
 secrets-init: INSTALL_ACTION := enroll
 secrets-init: HSM_TOOL := homelab-wrap

@@ -1,9 +1,11 @@
-"""Generate Image Factory IDs and digest-pinned installer references."""
+"""Prepare pinned Talos Image Factory boot assets."""
 
 import argparse
 import hashlib
 import json
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -59,10 +61,15 @@ def registry_manifest(repository: str, selector: str, accept: str) -> bytes:
         return response.read()
 
 
-def write_installer_image(source: Path, *, arch: str, scope: Path) -> Path:
+def read_id(source: Path) -> str:
     identifier = source.with_suffix(".id").read_text(encoding="ascii").strip()
     if not re.fullmatch(r"[0-9a-f]{64}", identifier):
         raise ValueError("Invalid schematic ID")
+    return identifier
+
+
+def write_installer_image(source: Path, *, arch: str, scope: Path) -> Path:
+    identifier = read_id(source)
     release = version("talos", scope)
     repository = f"metal-installer/{identifier}"
     print(f"Resolving linux/{arch} installer for {release} ({identifier})", flush=True)
@@ -94,23 +101,73 @@ def write_installer_image(source: Path, *, arch: str, scope: Path) -> Path:
     )
 
 
+def download_iso(source: Path, *, arch: str, scope: Path) -> Path:
+    identifier = read_id(source)
+    release = version("talos", scope)
+    pin = source.with_suffix(f".{arch}.iso.sha256")
+    expected = pin.read_text(encoding="ascii").strip()
+    if not re.fullmatch(r"[0-9a-f]{64}", expected):
+        raise ValueError(f"Invalid ISO SHA-256 in {pin}")
+    target = scope / "boot" / f"metal-{arch}.iso"
+    if target.is_file() and not target.is_symlink():
+        with target.open("rb") as existing:
+            if hashlib.file_digest(existing, "sha256").hexdigest() == expected:
+                print(f"Verified cached ISO SHA-256 for {target}", flush=True)
+                return target
+
+    url = f"https://{FACTORY}/image/{identifier}/{release}/{target.name}"
+    curl = shutil.which("curl")
+    if curl is None:
+        raise ValueError("Install curl on the workstation to download the ISO")
+    target.parent.mkdir(exist_ok=True)
+    print(f"Downloading {url}", flush=True)
+    with tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as handle:
+        temporary = Path(handle.name)
+    try:
+        subprocess.run(
+            [
+                curl,
+                "--fail",
+                "--location",
+                "--show-error",
+                "--output",
+                str(temporary),
+                url,
+            ],
+            check=True,
+        )
+        with temporary.open("rb") as download:
+            if hashlib.file_digest(download, "sha256").hexdigest() != expected:
+                raise ValueError(f"ISO SHA-256 mismatch for {url}")
+        temporary.replace(target)
+    finally:
+        temporary.unlink(missing_ok=True)
+    print(f"Verified ISO SHA-256 for {target}", flush=True)
+    return target
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--installer-image", action="store_true")
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument("--installer-image", action="store_true")
+    action.add_argument("--iso", action="store_true")
     parser.add_argument("--arch", choices=("amd64", "arm64"))
     parser.add_argument("--scope", type=Path)
     parser.add_argument("schematic", type=Path)
     args = parser.parse_args()
-    if args.installer_image and (args.arch is None or args.scope is None):
-        parser.error("--installer-image requires --arch and --scope")
+    if (args.installer_image or args.iso) and (args.arch is None or args.scope is None):
+        parser.error("--installer-image and --iso require --arch and --scope")
     try:
         if args.installer_image:
             output = write_installer_image(
                 args.schematic, arch=args.arch, scope=args.scope
             )
+        elif args.iso:
+            download_iso(args.schematic, arch=args.arch, scope=args.scope)
+            return 0
         else:
             output = write_id(args.schematic)
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, subprocess.CalledProcessError) as exc:
         print(f"Image Factory generation failed: {exc}", file=sys.stderr)
         return 1
     print(f"Wrote {output}")
