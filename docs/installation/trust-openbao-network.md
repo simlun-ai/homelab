@@ -60,71 +60,17 @@ verified the encrypted workload state envelope at serial 2 and
 
 ## Wait for the replacement and unseal
 
-Run the following from the checkout root. It waits for the StatefulSet to
-observe the new template, gracefully deletes the old pod once if needed, and
-waits for the replacement container to run. The retained claim carries the
-initialized Raft data across the restart.
+`openbao-restart` waits for the StatefulSet to observe its template, gracefully
+replaces the production pod, and waits for the new container to run. The
+retained claim carries the Raft data across the restart. The single-replica
+API is unavailable until the replacement has been unsealed.
 
 ```sh
-make -C clusters/trust check-tools &&
-  "${HSM_VENV:-$HOME/.local/share/homelab/venvs/hsm}/bin/python" -I -B - <<'PYTHON'
-import json
-import subprocess
-import sys
-import time
-from pathlib import Path
-
-sys.path.insert(0, str(Path("scripts").resolve()))
-import trust_tofu as trust
-
-trust.recovery.secrets.harden()
-kubeconfig = trust.get_kubeconfig(Path("/dev/shm"))
-kubectl = str(trust.SCOPE / "bin/kubectl")
-with trust.recovery.config.memory_file(kubeconfig) as fd:
-    base = [kubectl, "--kubeconfig", f"/proc/self/fd/{fd}", "-n", "openbao"]
-
-    def get(resource):
-        result = subprocess.run(
-            [*base, "get", resource, "--ignore-not-found", "-o", "json"],
-            pass_fds=(fd,), check=True, stdout=subprocess.PIPE, timeout=15,
-        )
-        return json.loads(result.stdout) if result.stdout else {}
-
-    deadline = time.monotonic() + 180
-    restart_requested = False
-    while time.monotonic() < deadline:
-        sts = get("statefulset/openbao")
-        pod = get("pod/openbao-0")
-        sts_status = sts.get("status", {})
-        revision = sts_status.get("updateRevision")
-        pod_metadata = pod.get("metadata", {})
-        annotations = pod_metadata.get("annotations", {})
-        statuses = pod.get("status", {}).get("containerStatuses", [])
-        template_annotations = (
-            sts.get("spec", {}).get("template", {}).get("metadata", {}).get("annotations", {})
-        )
-        checksum = template_annotations.get("openbao.hashicorp.com/config-checksum")
-        observed = sts_status.get("observedGeneration") == sts.get("metadata", {}).get("generation")
-        if revision and checksum and observed and pod_metadata and not pod_metadata.get("deletionTimestamp"):
-            pod_revision = pod_metadata.get("labels", {}).get("controller-revision-hash")
-            if pod_revision != revision and not restart_requested:
-                subprocess.run(
-                    [*base, "delete", "pod/openbao-0", "--wait=false"],
-                    pass_fds=(fd,), check=True, timeout=30,
-                )
-                restart_requested = True
-            if (
-                pod_revision == revision
-                and annotations.get("openbao.hashicorp.com/config-checksum") == checksum
-                and any(s["name"] == "openbao" and "running" in s["state"] for s in statuses)
-            ):
-                print(f"OpenBao replacement is running at revision {revision}.")
-                break
-        time.sleep(3)
-    else:
-        raise SystemExit("Timed out waiting for the OpenBao replacement.")
-PYTHON
+make -C clusters/trust openbao-restart
 ```
+
+Expect `OpenBao replacement is running at revision …`. If the command times
+out after requesting replacement, inspect the pod before retrying.
 
 ```sh
 make -C clusters/trust openbao-unseal

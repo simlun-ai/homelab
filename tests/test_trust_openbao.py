@@ -2,12 +2,66 @@
 
 import json
 import unittest
+from subprocess import CompletedProcess
 from unittest.mock import patch
 
 import trust_openbao
 
 
 class TrustOpenBaoTests(unittest.TestCase):
+    def test_restart_waits_for_replacement_container_without_readiness(self) -> None:
+        annotations = {"openbao.hashicorp.com/config-checksum": "checksum"}
+        statefulset = {
+            "metadata": {"generation": 2},
+            "status": {"observedGeneration": 2, "updateRevision": "revision"},
+            "spec": {"template": {"metadata": {"annotations": annotations}}},
+        }
+        metadata = {
+            "uid": "old",
+            "labels": {"controller-revision-hash": "revision"},
+            "annotations": annotations,
+        }
+        running: dict[str, str] = {}
+        pod = {
+            "metadata": metadata,
+            "status": {
+                "containerStatuses": [
+                    {"name": "openbao", "ready": False, "state": {"running": running}}
+                ]
+            },
+        }
+        old = json.dumps(pod).encode()
+        metadata["uid"] = "replacement"
+        responses: list[CompletedProcess[bytes]] = [
+            CompletedProcess(["kubectl"], 0, json.dumps(statefulset).encode()),
+            CompletedProcess(["kubectl"], 0, old),
+            CompletedProcess(["kubectl"], 0, b""),
+            CompletedProcess(["kubectl"], 0, old),
+            CompletedProcess(["kubectl"], 0, json.dumps(pod).encode()),
+        ]
+        with (
+            patch.object(trust_openbao.subprocess, "run", side_effect=responses) as run,
+            patch.object(trust_openbao.time, "sleep"),
+        ):
+            trust_openbao.restart(["kubectl"], 7)
+
+        delete = run.call_args_list[2]
+        self.assertEqual(
+            delete.args[0],
+            [
+                "kubectl",
+                "delete",
+                "--raw",
+                "/api/v1/namespaces/openbao/pods/openbao-0",
+                "-f",
+                "-",
+            ],
+        )
+        self.assertEqual(
+            json.loads(delete.kwargs["input"])["preconditions"], {"uid": "old"}
+        )
+        self.assertEqual(run.call_count, 5)
+
     def test_parse_valid_single_share(self) -> None:
         response = json.dumps(
             {

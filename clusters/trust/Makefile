@@ -33,6 +33,7 @@ help:
 	  'tofu-workload-validate / tofu-workload-plan / tofu-workload-apply: operate Trust workloads' \
 	  'tofu-workload-state-recover TOFU_RECOVERY_FILE=path: recover retained workload RAM state' \
 	  'openbao-status / openbao-initialize / openbao-unseal: operate Trust OpenBao' \
+	  'openbao-restart: replace the production pod and wait for its container' \
 	  'openbao-restore-unseal / openbao-restore-shell: inspect a restored backup' \
 	  'openbao-jobs-credentials / openbao-backup-auth / openbao-backup-init-repo: set up scheduled backups' \
 	  'openbao-kms-auth KMS_CLUSTER=backup: configure Transit and Kubernetes login' \
@@ -188,8 +189,8 @@ scheduling-preview scheduling-apply: check-tools check-rendered
 	  $@ --talosctl "$(SCOPE)/bin/talosctl" --ram-root "$(RAM_ROOT)" \
 	  --unwrap "$(HSM_VENV)/bin/homelab-unwrap"
 
-.PHONY: openbao-status openbao-initialize openbao-unseal
-openbao-status openbao-initialize openbao-unseal: check-tools
+.PHONY: openbao-status openbao-initialize openbao-unseal openbao-restart
+openbao-status openbao-initialize openbao-unseal openbao-restart: check-tools
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" \
 	  $(patsubst openbao-%,%,$@) --ram-root "$(RAM_ROOT)"
 

@@ -9,6 +9,7 @@ import re
 import shlex
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any, cast
 
@@ -47,6 +48,94 @@ BACKUP_RECORDS = {
 }
 
 
+def restart(kube: list[str], fd: int) -> None:
+    base = [*kube, "-n", "openbao"]
+
+    def get(resource: str) -> dict[str, Any]:
+        result = subprocess.run(
+            [*base, "get", resource, "--ignore-not-found", "-o", "json"],
+            pass_fds=(fd,),
+            stdout=subprocess.PIPE,
+            check=True,
+            timeout=15,
+        )
+        return cast(dict[str, Any], json.loads(result.stdout)) if result.stdout else {}
+
+    deadline = time.monotonic() + 180
+    while time.monotonic() < deadline:
+        sts = get("statefulset/openbao")
+        sts_status = sts.get("status", {})
+        revision = sts_status.get("updateRevision")
+        template = sts.get("spec", {}).get("template", {})
+        checksum = (
+            template.get("metadata", {})
+            .get("annotations", {})
+            .get("openbao.hashicorp.com/config-checksum")
+        )
+        observed = sts_status.get("observedGeneration") == sts.get("metadata", {}).get(
+            "generation"
+        )
+        if revision and checksum and observed:
+            break
+        time.sleep(3)
+    else:
+        print(
+            "Timed out waiting for the OpenBao StatefulSet template.", file=sys.stderr
+        )
+        raise TimeoutError
+
+    pod = get("pod/openbao-0")
+    metadata = pod.get("metadata", {})
+    previous_uid = metadata.get("uid")
+    if previous_uid and not metadata.get("deletionTimestamp"):
+        # Delete only the pod we inspected, even if another restart races us.
+        options = {
+            "apiVersion": "v1",
+            "kind": "DeleteOptions",
+            "preconditions": {"uid": previous_uid},
+        }
+        subprocess.run(
+            [
+                *kube,
+                "delete",
+                "--raw",
+                "/api/v1/namespaces/openbao/pods/openbao-0",
+                "-f",
+                "-",
+            ],
+            input=json.dumps(options).encode(),
+            pass_fds=(fd,),
+            stdout=subprocess.DEVNULL,
+            check=True,
+            timeout=30,
+        )
+        print("Requested graceful replacement of OpenBao pod openbao-0.", flush=True)
+
+    while time.monotonic() < deadline:
+        pod = get("pod/openbao-0")
+        metadata = pod.get("metadata", {})
+        uid = metadata.get("uid")
+        labels = metadata.get("labels", {})
+        annotations = metadata.get("annotations", {})
+        containers = pod.get("status", {}).get("containerStatuses", [])
+        if (
+            uid
+            and uid != previous_uid
+            and not metadata.get("deletionTimestamp")
+            and labels.get("controller-revision-hash") == revision
+            and annotations.get("openbao.hashicorp.com/config-checksum") == checksum
+            and any(
+                container["name"] == "openbao" and "running" in container["state"]
+                for container in containers
+            )
+        ):
+            print(f"OpenBao replacement is running at revision {revision}.", flush=True)
+            return
+        time.sleep(3)
+    print("Timed out waiting for the OpenBao replacement container.", file=sys.stderr)
+    raise TimeoutError
+
+
 def status(
     command: list[str], fd: int, tls_options: tuple[str, ...] = TLS_OPTIONS
 ) -> tuple[bool, bool]:
@@ -56,6 +145,7 @@ def status(
             "--",
             "bao",
             "status",
+            "restart",
             "-format=json",
             "-non-interactive",
             *tls_options,
@@ -367,6 +457,9 @@ def main() -> int:
                 return subprocess.run(
                     [*kube, *argv], pass_fds=(fd,), check=False
                 ).returncode
+            if args.action == "restart":
+                restart(kube, fd)
+                return 0
             if args.action == "backup-init-repo":
                 init_restic_repository(kube, fd)
                 return 0
