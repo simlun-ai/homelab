@@ -114,6 +114,7 @@ record the original hardware.
 - **System serial number (BIOS):** `S4K20298`.
 - **CPU (BIOS):** Intel Core i5-4570T @ 2.90 GHz.
 - **RAM:** 8 GB.
+- **Boot mode:** UEFI Only in firmware. Confirmed by the Talos installer kernel on 2026-11-28.
 - **OS drives (planned):** RAID1 using the 180 GB Intel SSD and the 128 GB Intenso Premium Portable USB SSD (128 GB nominal usable).
 - **Data drives (planned):** ZFS mirror using the two 8 TB 3.5-inch Seagate Expansion USB HDDs identified below.
 - **Network:** `k8s-aux` (VLAN 10), planned static `10.10.0.15`.
@@ -121,21 +122,24 @@ record the original hardware.
 
 ### Disk identities
 
+Observed in Talos maintenance mode on 2026-11-28 at `10.10.0.15`.
+
 | Planned role | Model and transport | Observed device | Bytes | Observed `/dev/disk/by-id/` link |
 | --- | --- | --- | ---: | --- |
 | Talos OS (RAID1) | Intel SSDSC2BF180A4L (SATA) | `/dev/sda` | 180,045,766,656 | `ata-INTEL_SSDSC2BF180A4L_CVDA431008U01802GN` |
 | Talos OS (RAID1) | Intenso Portable SSD (USB) | `/dev/sde` | 128,035,676,160 | `usb-Intenso_Portable_SSD_20230210306DC-0:0` |
 | ZFS data mirror | Seagate Expansion HDD (USB) | `/dev/sdb` | 8,001,563,221,504 | `usb-Seagate_Expansion_HDD_00000000NAC6HP6W-0:0` |
-| ZFS data mirror | Seagate Expansion SW (USB) | `/dev/sdc` | 8,001,563,221,504 | `usb-Seagate_Expansion_SW_00000000NAC85XEH-0:0` |
+| ZFS data mirror | Seagate Expansion SW (USB) | `/dev/sdd` | 8,001,563,221,504 | `usb-Seagate_Expansion_SW_00000000NAC85XEH-0:0` |
 
 Talos also reported `wwn-0x55cd2e404bd49897` for the Intel SSD and
 `ata-INTENSO_SSD_AA000000000000004056` for the Intenso SSD. The Seagate USB
 links identify the attached enclosures. The SanDisk installer was
-`/dev/sdd` during this boot. The `/dev/sd*` names can change between boots.
+`/dev/sdc` during this boot. The `/dev/sd*` names can change between boots.
 
-The operator cleared the Intenso's GPT and protective MBR signatures on the
-workstation, then confirmed that Backup reached Talos maintenance mode from
-the installer USB with the Intenso reconnected.
+The Intenso USB bridge (`152d:0579`) bound to `usb-storage` with the one-time
+installer argument `usb-storage.quirks=152d:0579:u`. The disk remained visible
+in maintenance mode with no USB resets or I/O errors in the captured log.
+The encrypted cold boot from the OS mirror is still pending.
 
 ## Shared infrastructure
 
