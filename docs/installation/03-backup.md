@@ -104,7 +104,7 @@ config in memory. Expect native strict metal validation to pass.
 | --- | --- |
 | Hardware discovery | [Verified in maintenance mode](../inventory.md#backup). |
 | Trust KMS deployment | [Rolled out with workload state published](02-trust.md#next-milestone-first-backup-kms-boot). |
-| Public Talos config | Offline rehearsal only. |
+| Public Talos config | Strict metal-mode validation passed and Talos accepted the configuration. |
 | Factory ISO and installer | ISO downloaded and checksum recorded. Installer pinned by amd64 manifest digest. |
 | Wrapped Talos identity and production config | Identity wrapped and recovered with the YubiKey. Strict validation passed. Ciphertext published at private commit `ccaa18e` and [pinned in homelab](https://github.com/simlun-ai/homelab/commit/4a52fe8). |
-| Installation and first encrypted cold boot | Pending. |
+| Installation and first encrypted cold boot | Verified 2026-11-28 using boot assets from [`4d4754f`](https://github.com/simlun-ai/homelab/commit/4d4754f5a5028fb65c1b1c20892b0be3166b30c4). After a clean ACPI shutdown, `backup-cp1` booted in UEFI mode with the installer USB removed. `make -C clusters/backup install-status` reached `10.10.0.15` and reported `STATE: ready (LUKS2)` and `EPHEMERAL: ready (LUKS2)` with Trust KMS configured for both. Kubernetes bootstrap is deferred. |
