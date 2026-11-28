@@ -54,6 +54,8 @@ server:
       enabled: true
       setNodeId: true
       config: |
+        ui = true
+
         listener "tcp" {
           address         = "0.0.0.0:8200"
           cluster_address = "127.0.0.1:8201"

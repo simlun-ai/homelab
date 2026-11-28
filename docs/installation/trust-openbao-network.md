@@ -134,6 +134,9 @@ Expect `PASS: OpenBao is initialized and unsealed.`
 
 ## Verify HTTPS and publish state
 
+The OpenBao UI is served at [the existing HTTPS address](https://bao.k8s-aux.simlun.se/ui/).
+After replacing and unsealing the pod, verify that this URL loads the sign-in page.
+
 Test from a client on VLAN 10 first. The explicit address bypasses local DNS
 while still verifying the production TLS hostname and certificate chain.
 
