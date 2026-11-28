@@ -39,7 +39,7 @@ help:
 	  'openbao-kms-auth KMS_CLUSTER=backup: configure Transit and Kubernetes login' \
 	  'openbao-secrets-bootstrap: configure workload KV and ESO access' \
 	  'openbao-secrets-check / openbao-secrets-seed: audit or populate OpenBao workload inventory' \
-	  'openbao-ui-token: stream a one-hour OpenBao UI token to a pipe' \
+	  'openbao-ui-token: stream a one-hour OpenBao root token to a pipe' \
 	  'openbao-secrets-zot-publisher: stream the Zot publisher password to a pipe' \
 	  'trust-kubectl KUBECTL_ARGS=...: use Trust Kubernetes credentials from memory' \
 	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \

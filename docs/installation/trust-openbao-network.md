@@ -109,7 +109,8 @@ Expect DNS to resolve to `10.10.0.200` and the same health result. Run
 ## Sign in to the web UI
 
 On the Trust operator workstation, use the YubiKey to issue a non-renewable
-token with OpenBao's `default` policy and a one-hour lifetime.
+token with OpenBao's `root` policy and a one-hour lifetime. This token has
+full access to Trust OpenBao.
 
 ```sh
 make -s --no-print-directory -C clusters/trust openbao-ui-token | pbcopy

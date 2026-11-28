@@ -13,7 +13,7 @@ import trust_openbao_inventory
 
 
 class TrustOpenBaoTests(unittest.TestCase):
-    def test_ui_token_is_piped_and_expires_after_one_hour(self) -> None:
+    def test_ui_token_is_piped_with_root_policy_and_one_hour_expiry(self) -> None:
         helpers = trust_openbao.secrets
         output = io.StringIO()
         with (
@@ -38,12 +38,12 @@ class TrustOpenBaoTests(unittest.TestCase):
             "POST",
             "auth/token/create",
             {
-                "policies": ["default"],
+                "policies": ["root"],
                 "type": "service",
                 "ttl": "1h",
                 "explicit_max_ttl": "1h",
                 "renewable": False,
-                "no_default_policy": False,
+                "no_default_policy": True,
             },
         )
         self.assertEqual(output.getvalue(), "ui-fixture\n")

@@ -239,12 +239,11 @@ def main() -> int:
                 return 1
             print(
                 operator_token(
-                    "default",
+                    "root",
                     type="service",
                     ttl="1h",
                     explicit_max_ttl="1h",
                     renewable=False,
-                    no_default_policy=False,
                 ),
                 flush=True,
             )
