@@ -39,6 +39,7 @@ help:
 	  'openbao-kms-auth KMS_CLUSTER=backup: configure Transit and Kubernetes login' \
 	  'openbao-secrets-bootstrap: configure workload KV and ESO access' \
 	  'openbao-secrets-check / openbao-secrets-seed: audit or populate OpenBao workload inventory' \
+	  'openbao-ui-token: stream a one-hour OpenBao UI token to a pipe' \
 	  'openbao-secrets-zot-publisher: stream the Zot publisher password to a pipe' \
 	  'trust-kubectl KUBECTL_ARGS=...: use Trust Kubernetes credentials from memory' \
 	  'kms-enroll / kms-key-verify: create or recover the wrapped trust-cp1 KMS key' \
@@ -205,7 +206,11 @@ openbao-restore-unseal openbao-restore-shell openbao-backup-auth openbao-jobs-cr
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" \
 	  $(patsubst openbao-%,%,$@) --ram-root "$(RAM_ROOT)"
 
-.PHONY: openbao-secrets-zot-publisher check-htpasswd
+.PHONY: openbao-ui-token openbao-secrets-zot-publisher check-htpasswd
+openbao-ui-token:
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao_inventory.py" ui-token
+
+
 check-htpasswd:
 	@$(PYTHON) -I -B "$(SCOPE)/tooling.py" check --tool htpasswd
 

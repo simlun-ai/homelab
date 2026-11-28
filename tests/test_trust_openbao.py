@@ -1,16 +1,53 @@
 """Protect the staged OpenBao credential transport from regressions."""
 
+import io
 import json
 import sys
 import unittest
-from contextlib import nullcontext
+from contextlib import nullcontext, redirect_stdout
 from subprocess import CompletedProcess
 from unittest.mock import patch
 
 import trust_openbao
+import trust_openbao_inventory
 
 
 class TrustOpenBaoTests(unittest.TestCase):
+    def test_ui_token_is_piped_and_expires_after_one_hour(self) -> None:
+        helpers = trust_openbao.secrets
+        output = io.StringIO()
+        with (
+            patch.object(sys, "argv", ["trust_openbao_inventory.py", "ui-token"]),
+            patch.object(helpers, "harden"),
+            patch.object(helpers, "require_pipe") as pipe,
+            patch.object(helpers, "require_private_repository"),
+            patch.object(helpers, "executable", return_value="homelab-unwrap"),
+            patch.object(helpers, "hsm_progress_terminal", return_value=nullcontext(7)),
+            patch.object(helpers, "recover_bundle", return_value=b"root-fixture"),
+            patch.object(
+                trust_openbao_inventory,
+                "api",
+                return_value={"auth": {"client_token": "ui-fixture"}},
+            ) as api,
+            redirect_stdout(output),
+        ):
+            self.assertEqual(trust_openbao_inventory.main(), 0)
+        pipe.assert_called_once_with()
+        api.assert_called_once_with(
+            "root-fixture",
+            "POST",
+            "auth/token/create",
+            {
+                "policies": ["default"],
+                "type": "service",
+                "ttl": "1h",
+                "explicit_max_ttl": "1h",
+                "renewable": False,
+                "no_default_policy": False,
+            },
+        )
+        self.assertEqual(output.getvalue(), "ui-fixture\n")
+
     def test_restart_is_a_cli_action(self) -> None:
         with (
             patch.object(sys, "argv", ["trust_openbao.py", "restart"]),

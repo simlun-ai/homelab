@@ -187,7 +187,7 @@ def populate(request: Api, entries: dict[str, str], *, seed: bool) -> bool:
     return ready
 
 
-def operator_token(policy: str) -> str:
+def operator_token(policy: str, **options: object) -> str:
     helpers = trust_openbao.secrets
     record, key_id = trust_openbao.ROOT_TOKEN
     helpers.require_private_repository(record=record)
@@ -205,21 +205,50 @@ def operator_token(policy: str) -> str:
         root.decode("ascii"),
         "POST",
         "auth/token/create",
-        {"policies": [policy], "ttl": "5m", "type": "batch", "no_default_policy": True},
+        {
+            "ttl": "5m",
+            "type": "batch",
+            "no_default_policy": True,
+            **options,
+            "policies": [policy],
+        },
     )
     match result:
         case {"auth": {"client_token": str() as token}} if token:
             return token
         case _:
-            raise ValueError("OpenBao did not return an inventory token")
+            raise ValueError("OpenBao did not return a token")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("check", "seed", "zot-publisher"))
+    parser.add_argument(
+        "action", choices=("check", "seed", "zot-publisher", "ui-token")
+    )
     args = parser.parse_args()
     try:
         trust_openbao.secrets.harden()
+        if args.action == "ui-token":
+            try:
+                trust_openbao.secrets.require_pipe()
+            except ValueError:
+                print(
+                    "Pipe openbao-ui-token to your clipboard command.",
+                    file=sys.stderr,
+                )
+                return 1
+            print(
+                operator_token(
+                    "default",
+                    type="service",
+                    ttl="1h",
+                    explicit_max_ttl="1h",
+                    renewable=False,
+                    no_default_policy=False,
+                ),
+                flush=True,
+            )
+            return 0
         if args.action == "zot-publisher":
             trust_openbao.secrets.require_pipe()
             token = operator_token("trust-zot-publisher")

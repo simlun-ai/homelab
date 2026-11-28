@@ -105,3 +105,16 @@ getent ahostsv4 bao.k8s-aux.simlun.se &&
 Expect DNS to resolve to `10.10.0.200` and the same health result. Run
 `make -C clusters/trust tofu-workload-plan` and expect no changes, then
 [check and publish the encrypted workload state](trust-openbao.md#publish-encrypted-workload-state).
+
+## Sign in to the web UI
+
+On the Trust operator workstation, use the YubiKey to issue a non-renewable
+token with OpenBao's `default` policy and a one-hour lifetime.
+
+```sh
+make -s --no-print-directory -C clusters/trust openbao-ui-token | pbcopy
+```
+
+At [the OpenBao UI](https://bao.k8s-aux.simlun.se/ui/), choose **Token** and
+paste the clipboard into the sign-in form. The command keeps the recovered
+root token in memory and streams the temporary token to the clipboard.
