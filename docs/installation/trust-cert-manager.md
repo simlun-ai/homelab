@@ -150,15 +150,27 @@ A fresh OpenTofu plan reported no changes, and the updated encrypted state
 was pushed. Production issuance is first tested when the OpenBao workload
 requests its real certificate.
 
-## Planned cross-cluster certificate delivery
+## Cross-cluster certificate delivery
 
-Trust will also run External Secrets Operator as part of the
-[certificate factory](../clusters.md#certificate-factory). It will publish
-selected cert-manager TLS Secrets to OpenBao using one `PushSecret` per
-certificate. Backup's Garage HTTPS endpoint will be the first consumer,
-using an `ExternalSecret` in Backup to fetch and refresh its local TLS Secret.
-This runbook installs cert-manager and its shared issuers. The publication
-and consumption steps will be documented with the later rollout.
+The [certificate factory](../clusters.md#certificate-factory) publishes
+selected cert-manager TLS Secrets to OpenBao through namespaced ESO
+`PushSecret` resources. With ESO 2.11.0, use a `SecretStore` with
+`provider.vault` pointed at OpenBao. The native `openBao` provider in that
+release supports reads. Enable `checkAndSet.required` for the `workload-kv`
+mount. Publish the entire Secret to one KV key so both TLS fields are written
+together. Give each publisher its own Kubernetes auth role, token self-lookup,
+and access to that key's data and metadata paths.
+
+On 2026-11-28, the operator verified that ESO published a Let's Encrypt
+staging certificate to OpenBao KV version 1. Adding a DNS name prompted
+cert-manager to issue revision 2, and ESO advanced the same OpenBao entry
+to KV version 2. The temporary namespace, KV entry, publisher role, and
+policy were removed after verification. Namespaced PushSecret processing
+is enabled in the Trust workload release.
+
+Backup's Garage HTTPS endpoint will be the first consumer. Configure an
+`ExternalSecret` there to fetch the production certificate and verify that
+Garage serves the renewed certificate.
 
 ## OpenBao network prerequisites
 

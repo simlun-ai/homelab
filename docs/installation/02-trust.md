@@ -37,6 +37,7 @@ mechanism separately before installation.
 - [x] **Deployed:** The [Trust-hosted Talos KMS adapter for Backup](trust-talos-kms.md) applied as one new Helm release. The `talos-backup` Deployment rolled out and MetalLB assigned `10.10.0.202:443`. The follow-up plan showed no changes and [encrypted workload state serial 10 was published](https://github.com/simlun-ai/homelab-opentofu-state/commit/66c6160). See the encrypted cold-boot result below.
 - [x] **Verified (2026-11-28):** [Backup’s first encrypted cold boot](03-backup.md#first-encrypted-boot) reached `10.10.0.15` from the installed OS mirror. Both `STATE` and `EPHEMERAL` were ready with LUKS2 using the configured Trust KMS endpoint.
 - [ ] Return to the remaining Trust installation work after this boot passes. Defer the rest of the Backup installation and the Pi and Metal adapter rollouts.
+- [x] **Verified (2026-11-28):** [Trust certificate publication](trust-cert-manager.md#cross-cluster-certificate-delivery) advanced the OpenBao KV entry from version 1 to 2 after cert-manager reissued a staging certificate. Garage delivery remains part of the Backup rollout.
 
 - [ ] Evaluate Talos [`RegistryMirrorConfig`](https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/images-container-runtime/pull-through-cache), including upstream selection, pre-seeding, fallback and Trust bootstrap recovery. Decide whether Backup, Pi, and Metal share Trust's Zot or run cluster-local instances based on storage and outage requirements.
 

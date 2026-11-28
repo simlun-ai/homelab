@@ -31,7 +31,8 @@ OpenBao storage, backups, and recovery are specified in [backup-and-restore.md](
 
 ### Certificate factory
 
-Trust is the planned central DNS-01 certificate issuer for the homelab.
+Trust is the central DNS-01 certificate issuer for the homelab. Publishing to
+OpenBao is [verified with a staging certificate](installation/trust-cert-manager.md#cross-cluster-certificate-delivery).
 For each certificate needed in another cluster:
 
 1. A cert-manager `Certificate` in Trust requests issuance through the shared
@@ -51,8 +52,8 @@ continues to use its independent [Certbot flow](installation/trust-kms-cloudflar
 The delivery rollout will define OpenBao paths and access policies so that
 each consumer can read only the certificate material it needs. For Garage,
 verify initial delivery and that a renewal reaches Backup and is served by the
-HTTPS endpoint. External Secrets Operator installation, OpenBao integration,
-and service reload behavior are later work.
+HTTPS endpoint. ESO and OpenBao are running on Trust. Garage's consumer-side
+configuration and reload behavior are part of the Backup rollout.
 
 ## Backup
 
