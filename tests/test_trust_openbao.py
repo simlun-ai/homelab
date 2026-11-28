@@ -1,7 +1,9 @@
 """Protect the staged OpenBao credential transport from regressions."""
 
 import json
+import sys
 import unittest
+from contextlib import nullcontext
 from subprocess import CompletedProcess
 from unittest.mock import patch
 
@@ -9,6 +11,38 @@ import trust_openbao
 
 
 class TrustOpenBaoTests(unittest.TestCase):
+    def test_restart_is_a_cli_action(self) -> None:
+        with (
+            patch.object(sys, "argv", ["trust_openbao.py", "restart"]),
+            patch.object(trust_openbao.secrets, "harden"),
+            patch.object(trust_openbao.secrets, "executable", return_value="kubectl"),
+            patch.object(trust_openbao.os, "umask"),
+            patch.object(trust_openbao.tofu, "get_kubeconfig", return_value=b"config"),
+            patch.object(
+                trust_openbao.tofu.recovery.config,
+                "memory_file",
+                return_value=nullcontext(7),
+            ),
+            patch.object(trust_openbao, "restart") as restart,
+        ):
+            self.assertEqual(trust_openbao.main(), 0)
+        restart.assert_called_once_with(
+            ["kubectl", "--kubeconfig", "/proc/self/fd/7"], 7
+        )
+
+    def test_status_passes_only_status_arguments_to_bao(self) -> None:
+        output = b'{"type":"shamir","initialized":true,"sealed":false}'
+        with patch.object(
+            trust_openbao.subprocess,
+            "run",
+            return_value=CompletedProcess(["kubectl"], 0, output),
+        ) as run:
+            self.assertEqual(trust_openbao.status(["kubectl"], 7, ()), (True, False))
+        self.assertEqual(
+            run.call_args.args[0],
+            ["kubectl", "--", "bao", "status", "-format=json", "-non-interactive"],
+        )
+
     def test_restart_waits_for_replacement_container_without_readiness(self) -> None:
         annotations = {"openbao.hashicorp.com/config-checksum": "checksum"}
         statefulset = {
