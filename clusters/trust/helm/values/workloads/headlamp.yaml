@@ -1,0 +1,97 @@
+config:
+  sessionTTL: 3600
+  unsafeUseServiceAccountToken: false
+  tlsCertPath: /var/run/headlamp-tls/tls.crt
+  tlsKeyPath: /var/run/headlamp-tls/tls.key
+
+clusterRoleBinding:
+  create: false
+
+probes:
+  scheme: HTTPS
+
+volumeMounts:
+  - name: tls
+    mountPath: /var/run/headlamp-tls
+    readOnly: true
+volumes:
+  - name: tls
+    secret:
+      secretName: headlamp-tls
+
+extraManifests:
+  - |
+    apiVersion: cert-manager.io/v1
+    kind: Certificate
+    metadata:
+      name: headlamp
+      namespace: "{{ .Release.Namespace }}"
+    spec:
+      secretName: headlamp-tls
+      dnsNames:
+        - headlamp.k8s-aux.simlun.se
+      issuerRef:
+        kind: ClusterIssuer
+        name: letsencrypt-production
+        group: cert-manager.io
+      privateKey:
+        rotationPolicy: Always
+  - |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: headlamp-https
+      namespace: "{{ .Release.Namespace }}"
+      annotations:
+        metallb.io/loadBalancerIPs: "10.10.0.203"
+    spec:
+      type: LoadBalancer
+      allocateLoadBalancerNodePorts: false
+      selector:
+        {{- include "headlamp.selectorLabels" . | nindent 4 }}
+      ports:
+        - name: https
+          port: 443
+          targetPort: http
+  - |
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: headlamp-viewer
+      namespace: "{{ .Release.Namespace }}"
+    automountServiceAccountToken: false
+  - |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: trust-headlamp-viewer
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: view
+    subjects:
+      - kind: ServiceAccount
+        name: headlamp-viewer
+        namespace: "{{ .Release.Namespace }}"
+  - |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      name: trust-headlamp-node-viewer
+    rules:
+      - apiGroups: [""]
+        resources: [nodes]
+        verbs: [get, list, watch]
+  - |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: trust-headlamp-node-viewer
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: trust-headlamp-node-viewer
+    subjects:
+      - kind: ServiceAccount
+        name: headlamp-viewer
+        namespace: "{{ .Release.Namespace }}"

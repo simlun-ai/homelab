@@ -39,6 +39,7 @@ help:
 	  'openbao-kms-auth KMS_CLUSTER=backup: configure Transit and Kubernetes login' \
 	  'openbao-secrets-bootstrap: configure workload KV and ESO access' \
 	  'openbao-secrets-check / openbao-secrets-seed: audit or populate OpenBao workload inventory' \
+	  'headlamp-login-token: stream a one-hour Headlamp viewer token to a pipe' \
 	  'openbao-ui-token: stream a one-hour OpenBao root token to a pipe' \
 	  'openbao-secrets-zot-publisher: stream the Zot publisher password to a pipe' \
 	  'trust-kubectl KUBECTL_ARGS=...: use Trust Kubernetes credentials from memory' \
@@ -194,6 +195,11 @@ scheduling-preview scheduling-apply: check-tools check-rendered
 openbao-status openbao-initialize openbao-unseal openbao-restart: check-tools
 	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_openbao.py" \
 	  $(patsubst openbao-%,%,$@) --ram-root "$(RAM_ROOT)"
+
+.PHONY: headlamp-login-token
+headlamp-login-token:
+	@$(MAKE) --no-print-directory check-tools >&2
+	@"$(HSM_VENV)/bin/python" -I -B "$(SCOPE)/../../scripts/trust_headlamp.py" --ram-root "$(RAM_ROOT)"
 
 export KUBECTL_ARGS R2_REPOSITORY KMS_CLUSTER
 .PHONY: trust-kubectl openbao-restore-unseal openbao-restore-shell
