@@ -52,9 +52,10 @@ The target uses Backup's schematic ID and Talos version pin. It writes
 `clusters/backup/boot/metal-amd64.iso` after verifying its SHA-256, or
 reuses the local ISO if it already matches.
 
-The checksum was computed from the downloaded Factory ISO. The boot arguments
-from the Factory and the embedded `ip=` argument in the pinned amd64 installer
-both matched the schematic. Talos pulls that installer during installation.
+The checksum was computed from the downloaded Factory ISO. Both the ISO and
+the pinned amd64 installer contain the early `ip=` argument and the
+[USB storage quirk for the Intenso SSD](../inventory.md#backup). Talos pulls
+that installer during installation.
 On subsequent boots, Talos loads the installed boot image from disk.
 
 ## Enroll and validate the Backup identity
@@ -83,7 +84,7 @@ config in memory. Expect native strict metal validation to pass.
 
 ## First encrypted boot
 
-1. Boot the verified Factory ISO from USB. Wait for maintenance mode at
+1. Boot the verified Factory ISO from USB in UEFI mode. Wait for maintenance mode at
    `10.10.0.15` and keep the console visible.
 2. From the workstation, run `make -C clusters/backup install-config-apply`
    only when ready to write the two assigned OS disks. The helper recovers
