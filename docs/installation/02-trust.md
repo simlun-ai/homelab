@@ -18,7 +18,7 @@
 - **Verified (2026-11-21):** [OpenBao initialization and YubiKey-backed unseal](trust-openbao-initialize.md) passed on the staged server. Both wrapped bootstrap records were verified, published, and pinned.
 - **Verified (2026-11-21):** The [OpenBao network listener](trust-openbao-network.md) is active through MetalLB. Local DNS and production TLS returned HTTP 200 from the operator workstation. The follow-up plan was clean and encrypted workload state serial 2 was published. Pi and Metal client checks are deferred until their VLANs are set up.
 - **Verified (2026-11-22):** A manually triggered OpenBao backup to R2 and restore into the separate rehearsal Helm release passed with matching restic snapshot IDs and Raft digests. The restored instance was sealed. Both CronJobs were enabled and the follow-up OpenTofu plan showed no changes. The [wrapped initial root token](../security/openbao-unseal.md#manual-root-token-use) is retained for occasional manual bootstrap.
-- [ ] Verify a [scheduled OpenBao backup and restore pair](trust-openbao-backup-operations.md#verify-a-scheduled-backup-and-restore). Record the run date, matching snapshot ID and digest, and sealed status.
+- [ ] Verify OpenBao recovery during the [clean Trust reinstall](#clean-reinstall-and-openbao-recovery). The manual restore rehearsal already passed.
 
 Trust's four 128 GB SSDs have [planned mirror assignments](../inventory.md#mirror-assignments). Use the
 `/dev/disk/by-id/ata-*` links in the
@@ -1559,6 +1559,28 @@ changed only the released scratch PV's policy to `Delete`. CSI reclaimed
 that PV and Talos debug confirmed its dataset was gone. The
 `trust-data` pool and recovery fixture remained present, and the test
 namespace was deleted.
+
+## Clean reinstall and OpenBao recovery
+
+1. Archive the Trust experiment notes and their results under
+   `docs/experiments/trust/`. Keep the supported install and recovery steps in
+   the installation docs and update links to the archived notes.
+2. Complete the cleanup and refactors, including removal of rehearsal-only
+   code and deployment scaffolding. Keep the supported install, live backup,
+   and credential recovery paths, and document how to restore a production
+   snapshot into fresh OpenBao. Review and merge the finished changes into
+   `main` before the reinstall.
+3. Before wiping Trust, identify a completed scheduled R2 backup and record
+   its restic snapshot ID and Raft snapshot digest. Verify that the backup and
+   the [recovery prerequisites](../emergency-recovery-guide.md#restore-trust-and-openbao)
+   are available independently of the cluster. The first Backup node depends
+   on Trust's KMS for disk unlock, so plan for that endpoint to be unavailable
+   during the reinstall.
+4. Check out `main` and record the commit used for the reinstall. Reinstall
+   Trust from that revision, restore the selected snapshot into OpenBao, and
+   verify the snapshot ID and digest. Record the sealed
+   state after restore, then unseal OpenBao and verify representative
+   recovered data and access.
 
 ## Later platform and service milestones
 

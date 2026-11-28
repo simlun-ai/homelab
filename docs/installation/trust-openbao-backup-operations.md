@@ -110,6 +110,11 @@ make -C clusters/trust trust-kubectl \
 
 ## Verify a scheduled backup and restore
 
+The next planned end-to-end OpenBao recovery check is the
+[clean Trust reinstall](02-trust.md#clean-reinstall-and-openbao-recovery).
+Use the scheduled backup as the recovery source. The job checks below apply
+when inspecting the existing scheduled backup and rehearsal restore.
+
 After 05:00 Europe/Stockholm, find the Jobs created by the 03:00 backup
 and 05:00 restore schedules.
 
