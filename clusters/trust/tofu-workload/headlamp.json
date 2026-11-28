@@ -1,0 +1,6 @@
+{
+  "version": "0.45.0",
+  "image_digest": "sha256:db3f0e0fc58d358d41daa3fe7fc852437552c7ee873c3645470f7b86a8e0db49",
+  "repository": "https://github.com/kubernetes-sigs/headlamp/releases/download/headlamp-helm-0.45.0",
+  "sha256": "38c619e0ed5db4164b02c353bcbb24e8157c1d98d961b292f99d68cc9316b8eb"
+}
